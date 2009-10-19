@@ -553,8 +553,9 @@ int SetTraceset(Tab * tab, LttvTraceset *traceset)
   gint retval = 0;
 
  
-  g_assert( lttv_iattribute_find_by_path(tab->attributes,
-     "hooks/updatetraceset", LTTV_POINTER, &value));
+  retval= lttv_iattribute_find_by_path(tab->attributes,
+    "hooks/updatetraceset", LTTV_POINTER, &value);
+  g_assert(retval);
 
   tmp = (LttvHooks*)*(value.v_pointer);
   if(tmp == NULL) retval = 1;
@@ -603,8 +604,11 @@ void update_traceset(Tab *tab)
 {
   LttvAttributeValue value;
   LttvHooks * tmp;
-  g_assert(lttv_iattribute_find_by_path(tab->attributes,
-           "hooks/updatetraceset", LTTV_POINTER, &value));
+  gboolean retval;
+
+  retval= lttv_iattribute_find_by_path(tab->attributes,
+    "hooks/updatetraceset", LTTV_POINTER, &value);
+  g_assert(retval);
   tmp = (LttvHooks*)*(value.v_pointer);
   if(tmp == NULL) return;
   lttv_hooks_call(tmp, NULL);
@@ -2100,6 +2104,8 @@ void redraw(GtkWidget *widget, gpointer user_data)
   GtkWidget *page = gtk_notebook_get_nth_page(GTK_NOTEBOOK(notebook),
                       gtk_notebook_get_current_page(GTK_NOTEBOOK(notebook)));
   Tab *tab;
+  gboolean retval;
+
   if(!page) {
     return;
   } else {
@@ -2111,7 +2117,8 @@ void redraw(GtkWidget *widget, gpointer user_data)
   LttvHooks * tmp;
   LttvAttributeValue value;
 
-  g_assert(lttv_iattribute_find_by_path(tab->attributes, "hooks/redraw", LTTV_POINTER, &value));
+  retval= lttv_iattribute_find_by_path(tab->attributes, "hooks/redraw", LTTV_POINTER, &value);
+  g_assert(retval);
 
   tmp = (LttvHooks*)*(value.v_pointer);
   if(tmp != NULL)
@@ -2125,6 +2132,8 @@ void continue_processing(GtkWidget *widget, gpointer user_data)
   GtkWidget *page = gtk_notebook_get_nth_page(GTK_NOTEBOOK(notebook),
                       gtk_notebook_get_current_page(GTK_NOTEBOOK(notebook)));
   Tab *tab;
+  gboolean retval;
+
   if(!page) {
     return;
   } else {
@@ -2136,8 +2145,9 @@ void continue_processing(GtkWidget *widget, gpointer user_data)
   LttvHooks * tmp;
   LttvAttributeValue value;
 
-  g_assert(lttv_iattribute_find_by_path(tab->attributes,
-     "hooks/continue", LTTV_POINTER, &value));
+  retval= lttv_iattribute_find_by_path(tab->attributes, "hooks/continue",
+    LTTV_POINTER, &value);
+  g_assert(retval);
 
   tmp = (LttvHooks*)*(value.v_pointer);
   if(tmp != NULL)
@@ -3307,17 +3317,20 @@ on_MWindow_destroy                     (GtkWidget       *widget,
   MainWindow *main_window = get_window_data_struct(widget);
   LttvIAttribute *attributes = main_window->attributes;
   LttvAttributeValue value;
+  gboolean retval;
  
   //This is unnecessary, since widgets will be destroyed
   //by the main window widget anyway.
   //remove_all_menu_toolbar_constructors(main_window, NULL);
 
-  g_assert(lttv_iattribute_find_by_path(attributes,
-           "viewers/menu", LTTV_POINTER, &value));
+  retval= lttv_iattribute_find_by_path(attributes, "viewers/menu",
+    LTTV_POINTER, &value);
+  g_assert(retval);
   lttv_menus_destroy((LttvMenus*)*(value.v_pointer));
 
-  g_assert(lttv_iattribute_find_by_path(attributes,
-           "viewers/toolbar", LTTV_POINTER, &value));
+  retval= lttv_iattribute_find_by_path(attributes, "viewers/toolbar",
+    LTTV_POINTER, &value);
+  g_assert(retval);
   lttv_toolbars_destroy((LttvToolbars*)*(value.v_pointer));
 
   g_object_unref(main_window->attributes);
@@ -3914,8 +3927,10 @@ void current_position_change_manager(Tab *tab,
   LttvTracesetContext *tsc =
     LTTV_TRACESET_CONTEXT(tab->traceset_info->traceset_context);
   TimeInterval time_span = tsc->time_span;
+  int retval;
 
-  g_assert(lttv_process_traceset_seek_position(tsc, pos) == 0);
+  retval= lttv_process_traceset_seek_position(tsc, pos);
+  g_assert_cmpint(retval, ==, 0);
   LttTime new_time = lttv_traceset_context_position_get_time(pos);
   /* Put the context in a state coherent position */
   lttv_state_traceset_seek_time_closest((LttvTracesetState*)tsc, ltt_time_zero);
@@ -4170,29 +4185,32 @@ void add_all_menu_toolbar_constructors(MainWindow * mw, gpointer user_data)
   LttvIAttribute *global_attributes = LTTV_IATTRIBUTE(lttv_global_attributes());
   LttvIAttribute *attributes = mw->attributes;
   GtkWidget * tool_menu_title_menu, *new_widget, *pixmap;
+  gboolean retval;
 
-  g_assert(lttv_iattribute_find_by_path(global_attributes,
-	   "viewers/menu", LTTV_POINTER, &value));
+  retval= lttv_iattribute_find_by_path(global_attributes, "viewers/menu",
+    LTTV_POINTER, &value);
+  g_assert(retval);
   if(*(value.v_pointer) == NULL)
     *(value.v_pointer) = lttv_menus_new();
   global_menu = (LttvMenus*)*(value.v_pointer);
 
-  g_assert(lttv_iattribute_find_by_path(attributes,
-	   "viewers/menu", LTTV_POINTER, &value));
+  retval= lttv_iattribute_find_by_path(attributes, "viewers/menu",
+    LTTV_POINTER, &value);
+  g_assert(retval);
   if(*(value.v_pointer) == NULL)
     *(value.v_pointer) = lttv_menus_new();
   instance_menu = (LttvMenus*)*(value.v_pointer);
 
-
-
-  g_assert(lttv_iattribute_find_by_path(global_attributes,
-	   "viewers/toolbar", LTTV_POINTER, &value));
+  retval= lttv_iattribute_find_by_path(global_attributes, "viewers/toolbar",
+    LTTV_POINTER, &value);
+  g_assert(retval);
   if(*(value.v_pointer) == NULL)
     *(value.v_pointer) = lttv_toolbars_new();
   global_toolbar = (LttvToolbars*)*(value.v_pointer);
 
-  g_assert(lttv_iattribute_find_by_path(attributes,
-	   "viewers/toolbar", LTTV_POINTER, &value));
+  retval= lttv_iattribute_find_by_path(attributes, "viewers/toolbar",
+    LTTV_POINTER, &value);
+  g_assert(retval);
   if(*(value.v_pointer) == NULL)
     *(value.v_pointer) = lttv_toolbars_new();
   instance_toolbar = (LttvToolbars*)*(value.v_pointer);
@@ -4262,6 +4280,8 @@ void add_all_menu_toolbar_constructors(MainWindow * mw, gpointer user_data)
 
 MainWindow *construct_main_window(MainWindow * parent)
 {
+  gboolean retval;
+
   g_debug("construct_main_window()");
   GtkWidget  * new_window; /* New generated main window */
   MainWindow * new_m_window;/* New main window structure */
@@ -4282,12 +4302,14 @@ MainWindow *construct_main_window(MainWindow * parent)
   new_m_window->mwindow = new_window;
   new_m_window->attributes = attributes;
 
-  g_assert(lttv_iattribute_find_by_path(attributes,
-           "viewers/menu", LTTV_POINTER, &value));
+  retval= lttv_iattribute_find_by_path(attributes, "viewers/menu",
+    LTTV_POINTER, &value);
+  g_assert(retval);
   *(value.v_pointer) = lttv_menus_new();
 
-  g_assert(lttv_iattribute_find_by_path(attributes,
-           "viewers/toolbar", LTTV_POINTER, &value));
+  retval= lttv_iattribute_find_by_path(attributes, "viewers/toolbar",
+    LTTV_POINTER, &value);
+  g_assert(retval);
   *(value.v_pointer) = lttv_toolbars_new();
 
   add_all_menu_toolbar_constructors(new_m_window, NULL);

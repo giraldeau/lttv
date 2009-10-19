@@ -95,6 +95,7 @@ int main(int argc, char **argv)
     *profile_memory_long_option = "--memory";
 
   gboolean profile_memory = FALSE;
+  gboolean retval;
 
   LttvAttributeValue value;
 
@@ -136,17 +137,21 @@ int main(int argc, char **argv)
 
   /* Create a number of hooks lists */
 
-  g_assert(lttv_iattribute_find_by_path(attributes, "hooks/options/before",
-      LTTV_POINTER, &value));
+  retval= lttv_iattribute_find_by_path(attributes, "hooks/options/before",
+      LTTV_POINTER, &value);
+  g_assert(retval);
   *(value.v_pointer) = before_options;
-  g_assert(lttv_iattribute_find_by_path(attributes, "hooks/options/after",
-      LTTV_POINTER, &value));
+  retval= lttv_iattribute_find_by_path(attributes, "hooks/options/after",
+      LTTV_POINTER, &value);
+  g_assert(retval);
   *(value.v_pointer) = after_options;
-  g_assert(lttv_iattribute_find_by_path(attributes, "hooks/main/before",
-      LTTV_POINTER, &value));
+  retval= lttv_iattribute_find_by_path(attributes, "hooks/main/before",
+      LTTV_POINTER, &value);
+  g_assert(retval);
   *(value.v_pointer) = before_main;
-  g_assert(lttv_iattribute_find_by_path(attributes, "hooks/main/after",
-      LTTV_POINTER, &value));
+  retval= lttv_iattribute_find_by_path(attributes, "hooks/main/after",
+      LTTV_POINTER, &value);
+  g_assert(retval);
   *(value.v_pointer) = after_main;
 
 

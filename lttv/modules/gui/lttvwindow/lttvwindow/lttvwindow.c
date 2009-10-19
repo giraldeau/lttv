@@ -65,6 +65,7 @@ void set_time_window(Tab *tab, const TimeWindow *time_window)
 {
   LttvAttributeValue value;
   LttvHooks * tmp;
+  gboolean retval;
 
   TimeWindowNotifyData time_window_notify_data;
   TimeWindow old_time_window = tab->time_window;
@@ -73,8 +74,9 @@ void set_time_window(Tab *tab, const TimeWindow *time_window)
   time_window_notify_data.new_time_window = 
                           &(tab->time_window);
 
-  g_assert(lttv_iattribute_find_by_path(tab->attributes,
-           "hooks/updatetimewindow", LTTV_POINTER, &value));
+  retval= lttv_iattribute_find_by_path(tab->attributes,
+    "hooks/updatetimewindow", LTTV_POINTER, &value);
+  g_assert(retval);
   tmp = (LttvHooks*)*(value.v_pointer);
   if(tmp != NULL) lttv_hooks_call(tmp, &time_window_notify_data);
 
@@ -94,11 +96,13 @@ void set_current_time(Tab *tab, const LttTime *current_time)
 {
   LttvAttributeValue value;
   LttvHooks * tmp;
+  gboolean retval;
 
   tab->current_time = *current_time;
 
-  g_assert(lttv_iattribute_find_by_path(tab->attributes,
-           "hooks/updatecurrenttime", LTTV_POINTER, &value));
+  retval= lttv_iattribute_find_by_path(tab->attributes,
+    "hooks/updatecurrenttime", LTTV_POINTER, &value);
+  g_assert(retval);
   tmp = (LttvHooks*)*(value.v_pointer);
   if(tmp != NULL) lttv_hooks_call(tmp, &tab->current_time);
 }
@@ -115,11 +119,13 @@ void set_current_position(Tab *tab, const LttvTracesetContextPosition *pos)
 {
   LttvAttributeValue value;
   LttvHooks * tmp;
+  gboolean retval;
 
   tab->current_time = lttv_traceset_context_position_get_time(pos);
 
-  g_assert(lttv_iattribute_find_by_path(tab->attributes,
-           "hooks/updatecurrentposition", LTTV_POINTER, &value));
+  retval= lttv_iattribute_find_by_path(tab->attributes,
+    "hooks/updatecurrentposition", LTTV_POINTER, &value);
+  g_assert(retval);
   tmp = (LttvHooks*)*(value.v_pointer);
   if(tmp != NULL) lttv_hooks_call(tmp, pos);
 }
@@ -132,9 +138,11 @@ void add_toolbar_constructor(MainWindow *mw, LttvToolbarClosure *toolbar_c)
   lttvwindow_viewer_constructor constructor;
   GtkWidget * tool_menu_title_menu, *new_widget, *pixmap;
   GdkPixbuf *pixbuf;
+  gboolean retval;
 
-  g_assert(lttv_iattribute_find_by_path(attributes,
-	   "viewers/toolbar", LTTV_POINTER, &value));
+  retval= lttv_iattribute_find_by_path(attributes, "viewers/toolbar",
+    LTTV_POINTER, &value);
+  g_assert(retval);
   if(*(value.v_pointer) == NULL)
     *(value.v_pointer) = lttv_toolbars_new();
   instance_toolbar = (LttvToolbars*)*(value.v_pointer);
@@ -176,9 +184,11 @@ void add_menu_constructor(MainWindow *mw, LttvMenuClosure *menu_c)
   LttvToolbars * instance_menu;
   lttvwindow_viewer_constructor constructor;
   GtkWidget * tool_menu_title_menu, *new_widget;
+  gboolean retval;
 
-  g_assert(lttv_iattribute_find_by_path(attributes,
-	   "viewers/menu", LTTV_POINTER, &value));
+  retval= lttv_iattribute_find_by_path(attributes, "viewers/menu",
+    LTTV_POINTER, &value);
+  g_assert(retval);
   if(*(value.v_pointer) == NULL)
     *(value.v_pointer) = lttv_menus_new();
   instance_menu = (LttvMenus*)*(value.v_pointer);
@@ -206,9 +216,11 @@ void remove_toolbar_constructor(MainWindow *mw, lttvwindow_viewer_constructor vi
   LttvAttributeValue value;
   LttvToolbars * instance_toolbar;
   GtkWidget * tool_menu_title_menu, *widget;
+  gboolean retval;
 
-  g_assert(lttv_iattribute_find_by_path(attributes,
-	   "viewers/toolbar", LTTV_POINTER, &value));
+  retval= lttv_iattribute_find_by_path(attributes, "viewers/toolbar",
+    LTTV_POINTER, &value);
+  g_assert(retval);
   if(*(value.v_pointer) == NULL)
     *(value.v_pointer) = lttv_toolbars_new();
   instance_toolbar = (LttvToolbars*)*(value.v_pointer);
@@ -226,9 +238,11 @@ void remove_menu_constructor(MainWindow *mw, lttvwindow_viewer_constructor viewe
   LttvAttributeValue value;
   LttvMenus * instance_menu;
   GtkWidget * tool_menu_title_menu, *widget;
+  gboolean retval;
 
-  g_assert(lttv_iattribute_find_by_path(attributes,
-	   "viewers/menu", LTTV_POINTER, &value));
+  retval= lttv_iattribute_find_by_path(attributes, "viewers/menu",
+    LTTV_POINTER, &value);
+  g_assert(retval);
   if(*(value.v_pointer) == NULL)
     *(value.v_pointer) = lttv_menus_new();
   instance_menu = (LttvMenus*)*(value.v_pointer);
@@ -274,12 +288,14 @@ __EXPORT void lttvwindow_register_constructor
   LttvToolbarClosure toolbar_c;
   LttvMenuClosure menu_c;
   LttvAttributeValue value;
+  gboolean retval;
 
   if(view_constructor == NULL) return;
   
   if(pixmap != NULL) {
-    g_assert(lttv_iattribute_find_by_path(attributes_global,
-       "viewers/toolbar", LTTV_POINTER, &value));
+    retval= lttv_iattribute_find_by_path(attributes_global, "viewers/toolbar",
+      LTTV_POINTER, &value);
+    g_assert(retval);
     toolbar = (LttvToolbars*)*(value.v_pointer);
 
     if(toolbar == NULL) {
@@ -295,8 +311,9 @@ __EXPORT void lttvwindow_register_constructor
   }
 
   if(menu_path != NULL) {
-    g_assert(lttv_iattribute_find_by_path(attributes_global,
-       "viewers/menu", LTTV_POINTER, &value));
+    retval= lttv_iattribute_find_by_path(attributes_global, "viewers/menu",
+      LTTV_POINTER, &value);
+    g_assert(retval);
     menu = (LttvMenus*)*(value.v_pointer);
     
     if(menu == NULL) {
@@ -346,10 +363,12 @@ __EXPORT void lttvwindow_unregister_constructor
   LttvToolbars * toolbar;
   LttvMenus * menu;
   LttvAttributeValue value;
-	gboolean is_named;
+  gboolean is_named;
+  gboolean retval;
 
-  g_assert(lttv_iattribute_find_by_path(attributes_global,
-     "viewers/toolbar", LTTV_POINTER, &value));
+  retval= lttv_iattribute_find_by_path(attributes_global, "viewers/toolbar",
+    LTTV_POINTER, &value);
+  g_assert(retval);
   toolbar = (LttvToolbars*)*(value.v_pointer);
   
   if(toolbar != NULL) {
@@ -359,8 +378,9 @@ __EXPORT void lttvwindow_unregister_constructor
     lttv_toolbars_remove(toolbar, view_constructor);
   }
 
-  g_assert(lttv_iattribute_find_by_path(attributes_global,
-     "viewers/menu", LTTV_POINTER, &value));
+  retval= lttv_iattribute_find_by_path(attributes_global, "viewers/menu",
+    LTTV_POINTER, &value);
+  g_assert(retval);
   menu = (LttvMenus*)*(value.v_pointer);
   
   if(menu != NULL) {
@@ -408,8 +428,11 @@ __EXPORT void lttvwindow_register_time_window_notify(Tab *tab,
 {
   LttvAttributeValue value;
   LttvHooks * tmp;
-  g_assert(lttv_iattribute_find_by_path(tab->attributes,
-           "hooks/updatetimewindow", LTTV_POINTER, &value));
+  gboolean retval;
+
+  retval= lttv_iattribute_find_by_path(tab->attributes,
+    "hooks/updatetimewindow", LTTV_POINTER, &value);
+  g_assert(retval);
   tmp = (LttvHooks*)*(value.v_pointer);
   if(tmp == NULL){    
     tmp = lttv_hooks_new();
@@ -432,8 +455,11 @@ __EXPORT void lttvwindow_unregister_time_window_notify(Tab *tab,
 {
   LttvAttributeValue value;
   LttvHooks * tmp;
-  g_assert(lttv_iattribute_find_by_path(tab->attributes,
-           "hooks/updatetimewindow", LTTV_POINTER, &value));
+  gboolean retval;
+
+  retval= lttv_iattribute_find_by_path(tab->attributes,
+    "hooks/updatetimewindow", LTTV_POINTER, &value);
+  g_assert(retval);
   tmp = (LttvHooks*)*(value.v_pointer);
   if(tmp == NULL) return;
   lttv_hooks_remove_data(tmp, hook, hook_data);
@@ -452,8 +478,11 @@ __EXPORT void lttvwindow_register_traceset_notify(Tab *tab,
 {
   LttvAttributeValue value;
   LttvHooks * tmp;
-  g_assert(lttv_iattribute_find_by_path(tab->attributes,
-           "hooks/updatetraceset", LTTV_POINTER, &value));
+  gboolean retval;
+
+  retval= lttv_iattribute_find_by_path(tab->attributes,
+    "hooks/updatetraceset", LTTV_POINTER, &value);
+  g_assert(retval);
   tmp = (LttvHooks*)*(value.v_pointer);
   if(tmp == NULL){    
     tmp = lttv_hooks_new();
@@ -476,8 +505,11 @@ __EXPORT void lttvwindow_unregister_traceset_notify(Tab *tab,
 {
   LttvAttributeValue value;
   LttvHooks * tmp;
-  g_assert(lttv_iattribute_find_by_path(tab->attributes,
-           "hooks/updatetraceset", LTTV_POINTER, &value));
+  gboolean retval;
+
+  retval= lttv_iattribute_find_by_path(tab->attributes,
+    "hooks/updatetraceset", LTTV_POINTER, &value);
+  g_assert(retval);
   tmp = (LttvHooks*)*(value.v_pointer);
   if(tmp == NULL) return;
   lttv_hooks_remove_data(tmp, hook, hook_data);
@@ -496,8 +528,11 @@ __EXPORT void lttvwindow_register_redraw_notify(Tab *tab,
 {
   LttvAttributeValue value;
   LttvHooks * tmp;
-  g_assert(lttv_iattribute_find_by_path(tab->attributes,
-           "hooks/redraw", LTTV_POINTER, &value));
+  gboolean retval;
+
+  retval= lttv_iattribute_find_by_path(tab->attributes, "hooks/redraw",
+    LTTV_POINTER, &value);
+  g_assert(retval);
   tmp = (LttvHooks*)*(value.v_pointer);
   if(tmp == NULL){    
     tmp = lttv_hooks_new();
@@ -520,8 +555,11 @@ __EXPORT void lttvwindow_unregister_redraw_notify(Tab *tab,
 {
   LttvAttributeValue value;
   LttvHooks * tmp;
-  g_assert(lttv_iattribute_find_by_path(tab->attributes,
-           "hooks/redraw", LTTV_POINTER, &value));
+  gboolean retval;
+
+  retval= lttv_iattribute_find_by_path(tab->attributes, "hooks/redraw",
+    LTTV_POINTER, &value);
+  g_assert(retval);
   tmp = (LttvHooks*)*(value.v_pointer);
   if(tmp == NULL) return;
   lttv_hooks_remove_data(tmp, hook, hook_data);
@@ -546,8 +584,11 @@ __EXPORT void lttvwindow_register_continue_notify(Tab *tab,
 {
   LttvAttributeValue value;
   LttvHooks * tmp;
-  g_assert(lttv_iattribute_find_by_path(tab->attributes,
-           "hooks/continue", LTTV_POINTER, &value));
+  gboolean retval;
+
+  retval= lttv_iattribute_find_by_path(tab->attributes, "hooks/continue",
+    LTTV_POINTER, &value);
+  g_assert(retval);
   tmp = (LttvHooks*)*(value.v_pointer);
   if(tmp == NULL){    
     tmp = lttv_hooks_new();
@@ -571,8 +612,11 @@ __EXPORT void lttvwindow_unregister_continue_notify(Tab *tab,
 {
   LttvAttributeValue value;
   LttvHooks * tmp;
-  g_assert(lttv_iattribute_find_by_path(tab->attributes,
-           "hooks/continue", LTTV_POINTER, &value));
+  gboolean retval;
+
+  retval= lttv_iattribute_find_by_path(tab->attributes, "hooks/continue",
+    LTTV_POINTER, &value);
+  g_assert(retval);
   tmp = (LttvHooks*)*(value.v_pointer);
   if(tmp == NULL) return;
   lttv_hooks_remove_data(tmp, hook, hook_data);
@@ -592,8 +636,11 @@ __EXPORT void lttvwindow_register_filter_notify(Tab *tab,
 {
   LttvAttributeValue value;
   LttvHooks * tmp;
-  g_assert(lttv_iattribute_find_by_path(tab->attributes,
-           "hooks/updatefilter", LTTV_POINTER, &value));
+  gboolean retval;
+
+  retval= lttv_iattribute_find_by_path(tab->attributes, "hooks/updatefilter",
+    LTTV_POINTER, &value);
+  g_assert(retval);
   tmp = (LttvHooks*)*(value.v_pointer);
   if(tmp == NULL){    
     tmp = lttv_hooks_new();
@@ -617,8 +664,11 @@ __EXPORT void lttvwindow_unregister_filter_notify(Tab *tab,
 {
   LttvAttributeValue value;
   LttvHooks * tmp;
-  g_assert(lttv_iattribute_find_by_path(tab->attributes,
-           "hooks/updatefilter", LTTV_POINTER, &value));
+  gboolean retval;
+
+  retval= lttv_iattribute_find_by_path(tab->attributes, "hooks/updatefilter",
+    LTTV_POINTER, &value);
+  g_assert(retval);
   tmp = (LttvHooks*)*(value.v_pointer);
   if(tmp == NULL) return;
   lttv_hooks_remove_data(tmp, hook, hook_data);
@@ -637,8 +687,11 @@ __EXPORT void lttvwindow_register_current_time_notify(Tab *tab,
 {
   LttvAttributeValue value;
   LttvHooks * tmp;
-  g_assert(lttv_iattribute_find_by_path(tab->attributes,
-           "hooks/updatecurrenttime", LTTV_POINTER, &value));
+  gboolean retval;
+
+  retval= lttv_iattribute_find_by_path(tab->attributes,
+    "hooks/updatecurrenttime", LTTV_POINTER, &value);
+  g_assert(retval);
   tmp = (LttvHooks*)*(value.v_pointer);
   if(tmp == NULL){    
     tmp = lttv_hooks_new();
@@ -661,8 +714,11 @@ __EXPORT void lttvwindow_unregister_current_time_notify(Tab *tab,
 {
   LttvAttributeValue value;
   LttvHooks * tmp;
-  g_assert(lttv_iattribute_find_by_path(tab->attributes,
-           "hooks/updatecurrenttime", LTTV_POINTER, &value));
+  gboolean retval;
+
+  retval= lttv_iattribute_find_by_path(tab->attributes,
+    "hooks/updatecurrenttime", LTTV_POINTER, &value);
+  g_assert(retval);
   tmp = (LttvHooks*)*(value.v_pointer);
   if(tmp == NULL) return;
   lttv_hooks_remove_data(tmp, hook, hook_data);
@@ -681,8 +737,11 @@ __EXPORT void lttvwindow_register_current_position_notify(Tab *tab,
 {
   LttvAttributeValue value;
   LttvHooks * tmp;
-  g_assert(lttv_iattribute_find_by_path(tab->attributes,
-           "hooks/updatecurrentposition", LTTV_POINTER, &value));
+  gboolean retval;
+
+  retval= lttv_iattribute_find_by_path(tab->attributes,
+    "hooks/updatecurrentposition", LTTV_POINTER, &value);
+  g_assert(retval);
   tmp = (LttvHooks*)*(value.v_pointer);
   if(tmp == NULL){    
     tmp = lttv_hooks_new();
@@ -705,8 +764,11 @@ __EXPORT void lttvwindow_unregister_current_position_notify(Tab *tab,
 {
   LttvAttributeValue value;
   LttvHooks * tmp;
-  g_assert(lttv_iattribute_find_by_path(tab->attributes,
-           "hooks/updatecurrentposition", LTTV_POINTER, &value));
+  gboolean retval;
+
+  retval= lttv_iattribute_find_by_path(tab->attributes,
+    "hooks/updatecurrentposition", LTTV_POINTER, &value);
+  g_assert(retval);
   tmp = (LttvHooks*)*(value.v_pointer);
   if(tmp == NULL) return;
   lttv_hooks_remove_data(tmp, hook, hook_data);
@@ -726,8 +788,11 @@ void lttvwindow_register_show_notify(Tab *tab,
 {
   LttvAttributeValue value;
   LttvHooks * tmp;
-  g_assert(lttv_iattribute_find_by_path(tab->attributes,
-           "hooks/showviewer", LTTV_POINTER, &value));
+  gboolean retval;
+
+  retval= lttv_iattribute_find_by_path(tab->attributes, "hooks/showviewer",
+    LTTV_POINTER, &value);
+  g_assert(retval);
   tmp = (LttvHooks*)*(value.v_pointer);
   if(tmp == NULL){    
     tmp = lttv_hooks_new();
@@ -750,8 +815,11 @@ void lttvwindow_unregister_show_notify(Tab *tab,
 {
   LttvAttributeValue value;
   LttvHooks * tmp;
-  g_assert(lttv_iattribute_find_by_path(tab->attributes,
-           "hooks/showviewer", LTTV_POINTER, &value));
+  gboolean retval;
+
+  retval= lttv_iattribute_find_by_path(tab->attributes, "hooks/showviewer",
+    LTTV_POINTER, &value);
+  g_assert(retval);
   tmp = (LttvHooks*)*(value.v_pointer);
   if(tmp == NULL) return;
   lttv_hooks_remove_data(tmp, hook, hook_data);
@@ -770,8 +838,11 @@ void lttvwindow_register_dividor(Tab *tab,
 {
   LttvAttributeValue value;
   LttvHooks * tmp;
-  g_assert(lttv_iattribute_find_by_path(tab->attributes,
-           "hooks/hpanedividor", LTTV_POINTER, &value));
+  gboolean retval;
+
+  retval= lttv_iattribute_find_by_path(tab->attributes, "hooks/hpanedividor",
+    LTTV_POINTER, &value);
+  g_assert(retval);
   tmp = (LttvHooks*)*(value.v_pointer);
   if(tmp == NULL){    
     tmp = lttv_hooks_new();
@@ -795,8 +866,11 @@ void lttvwindow_unregister_dividor(Tab *tab,
 {
   LttvAttributeValue value;
   LttvHooks * tmp;
-  g_assert(lttv_iattribute_find_by_path(tab->attributes,
-           "hooks/hpanedividor", LTTV_POINTER, &value));
+  gboolean retval;
+
+  retval= lttv_iattribute_find_by_path(tab->attributes, "hooks/hpanedividor",
+    LTTV_POINTER, &value);
+  g_assert(retval);
   tmp = (LttvHooks*)*(value.v_pointer);
   if(tmp == NULL) return;
   lttv_hooks_remove_data(tmp, hook, hook_data);
@@ -903,8 +977,11 @@ void lttvwindow_report_dividor(Tab *tab, gint position)
 {
   LttvAttributeValue value;
   LttvHooks * tmp;
-  g_assert(lttv_iattribute_find_by_path(tab->attributes,
-           "hooks/hpanedividor", LTTV_POINTER, &value));
+  gboolean retval;
+
+  retval= lttv_iattribute_find_by_path(tab->attributes, "hooks/hpanedividor",
+    LTTV_POINTER, &value);
+  g_assert(retval);
   tmp = (LttvHooks*)*(value.v_pointer);
   if(tmp == NULL) return;
   lttv_hooks_call(tmp, &position);
@@ -1075,12 +1152,14 @@ void lttvwindow_report_filter(Tab *tab, LttvFilter *filter)
 {
   LttvAttributeValue value;
   LttvHooks * tmp;
+  gboolean retval;
 
   //lttv_filter_destroy(tab->filter);
   //tab->filter = filter;
   
-  g_assert(lttv_iattribute_find_by_path(tab->attributes,
-           "hooks/updatefilter", LTTV_POINTER, &value));
+  retval= lttv_iattribute_find_by_path(tab->attributes, "hooks/updatefilter",
+    LTTV_POINTER, &value);
+  g_assert(retval);
   tmp = (LttvHooks*)*(value.v_pointer);
   if(tmp == NULL) return;
   lttv_hooks_call(tmp, filter);

@@ -202,6 +202,7 @@ static void init()
   LttvAttributeValue value;
 
   LttvIAttribute *attributes = LTTV_IATTRIBUTE(lttv_global_attributes());
+  gboolean retval;
 
   g_info("Init precomputeState.c");
 
@@ -224,29 +225,34 @@ static void init()
       "Raw binary", 
       LTTV_OPT_NONE, &a_raw, NULL, NULL);
 
-  g_assert(lttv_iattribute_find_by_path(attributes, "hooks/event",
-      LTTV_POINTER, &value));
+  retval= lttv_iattribute_find_by_path(attributes, "hooks/event",
+    LTTV_POINTER, &value);
+  g_assert(retval);
   g_assert((event_hook = *(value.v_pointer)) != NULL);
   lttv_hooks_add(event_hook, for_each_event, &a_event_count, LTTV_PRIO_DEFAULT);
 
-  g_assert(lttv_iattribute_find_by_path(attributes, "hooks/trace/before",
-      LTTV_POINTER, &value));
+  retval= lttv_iattribute_find_by_path(attributes, "hooks/trace/before",
+    LTTV_POINTER, &value);
+  g_assert(retval);
   g_assert((before_trace = *(value.v_pointer)) != NULL);
   lttv_hooks_add(before_trace, write_trace_header, NULL, LTTV_PRIO_DEFAULT);
 
-  g_assert(lttv_iattribute_find_by_path(attributes, "hooks/trace/after",
-      LTTV_POINTER, &value));
+  retval= lttv_iattribute_find_by_path(attributes, "hooks/trace/after",
+    LTTV_POINTER, &value);
+  g_assert(retval);
   g_assert((after_trace = *(value.v_pointer)) != NULL);
   lttv_hooks_add(after_trace, write_trace_footer, NULL, LTTV_PRIO_DEFAULT);
 
-  g_assert(lttv_iattribute_find_by_path(attributes, "hooks/traceset/before",
-      LTTV_POINTER, &value));
+  retval= lttv_iattribute_find_by_path(attributes, "hooks/traceset/before",
+    LTTV_POINTER, &value);
+  g_assert(retval);
   g_assert((before_traceset = *(value.v_pointer)) != NULL);
   lttv_hooks_add(before_traceset, write_traceset_header, NULL,
       LTTV_PRIO_DEFAULT);
 
-  g_assert(lttv_iattribute_find_by_path(attributes, "hooks/traceset/after",
-      LTTV_POINTER, &value));
+  retval= lttv_iattribute_find_by_path(attributes, "hooks/traceset/after",
+    LTTV_POINTER, &value);
+  g_assert(retval);
   g_assert((after_traceset = *(value.v_pointer)) != NULL);
   lttv_hooks_add(after_traceset, write_traceset_footer, NULL,
       LTTV_PRIO_DEFAULT);

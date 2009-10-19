@@ -1310,6 +1310,7 @@ static void get_events(double new_value, EventViewerData *event_viewer_data)
   LttvTracesetContext *tsc = (LttvTracesetContext*)tss;
   guint i;
   gboolean seek_by_time;
+  int retval;
   
   if(lttvwindow_preempt_count > 0) return;
 
@@ -1398,7 +1399,8 @@ static void get_events(double new_value, EventViewerData *event_viewer_data)
                                    pos);
        
       } else if(relative_position < 0) {
-        g_assert(lttv_process_traceset_seek_position(tsc, pos) == 0); 
+        retval= lttv_process_traceset_seek_position(tsc, pos);
+		g_assert_cmpint(retval, ==, 0);
       }
     } else {
       /* There is nothing in the list : simply seek to the time value. */

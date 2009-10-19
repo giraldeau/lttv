@@ -213,6 +213,7 @@ gboolean histo_draw_icon( void *hook_data, void *call_data)
 {
   histo_PropertiesIcon *properties = (histo_PropertiesIcon*)hook_data;
   histo_DrawContext *draw_context = (histo_DrawContext*)call_data;
+  gboolean retval;
 
   LttvIAttribute *attributes = LTTV_IATTRIBUTE(lttv_global_attributes());
   LttvAttributeValue value;
@@ -221,8 +222,9 @@ gboolean histo_draw_icon( void *hook_data, void *call_data)
 
   strcat(icon_name, properties->icon_name);
   
-  g_assert(lttv_iattribute_find_by_path(attributes, icon_name,
-      LTTV_POINTER, &value));
+  retval= lttv_iattribute_find_by_path(attributes, icon_name,
+      LTTV_POINTER, &value);
+  g_assert(retval);
   if(unlikely(*(value.v_pointer) == NULL))
   {
     *(value.v_pointer) = icon_info = g_new(histo_IconStruct,1);

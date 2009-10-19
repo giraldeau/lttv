@@ -801,6 +801,7 @@ static void init()
   LttvAttributeValue value;
 
   LttvIAttribute *attributes = LTTV_IATTRIBUTE(lttv_global_attributes());
+  gboolean retval;
 
   g_info("Init batchtest.c");
 
@@ -915,35 +916,43 @@ static void init()
   event_hook = lttv_hooks_new();
   
 
-  g_assert(lttv_iattribute_find_by_path(attributes, "hooks/traceset/before",
-      LTTV_POINTER, &value));
+  retval= lttv_iattribute_find_by_path(attributes, "hooks/traceset/before",
+      LTTV_POINTER, &value);
+  g_assert(retval);
   *(value.v_pointer) = before_traceset;
-  g_assert(lttv_iattribute_find_by_path(attributes, "hooks/traceset/after",
-      LTTV_POINTER, &value));
+  retval= lttv_iattribute_find_by_path(attributes, "hooks/traceset/after",
+      LTTV_POINTER, &value);
+  g_assert(retval);
   *(value.v_pointer) = after_traceset;
-  g_assert(lttv_iattribute_find_by_path(attributes, "hooks/trace/before",
-      LTTV_POINTER, &value));
+  retval= lttv_iattribute_find_by_path(attributes, "hooks/trace/before",
+      LTTV_POINTER, &value);
+  g_assert(retval);
   *(value.v_pointer) = before_trace;
-  g_assert(lttv_iattribute_find_by_path(attributes, "hooks/trace/after",
-      LTTV_POINTER, &value));
+  retval= lttv_iattribute_find_by_path(attributes, "hooks/trace/after",
+      LTTV_POINTER, &value);
+  g_assert(retval);
   *(value.v_pointer) = after_trace;
-  g_assert(lttv_iattribute_find_by_path(attributes, "hooks/tracefile/before",
-      LTTV_POINTER, &value));
+  retval= lttv_iattribute_find_by_path(attributes, "hooks/tracefile/before",
+      LTTV_POINTER, &value);
+  g_assert(retval);
   *(value.v_pointer) = before_tracefile;
-  g_assert(lttv_iattribute_find_by_path(attributes, "hooks/tracefile/after",
-      LTTV_POINTER, &value));
+  retval= lttv_iattribute_find_by_path(attributes, "hooks/tracefile/after",
+      LTTV_POINTER, &value);
+  g_assert(retval);
   *(value.v_pointer) = after_tracefile;
-  //g_assert(lttv_iattribute_find_by_path(attributes, "hooks/event/before",
-  //    LTTV_POINTER, &value));
+  //retval= lttv_iattribute_find_by_path(attributes, "hooks/event/before",
+  //    LTTV_POINTER, &value);
   //*(value.v_pointer) = before_event;
-  //g_assert(lttv_iattribute_find_by_path(attributes, "hooks/event/after",
-  //    LTTV_POINTER, &value));
+  //retval= lttv_iattribute_find_by_path(attributes, "hooks/event/after",
+  //    LTTV_POINTER, &value);
   //*(value.v_pointer) = after_event;
-  g_assert(lttv_iattribute_find_by_path(attributes, "hooks/event",
-      LTTV_POINTER, &value));
+  retval= lttv_iattribute_find_by_path(attributes, "hooks/event",
+      LTTV_POINTER, &value);
+  g_assert(retval);
   *(value.v_pointer) = event_hook;
-  g_assert(lttv_iattribute_find_by_path(attributes, "hooks/main/before",
-      LTTV_POINTER, &value));
+  retval= lttv_iattribute_find_by_path(attributes, "hooks/main/before",
+      LTTV_POINTER, &value);
+  g_assert(retval);
   g_assert((main_hooks = *(value.v_pointer)) != NULL);
   lttv_hooks_add(main_hooks, process_traceset, NULL, LTTV_PRIO_DEFAULT);
 }

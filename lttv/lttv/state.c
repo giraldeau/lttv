@@ -1707,6 +1707,7 @@ static void state_restore(LttvTraceState *self, LttvAttribute *container)
   LttEventPosition *ep;
 
   LttvTracesetContext *tsc = self->parent.ts_context;
+  int retval;
 
   tracefiles_tree = lttv_attribute_find_subdir(container, 
       LTTV_STATE_TRACEFILES);
@@ -1794,9 +1795,10 @@ static void state_restore(LttvTraceState *self, LttvAttribute *container)
     g_tree_remove(tsc->pqueue, tfc);
     
     if(ep != NULL) {
-      g_assert(ltt_tracefile_seek_position(tfc->tf, ep) == 0);
+      retval= ltt_tracefile_seek_position(tfc->tf, ep);
+      g_assert_cmpint(retval, ==, 0);
       tfc->timestamp = ltt_event_time(ltt_tracefile_get_event(tfc->tf));
-      g_assert(ltt_time_compare(tfc->timestamp, ltt_time_infinite) != 0);
+      g_assert_cmpint(ltt_time_compare(tfc->timestamp, ltt_time_infinite), !=, 0);
       g_tree_insert(tsc->pqueue, tfc, tfc);
       g_info("Restoring state for a tf at time %lu.%lu", tfc->timestamp.tv_sec, tfc->timestamp.tv_nsec);
     } else {

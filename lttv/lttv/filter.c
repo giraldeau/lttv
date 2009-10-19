@@ -137,7 +137,8 @@ lttv_simple_expression_assign_field(GPtrArray* fp, LttvSimpleExpression* se) {
   GString* f = NULL;
 
   if(fp->len < 2) return FALSE;
-  g_assert((f=ltt_g_ptr_array_remove_index_slow(fp,0)));
+  f=ltt_g_ptr_array_remove_index_slow(fp,0);
+  g_assert(f);
 
 
   /*

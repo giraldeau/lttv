@@ -214,6 +214,7 @@ gboolean draw_icon( void *hook_data, void *call_data)
 {
   PropertiesIcon *properties = (PropertiesIcon*)hook_data;
   DrawContext *draw_context = (DrawContext*)call_data;
+  gboolean retval;
 
   LttvIAttribute *attributes = LTTV_IATTRIBUTE(lttv_global_attributes());
   LttvAttributeValue value;
@@ -222,8 +223,9 @@ gboolean draw_icon( void *hook_data, void *call_data)
 
   strcat(icon_name, properties->icon_name);
   
-  g_assert(lttv_iattribute_find_by_path(attributes, icon_name,
-      LTTV_POINTER, &value));
+  retval= lttv_iattribute_find_by_path(attributes, icon_name, LTTV_POINTER,
+    &value);
+  g_assert(retval);
   if(unlikely(*(value.v_pointer) == NULL))
   {
     *(value.v_pointer) = icon_info = g_new(IconStruct,1);

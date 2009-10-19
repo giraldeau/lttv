@@ -219,11 +219,13 @@ gboolean draw_icon( void *hook_data, void *call_data)
   LttvAttributeValue value;
   gchar icon_name[MAX_PATH_LEN] = "icons/";
   IconStruct *icon_info;
+  gboolean retval;
 
   strcat(icon_name, properties->icon_name);
   
-  g_assert(lttv_iattribute_find_by_path(attributes, icon_name,
-      LTTV_POINTER, &value));
+  retval= lttv_iattribute_find_by_path(attributes, icon_name, LTTV_POINTER,
+	  &value);
+  g_assert(retval);
   if(unlikely(*(value.v_pointer) == NULL))
   {
     *(value.v_pointer) = icon_info = g_new(IconStruct,1);

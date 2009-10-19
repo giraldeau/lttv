@@ -134,6 +134,7 @@ static gboolean window_creation_hook(void *hook_data, void *call_data)
 static void init() {
 
   LttvAttributeValue value;
+  gboolean retval;
  
   // Global attributes only used for interaction with main() here.
   LttvIAttribute *attributes = LTTV_IATTRIBUTE(lttv_global_attributes());
@@ -173,8 +174,9 @@ static void init() {
       "pathname of the directory containing the trace", 
       LTTV_OPT_STRING, &a_trace, lttv_trace_option, NULL);
 
-  g_assert(lttv_iattribute_find_by_path(attributes, "hooks/main/before",
-      LTTV_POINTER, &value));
+  retval= lttv_iattribute_find_by_path(attributes, "hooks/main/before",
+    LTTV_POINTER, &value);
+  g_assert(retval);
   g_assert((main_hooks = *(value.v_pointer)) != NULL);
 
   lttv_hooks_add(main_hooks, window_creation_hook, NULL, LTTV_PRIO_DEFAULT);

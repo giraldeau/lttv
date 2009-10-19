@@ -1287,7 +1287,10 @@ LttvTracefileContext *lttv_traceset_context_get_current_tfc(LttvTracesetContext 
  */
 void lttv_process_traceset_synchronize_tracefiles(LttvTracesetContext *tsc)
 {
-  g_assert(lttv_process_traceset_seek_position(tsc, tsc->sync_position) == 0);
+  int retval;
+
+  retval= lttv_process_traceset_seek_position(tsc, tsc->sync_position);
+  g_assert_cmpint(retval, ==, 0);
 }
 
 
@@ -1414,6 +1417,7 @@ guint lttv_process_traceset_seek_n_backward(LttvTracesetContext *self,
   LttTime time_offset;
   struct seek_back_data sd;
   LttvHooks *hooks = lttv_hooks_new();
+  int retval;
   
   sd.first_event = 0;
   sd.events_found = 0;
@@ -1506,11 +1510,13 @@ guint lttv_process_traceset_seek_n_backward(LttvTracesetContext *self,
     LttvTracesetContextPosition *pos =
       (LttvTracesetContextPosition*)g_ptr_array_index (sd.array,
                                                        sd.first_event);
-    g_assert(lttv_process_traceset_seek_position(self, pos) == 0);
+    retval= lttv_process_traceset_seek_position(self, pos);
+    g_assert_cmpint(retval, ==, 0);
   } else {
     /* Will seek to the last saved position : in the worst case, it will be the
      * original position (if events_found is 0) */
-    g_assert(lttv_process_traceset_seek_position(self, saved_pos) == 0);
+    retval= lttv_process_traceset_seek_position(self, saved_pos);
+    g_assert_cmpint(retval, ==, 0);
   }
   
   for(i=0;i<sd.array->len;i++) {

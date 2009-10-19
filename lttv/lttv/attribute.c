@@ -339,6 +339,7 @@ void lttv_attribute_recursive_add(LttvAttribute *dest, LttvAttribute *src)
   Attribute *a;
 
   LttvAttributeValue value;
+  gboolean retval;
 
   nb = src->attributes->len;
 
@@ -355,10 +356,14 @@ void lttv_attribute_recursive_add(LttvAttribute *dest, LttvAttribute *src)
 						dest, a->name), (LttvAttribute *)(a->value.dv_gobject));
     }
     else {
-			if(a->is_named)
-	      g_assert(lttv_attribute_find(dest, a->name, a->type, &value));
-			else
-	      g_assert(lttv_attribute_find_unnamed(dest, a->name, a->type, &value));
+      if(a->is_named) {
+        retval= lttv_attribute_find(dest, a->name, a->type, &value);
+        g_assert(retval);
+      }
+      else {
+        retval= lttv_attribute_find_unnamed(dest, a->name, a->type, &value);
+        g_assert(retval);
+      }
       switch(a->type) {
 	      case LTTV_INT:
           *value.v_int += a->value.dv_int;
