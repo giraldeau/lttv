@@ -83,16 +83,15 @@ void filter_analyze_file(void *hook_data) {
 
   g_file_get_contents(a_file_name,&a_file_content,NULL,NULL);
   
-
-  if(((GString*)*(value.v_pointer))->len != 0)
-      g_string_append_c((GString*)*(value.v_pointer),'&');
-     g_string_append_c((GString*)*(value.v_pointer),'(');
-    g_string_append((GString*)*(value.v_pointer),a_file_content);
-    g_string_append_c((GString*)*(value.v_pointer),')');
-  
   retval= lttv_iattribute_find_by_path(attributes, "filter/expression",
     LTTV_POINTER, &value);
   g_assert(retval);
+
+  if (((GString*)*(value.v_pointer))->len != 0)
+    g_string_append_c((GString*)*(value.v_pointer),'&');
+  g_string_append_c((GString*)*(value.v_pointer),'(');
+  g_string_append((GString*)*(value.v_pointer),a_file_content);
+  g_string_append_c((GString*)*(value.v_pointer),')');
 }
 
 /**
@@ -111,16 +110,15 @@ void filter_analyze_string(void *hook_data) {
 	 * 	and/or command line string.  From these sources, an 
 	 * 	option string is rebuilded and sent to the filter core
 	 */
-
-  if(((GString*)*(value.v_pointer))->len != 0)
-      g_string_append_c((GString*)*(value.v_pointer),'&');
-    g_string_append_c((GString*)*(value.v_pointer),'(');
-    g_string_append((GString*)*(value.v_pointer),a_string);
-    g_string_append_c((GString*)*(value.v_pointer),')');
-
   retval= lttv_iattribute_find_by_path(attributes, "filter/expression",
     LTTV_POINTER, &value);
   g_assert(retval);
+
+  if (((GString*)*(value.v_pointer))->len != 0)
+    g_string_append_c((GString*)*(value.v_pointer),'&');
+  g_string_append_c((GString*)*(value.v_pointer),'(');
+  g_string_append((GString*)*(value.v_pointer),a_string);
+  g_string_append_c((GString*)*(value.v_pointer),')');
 }
 
 /**
