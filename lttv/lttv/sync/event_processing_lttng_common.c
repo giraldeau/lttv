@@ -37,9 +37,9 @@ void createQuarks()
 	LTT_CHANNEL_NET= g_quark_from_static_string("net");
 	LTT_CHANNEL_NETIF_STATE= g_quark_from_static_string("netif_state");
 
-	LTT_EVENT_DEV_XMIT= g_quark_from_static_string("dev_xmit");
+	LTT_EVENT_DEV_XMIT_EXTENDED= g_quark_from_static_string("dev_xmit_extended");
 	LTT_EVENT_DEV_RECEIVE= g_quark_from_static_string("dev_receive");
-	LTT_EVENT_TCPV4_RCV= g_quark_from_static_string("tcpv4_rcv");
+	LTT_EVENT_TCPV4_RCV_EXTENDED= g_quark_from_static_string("tcpv4_rcv_extended");
 	LTT_EVENT_NETWORK_IPV4_INTERFACE=
 		g_quark_from_static_string("network_ipv4_interface");
 
@@ -92,7 +92,7 @@ void registerHooks(GArray* hookListList, LttvTracesetContext* const
 	} eventHookInfoList[] = {
 		{
 			.channelName= LTT_CHANNEL_NET,
-			.eventName= LTT_EVENT_DEV_XMIT,
+			.eventName= LTT_EVENT_DEV_XMIT_EXTENDED,
 			.fields= FIELD_ARRAY(LTT_FIELD_SKB, LTT_FIELD_NETWORK_PROTOCOL,
 				LTT_FIELD_TRANSPORT_PROTOCOL, LTT_FIELD_SADDR,
 				LTT_FIELD_DADDR, LTT_FIELD_TOT_LEN, LTT_FIELD_IHL,
@@ -105,7 +105,7 @@ void registerHooks(GArray* hookListList, LttvTracesetContext* const
 			.fields= FIELD_ARRAY(LTT_FIELD_SKB, LTT_FIELD_PROTOCOL),
 		}, {
 			.channelName= LTT_CHANNEL_NET,
-			.eventName= LTT_EVENT_TCPV4_RCV,
+			.eventName= LTT_EVENT_TCPV4_RCV_EXTENDED,
 			.fields= FIELD_ARRAY(LTT_FIELD_SKB, LTT_FIELD_SADDR,
 				LTT_FIELD_DADDR, LTT_FIELD_TOT_LEN, LTT_FIELD_IHL,
 				LTT_FIELD_SOURCE, LTT_FIELD_DEST, LTT_FIELD_SEQ,

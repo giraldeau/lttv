@@ -382,7 +382,7 @@ static gboolean processEventLTTVStandard(void* hookData, void* callData)
 		(long) time.tv_sec, time.tv_nsec, traceNum, trace,
 		g_quark_to_string(info->name));
 
-	if (info->name == LTT_EVENT_DEV_XMIT)
+	if (info->name == LTT_EVENT_DEV_XMIT_EXTENDED)
 	{
 		Event* outE;
 
@@ -484,7 +484,7 @@ static gboolean processEventLTTVStandard(void* hookData, void* callData)
 			g_debug("\n");
 		}
 	}
-	else if (info->name == LTT_EVENT_TCPV4_RCV)
+	else if (info->name == LTT_EVENT_TCPV4_RCV_EXTENDED)
 	{
 		Event* inE;
 		void* skb;
