@@ -135,7 +135,7 @@ Communication is done via objects specialized from Event. At the moment, all
 be in separate files. This way, adding a new set of modules would require
 shipping extra data_structures* files instead of modifying the existing one.
 For this to work, Event.type couldn't be an enum, it could be an int and use
-#defines or constants defined the specialized data_structures* files.
+#defines or constants defined in the specialized data_structures* files.
 Event.event could be a void*.
 
 ++ Stage 2: Event matching
@@ -146,9 +146,10 @@ these can have different types of relation ("one to one", "one to many", or a
 mix) and it will influence the overall behavior of the module.
 eg. TCP, UDP, MPI
 
-matchEvent() takes an Event pointer. An actual matching module doesn't have
-to be able to process every type of event. It has to check that the passed
-event is of a type it can process.
+matchEvent() takes an Event pointer. An actual matching module doesn't have to
+be able to process every type of event. It will only be passed events of a
+type it can process (according to the .canMatch field of its MatchingModule
+struct).
 
 ++ Communication between stages 2 and 3: event groups
 Communication consists of events grouped in Message, Exchange or Broadcast

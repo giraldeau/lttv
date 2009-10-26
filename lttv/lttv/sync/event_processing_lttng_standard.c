@@ -27,6 +27,7 @@
 #include <netinet/in.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "sync_chain_lttv.h"
 #include "event_processing_lttng_common.h"
@@ -131,7 +132,8 @@ static void initProcessingLTTVStandard(SyncState* const syncState, LttvTracesetC
 	}
 
 	registerHooks(processingData->hookListList, traceSetContext,
-		&processEventLTTVStandard, syncState);
+		&processEventLTTVStandard, syncState,
+		syncState->matchingModule->canMatch);
 }
 
 
@@ -244,10 +246,21 @@ static void printProcessingStatsLTTVStandard(SyncState* const syncState)
 	printf("\treceived frames: %d\n", processingData->stats->totRecv);
 	printf("\treceived frames that are IP: %d\n",
 		processingData->stats->totRecvIp);
-	printf("\treceived and processed packets that are TCP: %d\n",
-		processingData->stats->totInE);
-	printf("\tsent packets that are TCP: %d\n",
-		processingData->stats->totOutE);
+	if (syncState->matchingModule->canMatch[TCP])
+	{
+		printf("\treceived and processed packets that are TCP: %d\n",
+			processingData->stats->totRecvTCP);
+	}
+	if (syncState->matchingModule->canMatch[UDP])
+	{
+		printf("\treceived and processed packets that are UDP: %d\n",
+			processingData->stats->totRecvUDP);
+	}
+	if (syncState->matchingModule->canMatch[TCP])
+	{
+		printf("\tsent packets that are TCP: %d\n",
+			processingData->stats->totOutE);
+	}
 
 	if (syncState->matchingModule->printMatchingStats != NULL)
 	{
@@ -394,6 +407,11 @@ static gboolean processEventLTTVStandard(void* hookData, void* callData)
 			return FALSE;
 		}
 
+		if (!syncState->matchingModule->canMatch[TCP])
+		{
+			return FALSE;
+		}
+
 		if (syncState->stats)
 		{
 			processingData->stats->totOutE++;
@@ -498,13 +516,13 @@ static gboolean processEventLTTVStandard(void* hookData, void* callData)
 		if (inE == NULL)
 		{
 			// This should only happen in case of lost events
-			g_debug("No matching pending receive event found\n");
+			g_warning("No matching pending receive event found");
 		}
 		else
 		{
 			if (syncState->stats)
 			{
-				processingData->stats->totInE++;
+				processingData->stats->totRecvTCP++;
 			}
 
 			// If it's there, remove it and proceed with a receive event
@@ -557,29 +575,81 @@ static gboolean processEventLTTVStandard(void* hookData, void* callData)
 
 			syncState->matchingModule->matchEvent(syncState, inE);
 
-			g_debug("Input event %p for skb %p done\n", inE, skb);
+			g_debug("TCP input event %p for skb %p done\n", inE, skb);
 		}
 	}
-	else if (info->name == LTT_EVENT_NETWORK_IPV4_INTERFACE)
+	else if (info->name == LTT_EVENT_UDPV4_RCV_EXTENDED)
 	{
-		char* name;
-		guint64 address;
-		gint64 up;
-		char addressString[17];
+		Event* inE;
+		void* skb;
 
-		address= ltt_event_get_long_unsigned(event,
-			lttv_trace_get_hook_field(traceHook, 1));
-		up= ltt_event_get_long_int(event, lttv_trace_get_hook_field(traceHook,
-				2));
-		/* name must be the last field to get or else copy the string, see the
-		 * doc for ltt_event_get_string()
-		 */
-		name= ltt_event_get_string(event, lttv_trace_get_hook_field(traceHook,
-				0));
+		// Search pendingRecv for an event with the same skb
+		skb= (void*) (long) ltt_event_get_long_unsigned(event,
+			lttv_trace_get_hook_field(traceHook, 0));
 
-		convertIP(addressString, address);
+		inE= (Event*)
+			g_hash_table_lookup(processingData->pendingRecv[traceNum], skb);
+		if (inE == NULL)
+		{
+			// This should only happen in case of lost events
+			g_warning("No matching pending receive event found");
+		}
+		else
+		{
+			guint64 dataStart;
 
-		g_debug("name \"%s\" address %s up %lld\n", name, addressString, up);
+			if (syncState->stats)
+			{
+				processingData->stats->totRecvUDP++;
+			}
+
+			// If it's there, remove it and proceed with a receive event
+			g_hash_table_steal(processingData->pendingRecv[traceNum], skb);
+
+			inE->type= UDP;
+			inE->event.udpEvent= malloc(sizeof(UDPEvent));
+			inE->destroy= &destroyUDPEvent;
+			inE->event.udpEvent->direction= IN;
+			inE->event.udpEvent->datagramKey= malloc(sizeof(DatagramKey));
+			inE->event.udpEvent->datagramKey->saddr=
+				ltt_event_get_unsigned(event,
+					lttv_trace_get_hook_field(traceHook, 1));
+			inE->event.udpEvent->datagramKey->daddr=
+				ltt_event_get_unsigned(event,
+					lttv_trace_get_hook_field(traceHook, 2));
+			inE->event.udpEvent->unicast= ltt_event_get_unsigned(event,
+				lttv_trace_get_hook_field(traceHook, 3)) == 0 ? false : true;
+			inE->event.udpEvent->datagramKey->ulen=
+				ltt_event_get_unsigned(event,
+					lttv_trace_get_hook_field(traceHook, 4));
+			inE->event.udpEvent->datagramKey->source=
+				ltt_event_get_unsigned(event,
+					lttv_trace_get_hook_field(traceHook, 5));
+			inE->event.udpEvent->datagramKey->dest=
+				ltt_event_get_unsigned(event,
+					lttv_trace_get_hook_field(traceHook, 6));
+			dataStart= ltt_event_get_long_unsigned(event,
+				lttv_trace_get_hook_field(traceHook, 7));
+			g_assert_cmpuint(sizeof(inE->event.udpEvent->datagramKey->dataKey),
+				==, sizeof(guint64));
+			if (inE->event.udpEvent->datagramKey->ulen - 8 >=
+				sizeof(inE->event.udpEvent->datagramKey->dataKey))
+			{
+				memcpy(inE->event.udpEvent->datagramKey->dataKey, &dataStart,
+					sizeof(inE->event.udpEvent->datagramKey->dataKey));
+			}
+			else
+			{
+				memset(inE->event.udpEvent->datagramKey->dataKey, 0,
+					sizeof(inE->event.udpEvent->datagramKey->dataKey));
+				memcpy(inE->event.udpEvent->datagramKey->dataKey, &dataStart,
+						inE->event.udpEvent->datagramKey->ulen - 8);
+			}
+
+			syncState->matchingModule->matchEvent(syncState, inE);
+
+			g_debug("UDP input event %p for skb %p done\n", inE, skb);
+		}
 	}
 	else
 	{

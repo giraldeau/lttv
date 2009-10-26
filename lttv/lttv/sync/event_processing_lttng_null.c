@@ -91,7 +91,8 @@ static void initProcessingLTTVNull(SyncState* const syncState,
 		sizeof(GArray*), syncState->traceNb);
 
 	registerHooks(processingData->hookListList, traceSetContext,
-		&processEventLTTVNull, syncState);
+		&processEventLTTVNull, syncState,
+		syncState->matchingModule->canMatch);
 }
 
 

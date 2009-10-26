@@ -69,6 +69,8 @@ static void writeMessagePoint(FILE* stream, const Message* const message);
 
 static MatchingModule matchingModuleTCP = {
 	.name= "TCP",
+	.canMatch[TCP]= true,
+	.canMatch[UDP]= false,
 	.initMatching= &initMatchingTCP,
 	.destroyMatching= &destroyMatchingTCP,
 	.matchEvent= &matchEventTCP,
@@ -231,11 +233,12 @@ static void partialDestroyMatchingTCP(SyncState* const syncState)
  * Args:
  *   syncState     container for synchronization data.
  *   event         new event to match
- *   eventType     type of event to match
  */
 static void matchEventTCP(SyncState* const syncState, Event* const event)
 {
 	MatchingDataTCP* matchingData;
+
+	g_assert(event->type == TCP);
 
 	matchingData= (MatchingDataTCP*) syncState->matchingData;
 

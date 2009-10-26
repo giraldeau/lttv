@@ -453,3 +453,113 @@ void gdnConnectionKeyDestroy(gpointer data)
 {
 	free((ConnectionKey*) data);
 }
+
+
+/*
+ * A GHashFunc for g_hash_table_new()
+ *
+ * Args:
+ *    key        DatagramKey*
+ */
+guint ghfDatagramKeyHash(gconstpointer key)
+{
+	DatagramKey* datagramKey;
+	uint32_t a, b, c;
+
+	datagramKey= (DatagramKey*) key;
+
+	a= datagramKey->saddr;
+	b= datagramKey->daddr;
+	c= datagramKey->source + (datagramKey->dest << 16);
+	mix(a, b, c);
+
+	a+= datagramKey->ulen; // 16 bits left here
+	b+= *((uint32_t*) datagramKey->dataKey);
+	c+= *((uint32_t*) ((void*) datagramKey->dataKey + 4));
+	final(a, b, c);
+
+	return c;
+}
+
+
+/*
+ * A GEqualFunc for g_hash_table_new()
+ *
+ * Args:
+ *   a, b          DatagramKey*
+ *
+ * Returns:
+ *   TRUE if both values are equal
+ */
+gboolean gefDatagramKeyEqual(gconstpointer a, gconstpointer b)
+{
+	const DatagramKey* dA, * dB;
+
+	dA= (DatagramKey*) a;
+	dB= (DatagramKey*) b;
+
+	if (dA->saddr == dB->saddr && dA->daddr == dB->daddr &&
+		dA->source == dB->source && dA->dest == dB->dest &&
+		dA->ulen == dB->ulen &&
+		memcmp(dA->dataKey, dB->dataKey, sizeof(dA->dataKey)) == 0)
+	{
+		return TRUE;
+	}
+	else
+	{
+		return FALSE;
+	}
+}
+
+
+/*
+ * A GDestroyNotify function for g_hash_table_new_full()
+ *
+ * Args:
+ *   data:         DatagramKey*
+ */
+void gdnDestroyDatagramKey(gpointer data)
+{
+	free((DatagramKey*) data);
+}
+
+
+/*
+ * A GDestroyNotify function for g_hash_table_new_full()
+ *
+ * Args:
+ *   data:         Broadcast*
+ */
+void gdnDestroyBroadcast(gpointer data)
+{
+	destroyBroadcast((Broadcast*) data);
+}
+
+
+/*
+ * Free a Broadcast struct and its associated ressources
+ *
+ * Args:
+ *   broadcast:    Broadcast*
+ */
+void destroyBroadcast(Broadcast* const broadcast)
+{
+	g_queue_foreach(broadcast->events, &gfDestroyEvent, NULL);
+	g_queue_clear(broadcast->events);
+	free(broadcast);
+}
+
+
+/*
+ * A GFunc for g_queue_foreach()
+ *
+ * Args:
+ *   data          Event*
+ *   user_data     NULL
+ */
+void gfDestroyEvent(gpointer data, gpointer user_data)
+{
+	Event* event= data;
+
+	event->destroy(event);
+}

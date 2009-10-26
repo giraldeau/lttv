@@ -29,7 +29,8 @@ typedef struct
 {
 	int totRecv,
 		totRecvIp,
-		totInE,
+		totRecvTCP,
+		totRecvUDP,
 		totOutE;
 } ProcessingStatsLTTVStandard;
 

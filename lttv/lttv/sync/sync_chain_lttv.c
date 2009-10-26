@@ -210,24 +210,22 @@ void syncTraceset(LttvTracesetContext* const traceSetContext)
 	syncState->processingModule= (ProcessingModule*) result->data;
 
 	graphsStream= NULL;
-	if (syncState->graphs)
+	if (syncState->graphs &&
+		syncState->processingModule->writeProcessingGraphsPlots != NULL)
 	{
 		// Create the graph directory right away in case the module initialization
 		// functions have something to write in it.
 		cwd= changeToGraphDir(syncState->graphs);
 
-		if (syncState->processingModule->writeProcessingGraphsPlots != NULL)
+		if ((graphsFp= open("graphs.gnu", O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR |
+				S_IWUSR | S_IXUSR | S_IRGRP | S_IWGRP | S_IXGRP | S_IROTH
+				| S_IWOTH | S_IXOTH)) == -1)
 		{
-			if ((graphsFp= open("graphs.gnu", O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR |
-					S_IWUSR | S_IXUSR | S_IRGRP | S_IWGRP | S_IXGRP | S_IROTH
-					| S_IWOTH | S_IXOTH)) == -1)
-			{
-				g_error(strerror(errno));
-			}
-			if ((graphsStream= fdopen(graphsFp, "w")) == NULL)
-			{
-				g_error(strerror(errno));
-			}
+			g_error(strerror(errno));
+		}
+		if ((graphsStream= fdopen(graphsFp, "w")) == NULL)
+		{
+			g_error(strerror(errno));
 		}
 
 		retval= chdir(cwd);
@@ -238,34 +236,31 @@ void syncTraceset(LttvTracesetContext* const traceSetContext)
 		free(cwd);
 	}
 
-	syncState->processingModule->initProcessing(syncState, traceSetContext);
+	// Identify matching and analysis modules
+	g_assert(g_queue_get_length(&matchingModules) == 1);
+	syncState->matchingModule= (MatchingModule*)
+		g_queue_peek_head(&matchingModules);
 
-	// Identify and initialize matching and analysis modules
-	syncState->matchingData= NULL;
-	syncState->analysisData= NULL;
-	if (optionSyncNull)
+	result= g_queue_find_custom(&analysisModules, optionSyncAnalysis,
+		&gcfCompareAnalysis);
+	if (result != NULL)
 	{
-		syncState->matchingModule= NULL;
-		syncState->analysisModule= NULL;
+		syncState->analysisModule= (AnalysisModule*) result->data;
 	}
 	else
 	{
-		g_assert(g_queue_get_length(&matchingModules) == 1);
-		syncState->matchingModule= (MatchingModule*)
-			g_queue_peek_head(&matchingModules);
-		syncState->matchingModule->initMatching(syncState);
+		g_error("Analysis module '%s' not found", optionSyncAnalysis);
+	}
 
-		result= g_queue_find_custom(&analysisModules, optionSyncAnalysis,
-			&gcfCompareAnalysis);
-		if (result != NULL)
-		{
-			syncState->analysisModule= (AnalysisModule*) result->data;
-			syncState->analysisModule->initAnalysis(syncState);
-		}
-		else
-		{
-			g_error("Analysis module '%s' not found", optionSyncAnalysis);
-		}
+	syncState->processingModule->initProcessing(syncState, traceSetContext);
+
+	syncState->matchingData= NULL;
+	syncState->analysisData= NULL;
+
+	if (!optionSyncNull)
+	{
+		syncState->matchingModule->initMatching(syncState);
+		syncState->analysisModule->initAnalysis(syncState);
 	}
 
 	// Process traceset

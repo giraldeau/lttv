@@ -29,6 +29,7 @@ struct _SyncState;
 typedef struct
 {
 	char* name;
+	bool canMatch[TYPE_COUNT];
 
 	void (*initMatching)(struct _SyncState* const syncState);
 	void (*destroyMatching)(struct _SyncState* const syncState);

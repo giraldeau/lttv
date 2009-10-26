@@ -49,6 +49,13 @@ enum Direction
 	IN,
 };
 
+enum EventType
+{
+	TCP,
+	UDP,
+	TYPE_COUNT,
+};
+
 typedef struct
 {
 	enum Direction direction;
@@ -59,6 +66,8 @@ typedef struct
 typedef struct
 {
 	uint32_t saddr, daddr;
+	uint16_t source, dest;
+	uint16_t ulen;
 	uint8_t dataKey[8];
 } DatagramKey;
 
@@ -76,7 +85,7 @@ typedef struct _Event
 
 	// specific event structures and functions could be in separate files and
 	// type could be an int
-	enum {TCP, UDP} type;
+	enum EventType type;
 	// event could be a void*, this union is to avoid having to cast
 	union {
 		TCPEvent* tcpEvent;
@@ -130,6 +139,7 @@ void gdnDestroyEvent(gpointer data);
 void destroyEvent(Event* const event);
 void destroyTCPEvent(Event* const event);
 void destroyUDPEvent(Event* const event);
+void gfDestroyEvent(gpointer data, gpointer user_data);
 
 // Message-related functions
 void printTCPSegment(const Message* const segment);
@@ -144,4 +154,9 @@ void destroyTCPSegment(Message* const segment);
 
 // Exchange-related functions
 void destroyTCPExchange(Exchange* const exchange);
+
+// Broadcast-related functions
+void gdnDestroyBroadcast(gpointer data);
+void destroyBroadcast(Broadcast* const broadcast);
+
 #endif

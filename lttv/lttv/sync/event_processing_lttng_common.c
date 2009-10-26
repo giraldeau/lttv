@@ -20,6 +20,7 @@
 #include <config.h>
 #endif
 
+#include "data_structures.h"
 #include "event_processing_lttng_common.h"
 
 
@@ -35,13 +36,11 @@
 void createQuarks()
 {
 	LTT_CHANNEL_NET= g_quark_from_static_string("net");
-	LTT_CHANNEL_NETIF_STATE= g_quark_from_static_string("netif_state");
 
 	LTT_EVENT_DEV_XMIT_EXTENDED= g_quark_from_static_string("dev_xmit_extended");
 	LTT_EVENT_DEV_RECEIVE= g_quark_from_static_string("dev_receive");
 	LTT_EVENT_TCPV4_RCV_EXTENDED= g_quark_from_static_string("tcpv4_rcv_extended");
-	LTT_EVENT_NETWORK_IPV4_INTERFACE=
-		g_quark_from_static_string("network_ipv4_interface");
+	LTT_EVENT_UDPV4_RCV_EXTENDED= g_quark_from_static_string("udpv4_rcv_extended");
 
 	LTT_FIELD_SKB= g_quark_from_static_string("skb");
 	LTT_FIELD_PROTOCOL= g_quark_from_static_string("protocol");
@@ -62,9 +61,9 @@ void createQuarks()
 	LTT_FIELD_RST= g_quark_from_static_string("rst");
 	LTT_FIELD_SYN= g_quark_from_static_string("syn");
 	LTT_FIELD_FIN= g_quark_from_static_string("fin");
-	LTT_FIELD_NAME= g_quark_from_static_string("name");
-	LTT_FIELD_ADDRESS= g_quark_from_static_string("address");
-	LTT_FIELD_UP= g_quark_from_static_string("up");
+	LTT_FIELD_UNICAST= g_quark_from_static_string("unicast");
+	LTT_FIELD_ULEN= g_quark_from_static_string("ulen");
+	LTT_FIELD_DATA_START= g_quark_from_static_string("data_start");
 }
 
 
@@ -79,9 +78,11 @@ void createQuarks()
  *   hookFunction: call back function when event is encountered
  *   hookData:     data that will be made accessible to hookFunction in
  *                 arg0->hook_data
+ *   eventTypes:   types of events for which to register hooks
  */
 void registerHooks(GArray* hookListList, LttvTracesetContext* const
-	traceSetContext, LttvHook hookFunction, gpointer hookData)
+	traceSetContext, LttvHook hookFunction, gpointer hookData, const bool
+	const* eventTypes)
 {
 	unsigned int i, j, k;
 	unsigned int traceNb= lttv_traceset_number(traceSetContext->ts);
@@ -89,6 +90,7 @@ void registerHooks(GArray* hookListList, LttvTracesetContext* const
 		GQuark channelName;
 		GQuark eventName;
 		GQuark* fields;
+		bool eventTypes[TYPE_COUNT];
 	} eventHookInfoList[] = {
 		{
 			.channelName= LTT_CHANNEL_NET,
@@ -99,10 +101,14 @@ void registerHooks(GArray* hookListList, LttvTracesetContext* const
 				LTT_FIELD_SOURCE, LTT_FIELD_DEST, LTT_FIELD_SEQ,
 				LTT_FIELD_ACK_SEQ, LTT_FIELD_DOFF, LTT_FIELD_ACK,
 				LTT_FIELD_RST, LTT_FIELD_SYN, LTT_FIELD_FIN),
+			.eventTypes[TCP]= true,
+			.eventTypes[UDP]= true,
 		}, {
 			.channelName= LTT_CHANNEL_NET,
 			.eventName= LTT_EVENT_DEV_RECEIVE,
 			.fields= FIELD_ARRAY(LTT_FIELD_SKB, LTT_FIELD_PROTOCOL),
+			.eventTypes[TCP]= true,
+			.eventTypes[UDP]= true,
 		}, {
 			.channelName= LTT_CHANNEL_NET,
 			.eventName= LTT_EVENT_TCPV4_RCV_EXTENDED,
@@ -111,11 +117,16 @@ void registerHooks(GArray* hookListList, LttvTracesetContext* const
 				LTT_FIELD_SOURCE, LTT_FIELD_DEST, LTT_FIELD_SEQ,
 				LTT_FIELD_ACK_SEQ, LTT_FIELD_DOFF, LTT_FIELD_ACK,
 				LTT_FIELD_RST, LTT_FIELD_SYN, LTT_FIELD_FIN),
+			.eventTypes[TCP]= true,
+			.eventTypes[UDP]= false,
 		}, {
-			.channelName= LTT_CHANNEL_NETIF_STATE,
-			.eventName= LTT_EVENT_NETWORK_IPV4_INTERFACE,
-			.fields= FIELD_ARRAY(LTT_FIELD_NAME, LTT_FIELD_ADDRESS,
-				LTT_FIELD_UP),
+			.channelName= LTT_CHANNEL_NET,
+			.eventName= LTT_EVENT_UDPV4_RCV_EXTENDED,
+			.fields= FIELD_ARRAY(LTT_FIELD_SKB, LTT_FIELD_SADDR,
+				LTT_FIELD_DADDR, LTT_FIELD_UNICAST, LTT_FIELD_ULEN,
+				LTT_FIELD_DATA_START),
+			.eventTypes[TCP]= false,
+			.eventTypes[UDP]= true,
 		}
 	}; // This is called a compound literal
 	unsigned int hookNb= sizeof(eventHookInfoList) / sizeof(*eventHookInfoList);
@@ -134,6 +145,21 @@ void registerHooks(GArray* hookListList, LttvTracesetContext* const
 		for (j= 0; j < hookNb; j++)
 		{
 			guint old_len;
+			bool registerHook;
+
+			registerHook= true;
+			for (k= 0; k < TYPE_COUNT; k++)
+			{
+				if (eventTypes[k] && eventHookInfoList[j].eventTypes[k] == false)
+				{
+					registerHook= false;
+					break;
+				}
+			}
+			if (!registerHook)
+			{
+				continue;
+			}
 
 			old_len= hookList->len;
 			retval= lttv_trace_find_hook(tc->t,
