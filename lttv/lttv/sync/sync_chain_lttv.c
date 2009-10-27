@@ -233,9 +233,9 @@ void syncTraceset(LttvTracesetContext* const traceSetContext)
 	}
 
 	// Identify matching and analysis modules
-	g_assert(g_queue_get_length(&matchingModules) == 1);
-	syncState->matchingModule= (MatchingModule*)
-		g_queue_peek_head(&matchingModules);
+	result= g_queue_find_custom(&matchingModules, "TCP", &gcfCompareMatching);
+	g_assert(result != NULL);
+	syncState->matchingModule= (MatchingModule*) result->data;
 
 	result= g_queue_find_custom(&analysisModules, optionSyncAnalysis,
 		&gcfCompareAnalysis);

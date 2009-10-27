@@ -339,7 +339,7 @@ void setupSyncChain(LttvTracesetContext* const traceSetContext)
 	}
 
 	syncState->matchingData= NULL;
-	result= g_queue_find_custom(&matchingModules, "TCP", &gcfCompareMatching);
+	result= g_queue_find_custom(&matchingModules, "broadcast", &gcfCompareMatching);
 	syncState->matchingModule= (MatchingModule*) result->data;
 
 	syncState->analysisData= NULL;

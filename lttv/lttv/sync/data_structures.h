@@ -25,6 +25,20 @@
 
 #include <ltt/ltt.h>
 
+
+enum Direction
+{
+	OUT,
+	IN,
+};
+
+enum EventType
+{
+	TCP,
+	UDP,
+	TYPE_COUNT, // This must be the last field
+};
+
 // Stage 1 to 2: These structures are passed from processing to matching modules
 // TCP events
 typedef struct
@@ -42,19 +56,6 @@ typedef struct
 	uint8_t doff;
 	uint8_t ack, rst, syn, fin;
 } SegmentKey;
-
-enum Direction
-{
-	OUT,
-	IN,
-};
-
-enum EventType
-{
-	TCP,
-	UDP,
-	TYPE_COUNT,
-};
 
 typedef struct
 {
@@ -133,6 +134,11 @@ void gdnConnectionKeyDestroy(gpointer data);
 // SegmentKey-related functions
 guint ghfSegmentKeyHash(gconstpointer key);
 gboolean gefSegmentKeyEqual(gconstpointer a, gconstpointer b);
+
+// DatagramKey-related functions
+guint ghfDatagramKeyHash(gconstpointer key);
+gboolean gefDatagramKeyEqual(gconstpointer a, gconstpointer b);
+void gdnDestroyDatagramKey(gpointer data);
 
 // Event-related functions
 void gdnDestroyEvent(gpointer data);
