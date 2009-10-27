@@ -26,7 +26,6 @@
 #include <stdlib.h>
 #include <sys/resource.h>
 #include <sys/stat.h>
-#include <sys/time.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -45,10 +44,6 @@
 static void init();
 static void destroy();
 
-static void timeDiff(struct timeval* const end, const struct timeval* const start);
-
-static gint gcfCompareAnalysis(gconstpointer a, gconstpointer b);
-static gint gcfCompareProcessing(gconstpointer a, gconstpointer b);
 static void gfAppendAnalysisName(gpointer data, gpointer user_data);
 
 static gboolean optionSync;
@@ -155,9 +150,7 @@ void syncTraceset(LttvTracesetContext* const traceSetContext)
 	struct timeval startTime, endTime;
 	struct rusage startUsage, endUsage;
 	GList* result;
-	char* cwd;
 	FILE* graphsStream;
-	int graphsFp;
 	int retval;
 
 	if (optionSync == FALSE)
@@ -213,6 +206,9 @@ void syncTraceset(LttvTracesetContext* const traceSetContext)
 	if (syncState->graphs &&
 		syncState->processingModule->writeProcessingGraphsPlots != NULL)
 	{
+		char* cwd;
+		int graphsFp;
+
 		// Create the graph directory right away in case the module initialization
 		// functions have something to write in it.
 		cwd= changeToGraphDir(syncState->graphs);
@@ -372,7 +368,7 @@ void syncTraceset(LttvTracesetContext* const traceSetContext)
  *   end:          end time, result is also stored in this structure
  *   start:        start time
  */
-static void timeDiff(struct timeval* const end, const struct timeval* const start)
+void timeDiff(struct timeval* const end, const struct timeval* const start)
 {
 		if (end->tv_usec >= start->tv_usec)
 		{
@@ -391,21 +387,44 @@ static void timeDiff(struct timeval* const end, const struct timeval* const star
  * A GCompareFunc for g_slist_find_custom()
  *
  * Args:
- *   a:            AnalysisModule*, element's data
+ *   a:            ProcessingModule*, element's data
  *   b:            char*, user data to compare against
  *
  * Returns:
- *   0 if the analysis module a's name is b
+ *   0 if the processing module a's name is b
  */
-static gint gcfCompareAnalysis(gconstpointer a, gconstpointer b)
+gint gcfCompareProcessing(gconstpointer a, gconstpointer b)
 {
-	const AnalysisModule* analysisModule;
+	const ProcessingModule* processingModule;
 	const char* name;
 
-	analysisModule= (const AnalysisModule*)a;
-	name= (const char*)b;
+	processingModule= (const ProcessingModule*) a;
+	name= (const char*) b;
 
-	return strncmp(analysisModule->name, name, strlen(analysisModule->name) +
+	return strncmp(processingModule->name, name,
+		strlen(processingModule->name) + 1);
+}
+
+
+/*
+ * A GCompareFunc for g_slist_find_custom()
+ *
+ * Args:
+ *   a:            MatchingModule*, element's data
+ *   b:            char*, user data to compare against
+ *
+ * Returns:
+ *   0 if the matching module a's name is b
+ */
+gint gcfCompareMatching(gconstpointer a, gconstpointer b)
+{
+	const MatchingModule* matchingModule;
+	const char* name;
+
+	matchingModule= (const MatchingModule*) a;
+	name= (const char*) b;
+
+	return strncmp(matchingModule->name, name, strlen(matchingModule->name) +
 		1);
 }
 
@@ -414,22 +433,22 @@ static gint gcfCompareAnalysis(gconstpointer a, gconstpointer b)
  * A GCompareFunc for g_slist_find_custom()
  *
  * Args:
- *   a:            ProcessingModule*, element's data
+ *   a:            AnalysisModule*, element's data
  *   b:            char*, user data to compare against
  *
  * Returns:
  *   0 if the analysis module a's name is b
  */
-static gint gcfCompareProcessing(gconstpointer a, gconstpointer b)
+gint gcfCompareAnalysis(gconstpointer a, gconstpointer b)
 {
-	const ProcessingModule* processingModule;
+	const AnalysisModule* analysisModule;
 	const char* name;
 
-	processingModule= (const ProcessingModule*)a;
-	name= (const char*)b;
+	analysisModule= (const AnalysisModule*) a;
+	name= (const char*) b;
 
-	return strncmp(processingModule->name, name,
-		strlen(processingModule->name) + 1);
+	return strncmp(analysisModule->name, name, strlen(analysisModule->name) +
+		1);
 }
 
 

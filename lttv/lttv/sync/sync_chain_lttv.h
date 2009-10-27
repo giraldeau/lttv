@@ -20,6 +20,7 @@
 #define SYNC_CHAIN_LTTV_H
 
 #include <glib.h>
+#include <sys/time.h>
 
 #include "event_processing.h"
 #include "event_matching.h"
@@ -47,5 +48,10 @@ extern GQueue analysisModules;
 void syncTraceset(LttvTracesetContext* const traceSetContext);
 
 char* changeToGraphDir(char* const graphs);
+void timeDiff(struct timeval* const end, const struct timeval* const start);
+
+gint gcfCompareProcessing(gconstpointer a, gconstpointer b);
+gint gcfCompareMatching(gconstpointer a, gconstpointer b);
+gint gcfCompareAnalysis(gconstpointer a, gconstpointer b);
 
 #endif

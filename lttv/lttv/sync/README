@@ -34,6 +34,8 @@ to make sure the following markers are enabled:
 * dev_xmit_extended
 * tcpv4_rcv_extended
 * udpv4_rcv_extended
+You can use the 'ltt-armall' and 'ltt-armnetsync' scripts for this.
+
 You also have to make sure there is some TCP traffic between the traced nodes.
 
 ++ Viewing traces

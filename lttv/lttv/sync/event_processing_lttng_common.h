@@ -20,6 +20,7 @@
 #define EVENT_PROCESSING_LTTNG_COMMON_H
 
 #include <glib.h>
+#include <stdbool.h>
 
 #include <lttv/tracecontext.h>
 

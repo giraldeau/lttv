@@ -380,12 +380,12 @@ static gboolean processEventLTTVStandard(void* hookData, void* callData)
 
 	traceHook= (LttvTraceHook*) hookData;
 	tfc= (LttvTracefileContext*) callData;
+	trace= tfc->t_context->t;
 	syncState= (SyncState*) traceHook->hook_data;
 	processingData= (ProcessingDataLTTVStandard*) syncState->processingData;
 	event= ltt_tracefile_get_event(tfc->tf);
 	time= ltt_event_time(event);
-	tsc= ltt_event_cycle_count(event);
-	trace= tfc->t_context->t;
+	tsc= trace->drift * ltt_event_cycle_count(event) + trace->offset;
 	info= marker_get_info_from_id(tfc->tf->mdata, event->event_id);
 
 	g_assert(g_hash_table_lookup_extended(processingData->traceNumTable,

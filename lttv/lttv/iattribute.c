@@ -146,7 +146,7 @@ gboolean lttv_iattribute_find(LttvIAttribute *self, LttvAttributeName name,
 /* Trees of attribute tables may be accessed using a hierarchical path with
    components separated by /, like in filesystems */
 
-gboolean lttv_iattribute_find_by_path(LttvIAttribute *self, char *path, 
+gboolean lttv_iattribute_find_by_path(LttvIAttribute *self, const char *path,
     LttvAttributeType t, LttvAttributeValue *v)
 {
   LttvIAttribute *node = self;
@@ -177,7 +177,7 @@ gboolean lttv_iattribute_find_by_path(LttvIAttribute *self, char *path,
       if(found_type == LTTV_NONE) {
         node = lttv_iattribute_find_subdir(node, name);
       }
-      else if(found_type == LTTV_GOBJECT && 
+      else if(found_type == LTTV_GOBJECT &&
 	      LTTV_IS_IATTRIBUTE(*(v->v_gobject))) {
         node = LTTV_IATTRIBUTE(*(v->v_gobject));
       }

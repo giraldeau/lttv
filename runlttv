@@ -14,6 +14,7 @@ PROGNAME=$0
 BUILDPATH=$(dirname $0)
 RCFILE="$(dirname $0)/.runlttvrc"
 TEXTLIBS="-L ${BUILDPATH}/lttv/modules/text/.libs -m textDump"
+EVALLIBS="-L ${BUILDPATH}/lttv/modules/text/.libs -m sync_chain_batch"
 GRAPHLIBS="-L ${BUILDPATH}/lttv/modules/gui/lttvwindow/lttvwindow/.libs -m lttvwindow "\
 "-L ${BUILDPATH}/lttv/modules/gui/controlflow/.libs -m guicontrolflow "\
 "-L ${BUILDPATH}/lttv/modules/gui/detailedevents/.libs -m guievents "\
@@ -29,7 +30,7 @@ usage () {
 	echo "Usage: $0 [OPTION]... [TRACE]..." >/dev/stderr
 	echo "" >/dev/stderr
 	echo "Options:" >/dev/stderr
-	printf "\t-m MODE      Output mode (modes: text, gui)\n" >/dev/stderr
+	printf "\t-m MODE      Output mode (modes: text, eval, gui)\n" >/dev/stderr
 	printf "\t-H HELPER    Invoke LTTV through a helper program\n" >/dev/stderr
 	printf "\t             (helpers: gdb, valgrind, massif, strace)\n" >/dev/stderr
 	printf "\t-b OPTIONS   LTTV options to specify before the module list\n" >/dev/stderr
@@ -75,6 +76,8 @@ fi
 
 if [ "$MODE" = "text" ]; then
 	LIBS="$TEXTLIBS"
+elif [ "$MODE" = "eval" ]; then
+	LIBS="$EVALLIBS"
 elif [ "$MODE" = "gui" ]; then
 	LIBS="$GRAPHLIBS"
 else
