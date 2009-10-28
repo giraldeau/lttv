@@ -343,7 +343,8 @@ void setupSyncChain(LttvTracesetContext* const traceSetContext)
 	syncState->matchingModule= (MatchingModule*) result->data;
 
 	syncState->analysisData= NULL;
-	result= g_queue_find_custom(&analysisModules, "chull", &gcfCompareAnalysis);
+	result= g_queue_find_custom(&analysisModules, "eval",
+		&gcfCompareAnalysis);
 	syncState->analysisModule= (AnalysisModule*) result->data;
 
 	syncState->processingModule->initProcessing(syncState, traceSetContext);
