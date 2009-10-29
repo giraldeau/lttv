@@ -24,15 +24,15 @@ GRAPHLIBS="-L lttv/modules/gui/lttvwindow/lttvwindow/.libs -m lttvwindow "\
 "-L lttv/modules/gui/histogram/.libs -m guihistogram"
 DEFAULTMODE="gui"
 
-function usage {
+usage () {
 	echo "Usage: $0 [OPTION]... [TRACE]..." >/dev/stderr
 	echo "" >/dev/stderr
 	echo "Options:" >/dev/stderr
-	echo -e "\t-m MODE      Output mode (modes: text, gui)" >/dev/stderr
-	echo -e "\t-H HELPER    Invoke LTTV through a helper program" >/dev/stderr
-	echo -e "\t             (helpers: gdb, valgrind, massif, strace)" >/dev/stderr
-	echo -e "\t-b OPTIONS   LTTV options to specify before the module list" >/dev/stderr
-	echo -e "\t-a OPTIONS   LTTV options to specify after the module list" >/dev/stderr
+	printf "\t-m MODE      Output mode (modes: text, gui)" >/dev/stderr
+	printf "\t-H HELPER    Invoke LTTV through a helper program" >/dev/stderr
+	printf "\t             (helpers: gdb, valgrind, massif, strace)" >/dev/stderr
+	printf "\t-b OPTIONS   LTTV options to specify before the module list" >/dev/stderr
+	printf "\t-a OPTIONS   LTTV options to specify after the module list" >/dev/stderr
 	echo "" >/dev/stderr
 }
 
@@ -65,7 +65,7 @@ do
 done
 
 if [ -e "$RCFILE" ]; then
-	source "$RCFILE";
+	. "$RCFILE";
 fi
 
 if [ -z "$MODE" ]; then
