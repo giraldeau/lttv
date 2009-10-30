@@ -28,7 +28,7 @@
 #include <stdio.h>
 #include <unistd.h>
 
-#include "sync_chain_lttv.h"
+#include "sync_chain.h"
 
 #include "event_analysis_chull.h"
 

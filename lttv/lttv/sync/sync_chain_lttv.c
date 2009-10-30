@@ -33,7 +33,7 @@
 #include <lttv/module.h>
 #include <lttv/option.h>
 
-#include "sync_chain_lttv.h"
+#include "sync_chain.h"
 
 
 #ifndef g_info
@@ -45,19 +45,51 @@ static void init();
 static void destroy();
 
 static void gfAppendAnalysisName(gpointer data, gpointer user_data);
-
-static gboolean optionSync;
-static gboolean optionSyncStats;
-static gboolean optionSyncNull;
-static char* optionSyncAnalysis;
-static gboolean optionSyncGraphs;
-static char* optionSyncGraphsDir;
-static char graphsDir[20];
+static void gfAddModuleOption(gpointer data, gpointer user_data);
+static void gfRemoveModuleOption(gpointer data, gpointer user_data);
 
 GQueue processingModules= G_QUEUE_INIT;
 GQueue matchingModules= G_QUEUE_INIT;
 GQueue analysisModules= G_QUEUE_INIT;
+GQueue moduleOptions= G_QUEUE_INIT;
 
+static char* argHelpNone= "none";
+static ModuleOption optionSync= {
+	.longName= "sync",
+	.hasArg= NO_ARG,
+	{.present= false},
+	.optionHelp= "synchronize the time between the traces",
+};
+static char graphsDir[20];
+static ModuleOption optionSyncStats= {
+	.longName= "sync-stats",
+	.hasArg= NO_ARG,
+	{.present= false},
+	.optionHelp= "print statistics about the time synchronization",
+};
+static ModuleOption optionSyncNull= {
+	.longName= "sync-null",
+	.hasArg= NO_ARG,
+	{.present= false},
+	.optionHelp= "read the events but do not perform any processing",
+};
+static GString* analysisModulesNames;
+static ModuleOption optionSyncAnalysis= {
+	.longName= "sync-analysis",
+	.hasArg= REQUIRED_ARG,
+	.optionHelp= "specify the algorithm to use for event analysis",
+};
+static ModuleOption optionSyncGraphs= {
+	.longName= "sync-graphs",
+	.hasArg= NO_ARG,
+	{.present= false},
+	.optionHelp= "output gnuplot graph showing synchronization points",
+};
+static ModuleOption optionSyncGraphsDir= {
+	.longName= "sync-graphs-dir",
+	.hasArg= REQUIRED_ARG,
+	.optionHelp= "specify the directory where to store the graphs",
+};
 
 /*
  * Module init function
@@ -72,51 +104,37 @@ GQueue analysisModules= G_QUEUE_INIT;
  */
 static void init()
 {
-	GString* analysisModulesNames;
 	int retval;
 
 	g_debug("\t\t\tXXXX sync init\n");
 
-	optionSync= FALSE;
-	lttv_option_add("sync", '\0', "synchronize the time between the traces" ,
-		"none", LTTV_OPT_NONE, &optionSync, NULL, NULL);
-
-	optionSyncStats= FALSE;
-	lttv_option_add("sync-stats", '\0', "print statistics about the time "
-		"synchronization", "none", LTTV_OPT_NONE, &optionSyncStats, NULL,
-		NULL);
-
-	optionSyncNull= FALSE;
-	lttv_option_add("sync-null", '\0', "read the events but do not perform "
-		"any processing", "none", LTTV_OPT_NONE, &optionSyncNull, NULL, NULL);
-
 	g_assert(g_queue_get_length(&analysisModules) > 0);
-	optionSyncAnalysis= ((AnalysisModule*)
+	optionSyncAnalysis.arg = ((AnalysisModule*)
 		g_queue_peek_head(&analysisModules))->name;
 	analysisModulesNames= g_string_new("");
 	g_queue_foreach(&analysisModules, &gfAppendAnalysisName,
 		analysisModulesNames);
 	// remove the last ", "
 	g_string_truncate(analysisModulesNames, analysisModulesNames->len - 2);
-	lttv_option_add("sync-analysis", '\0', "specify the algorithm to use for "
-		"event analysis" , analysisModulesNames->str, LTTV_OPT_STRING,
-		&optionSyncAnalysis, NULL, NULL);
-	g_string_free(analysisModulesNames, TRUE);
-
-	optionSyncGraphs= FALSE;
-	lttv_option_add("sync-graphs", '\0', "output gnuplot graph showing "
-		"synchronization points", "none", LTTV_OPT_NONE, &optionSyncGraphs,
-		NULL, NULL);
+	optionSyncAnalysis.argHelp= analysisModulesNames->str;
 
 	retval= snprintf(graphsDir, sizeof(graphsDir), "graphs-%d", getpid());
 	if (retval > sizeof(graphsDir) - 1)
 	{
 		graphsDir[sizeof(graphsDir) - 1]= '\0';
 	}
-	optionSyncGraphsDir= graphsDir;
-	lttv_option_add("sync-graphs-dir", '\0', "specify the directory where to"
-		" store the graphs", graphsDir, LTTV_OPT_STRING, &optionSyncGraphsDir,
-		NULL, NULL);
+	optionSyncGraphsDir.arg= graphsDir;
+	optionSyncGraphsDir.argHelp= graphsDir;
+
+	g_queue_push_head(&moduleOptions, &optionSyncGraphsDir);
+	g_queue_push_head(&moduleOptions, &optionSyncGraphs);
+	g_queue_push_head(&moduleOptions, &optionSyncAnalysis);
+	g_queue_push_head(&moduleOptions, &optionSyncNull);
+	g_queue_push_head(&moduleOptions, &optionSyncStats);
+	g_queue_push_head(&moduleOptions, &optionSync);
+
+	g_queue_foreach(&moduleOptions, &gfAddModuleOption, NULL);
+
 }
 
 
@@ -127,12 +145,13 @@ static void destroy()
 {
 	g_debug("\t\t\tXXXX sync destroy\n");
 
-	lttv_option_remove("sync");
-	lttv_option_remove("sync-stats");
-	lttv_option_remove("sync-null");
-	lttv_option_remove("sync-analysis");
-	lttv_option_remove("sync-graphs");
-	lttv_option_remove("sync-graphs-dir");
+	g_queue_foreach(&moduleOptions, &gfRemoveModuleOption, NULL);
+	g_string_free(analysisModulesNames, TRUE);
+
+	g_queue_clear(&processingModules);
+	g_queue_clear(&matchingModules);
+	g_queue_clear(&analysisModules);
+	g_queue_clear(&moduleOptions);
 }
 
 
@@ -153,13 +172,13 @@ void syncTraceset(LttvTracesetContext* const traceSetContext)
 	FILE* graphsStream;
 	int retval;
 
-	if (optionSync == FALSE)
+	if (!optionSync.present)
 	{
 		g_debug("Not synchronizing traceset because option is disabled");
 		return;
 	}
 
-	if (optionSyncStats)
+	if (optionSyncStats.present)
 	{
 		gettimeofday(&startTime, 0);
 		getrusage(RUSAGE_SELF, &startUsage);
@@ -169,7 +188,7 @@ void syncTraceset(LttvTracesetContext* const traceSetContext)
 	syncState= malloc(sizeof(SyncState));
 	syncState->traceNb= lttv_traceset_number(traceSetContext->ts);
 
-	if (optionSyncStats)
+	if (optionSyncStats.present)
 	{
 		syncState->stats= true;
 	}
@@ -178,9 +197,9 @@ void syncTraceset(LttvTracesetContext* const traceSetContext)
 		syncState->stats= false;
 	}
 
-	if (optionSyncGraphs)
+	if (optionSyncGraphs.present)
 	{
-		syncState->graphs= optionSyncGraphsDir;
+		syncState->graphs= optionSyncGraphsDir.arg;
 	}
 	else
 	{
@@ -189,7 +208,7 @@ void syncTraceset(LttvTracesetContext* const traceSetContext)
 
 	// Identify and initialize processing module
 	syncState->processingData= NULL;
-	if (optionSyncNull)
+	if (optionSyncNull.present)
 	{
 		result= g_queue_find_custom(&processingModules, "LTTV-null",
 			&gcfCompareProcessing);
@@ -237,7 +256,7 @@ void syncTraceset(LttvTracesetContext* const traceSetContext)
 	g_assert(result != NULL);
 	syncState->matchingModule= (MatchingModule*) result->data;
 
-	result= g_queue_find_custom(&analysisModules, optionSyncAnalysis,
+	result= g_queue_find_custom(&analysisModules, optionSyncAnalysis.arg,
 		&gcfCompareAnalysis);
 	if (result != NULL)
 	{
@@ -245,7 +264,7 @@ void syncTraceset(LttvTracesetContext* const traceSetContext)
 	}
 	else
 	{
-		g_error("Analysis module '%s' not found", optionSyncAnalysis);
+		g_error("Analysis module '%s' not found", optionSyncAnalysis.arg);
 	}
 
 	syncState->processingModule->initProcessing(syncState, traceSetContext);
@@ -253,7 +272,7 @@ void syncTraceset(LttvTracesetContext* const traceSetContext)
 	syncState->matchingData= NULL;
 	syncState->analysisData= NULL;
 
-	if (!optionSyncNull)
+	if (!optionSyncNull.present)
 	{
 		syncState->matchingModule->initMatching(syncState);
 		syncState->analysisModule->initAnalysis(syncState);
@@ -342,7 +361,7 @@ void syncTraceset(LttvTracesetContext* const traceSetContext)
 
 	free(syncState);
 
-	if (optionSyncStats)
+	if (optionSyncStats.present)
 	{
 		gettimeofday(&endTime, 0);
 		retval= getrusage(RUSAGE_SELF, &endUsage);
@@ -478,7 +497,7 @@ static void gfAppendAnalysisName(gpointer data, gpointer user_data)
  *   The current working directory before the execution of the function. The
  *   string must be free'd by the caller.
  */
-char* changeToGraphDir(char* const graphs)
+char* changeToGraphDir(const char* const graphs)
 {
 	int retval;
 	char* cwd;
@@ -506,6 +525,43 @@ char* changeToGraphDir(char* const graphs)
 	}
 
 	return cwd;
+}
+
+
+/*
+ * A GFunc for g_queue_foreach()
+ *
+ * Args:
+ *   data:         ModuleOption*
+ *   user_data:    NULL
+ */
+static void gfAddModuleOption(gpointer data, gpointer user_data)
+{
+	ModuleOption* option;
+	LttvOptionType conversion[]= {
+		[NO_ARG]= LTTV_OPT_NONE,
+		[REQUIRED_ARG]= LTTV_OPT_STRING,
+	};
+
+	g_assert_cmpuint(sizeof(conversion) / sizeof(*conversion), ==,
+		HAS_ARG_COUNT);
+	option= (ModuleOption*) data;
+	lttv_option_add(option->longName, '\0', option->optionHelp,
+		option->argHelp ? option->argHelp : argHelpNone,
+		conversion[option->hasArg], &option->arg, NULL, NULL);
+}
+
+
+/*
+ * A GFunc for g_queue_foreach()
+ *
+ * Args:
+ *   data:         ModuleOption*
+ *   user_data:    NULL
+ */
+static void gfRemoveModuleOption(gpointer data, gpointer user_data)
+{
+	lttv_option_remove(((ModuleOption*) data)->longName);
 }
 
 

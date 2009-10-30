@@ -36,7 +36,7 @@ enum EventType
 {
 	TCP,
 	UDP,
-	TYPE_COUNT, // This must be the last field
+	TYPE_COUNT // This must be the last field
 };
 
 // Stage 1 to 2: These structures are passed from processing to matching modules

@@ -37,9 +37,14 @@ typedef struct
 	TracePairStats** allStats;
 } AnalysisStatsEval;
 
+struct RttKey
+{
+	uint32_t saddr, daddr;
+};
+
 typedef struct
 {
-	// double* rttInfo[saddr][daddr]
+	// double* rttInfo[RttKey]
 	GHashTable* rttInfo;
 
 	AnalysisStatsEval* stats;

@@ -22,7 +22,7 @@
 
 #include <stdlib.h>
 
-#include "sync_chain_lttv.h"
+#include "sync_chain.h"
 #include "event_processing_lttng_common.h"
 
 #include "event_processing_lttng_null.h"

@@ -16,8 +16,8 @@
  * MA 02111-1307, USA.
  */
 
-#ifndef SYNC_CHAIN_LTTV_H
-#define SYNC_CHAIN_LTTV_H
+#ifndef SYNC_CHAIN_H
+#define SYNC_CHAIN_H
 
 #include <glib.h>
 #include <sys/time.h>
@@ -30,7 +30,7 @@ typedef struct _SyncState
 {
 	unsigned int traceNb;
 	bool stats;
-	char* graphs;
+	const char* graphs;
 
 	const ProcessingModule* processingModule;
 	void* processingData;
@@ -40,14 +40,34 @@ typedef struct _SyncState
 	void* analysisData;
 } SyncState;
 
+typedef struct
+{
+	const char* longName;
+	enum {
+		NO_ARG,
+		REQUIRED_ARG,
+		//OPTIONAL_ARG,
+		HAS_ARG_COUNT // This must be the last field
+	} hasArg;
+	union
+	{
+		bool present;
+		const char* arg;
+	};
+	const char* optionHelp;
+	const char* argHelp;
+} ModuleOption;
+
+
 extern GQueue processingModules;
 extern GQueue matchingModules;
 extern GQueue analysisModules;
+extern GQueue moduleOptions;
 
 
 void syncTraceset(LttvTracesetContext* const traceSetContext);
 
-char* changeToGraphDir(char* const graphs);
+char* changeToGraphDir(const char* const graphs);
 void timeDiff(struct timeval* const end, const struct timeval* const start);
 
 gint gcfCompareProcessing(gconstpointer a, gconstpointer b);

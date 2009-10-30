@@ -39,7 +39,7 @@
 #include <lttv/iattribute.h>
 #include <lttv/stats.h>
 #include <lttv/filter.h>
-#include <lttv/sync/sync_chain_lttv.h>
+#include <lttv/sync/sync_chain.h>
 #include <lttvwindow/mainwindow.h>
 #include <lttvwindow/mainwindow-private.h>
 #include <lttvwindow/menu.h>

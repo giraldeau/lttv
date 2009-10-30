@@ -34,7 +34,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-#include "sync_chain_lttv.h"
+#include "sync_chain.h"
 
 
 #ifndef g_info

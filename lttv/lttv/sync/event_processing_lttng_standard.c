@@ -29,7 +29,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "sync_chain_lttv.h"
+#include "sync_chain.h"
 #include "event_processing_lttng_common.h"
 
 #include "event_processing_lttng_standard.h"

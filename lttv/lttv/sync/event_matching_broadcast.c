@@ -26,7 +26,7 @@
 #include <unistd.h>
 
 #include "event_analysis.h"
-#include "sync_chain_lttv.h"
+#include "sync_chain.h"
 
 #include "event_matching_broadcast.h"
 
@@ -215,6 +215,11 @@ static void matchEventBroadcast(SyncState* const syncState, Event* const event)
 				g_queue_push_tail(broadcast->events, event);
 				if (broadcast->events->length == syncState->traceNb)
 				{
+					if (matchingData->stats)
+					{
+						matchingData->stats->totComplete++;
+					}
+
 					g_hash_table_steal(matchingData->pendingBroadcasts, datagramKey);
 					free(datagramKey);
 					syncState->analysisModule->analyzeBroadcast(syncState, broadcast);
@@ -226,6 +231,12 @@ static void matchEventBroadcast(SyncState* const syncState, Event* const event)
 				broadcast= malloc(sizeof(Broadcast));
 				broadcast->events= g_queue_new();
 				g_queue_push_tail(broadcast->events, event);
+
+				datagramKey= malloc(sizeof(DatagramKey));
+				*datagramKey= *event->event.udpEvent->datagramKey;
+
+				g_hash_table_insert(matchingData->pendingBroadcasts,
+					datagramKey, broadcast);
 			}
 		}
 		else
@@ -288,7 +299,6 @@ static void printMatchingStatsBroadcast(SyncState* const syncState)
 	{
 		return;
 	}
-
 	matchingData= (MatchingDataBroadcast*) syncState->matchingData;
 
 	printf("Broadcast matching stats:\n");

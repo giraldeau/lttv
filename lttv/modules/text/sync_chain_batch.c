@@ -41,7 +41,7 @@
 #include <lttv/module.h>
 #include <lttv/option.h>
 #include <lttv/print.h>
-#include <lttv/sync/sync_chain_lttv.h>
+#include <lttv/sync/sync_chain.h>
 #include <ltt/ltt.h>
 #include <ltt/event.h>
 #include <ltt/trace.h>

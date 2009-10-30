@@ -16,13 +16,23 @@
  * MA 02111-1307, USA.
  */
 
+#define _GNU_SOURCE
+
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
 
+#include <arpa/inet.h>
+#include <errno.h>
+#include <netinet/in.h>
+#include <stddef.h>
 #include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <sys/socket.h>
 
-#include "sync_chain_lttv.h"
+#include "lookup3.h"
+#include "sync_chain.h"
 
 #include "event_analysis_eval.h"
 
@@ -42,6 +52,12 @@ static void printAnalysisStatsEval(SyncState* const syncState);
 
 // Functions specific to this module
 static void registerAnalysisEval() __attribute__((constructor (102)));
+static guint ghfRttKeyHash(gconstpointer key);
+static gboolean gefRttKeyEqual(gconstpointer a, gconstpointer b);
+static void gdnDestroyRttKey(gpointer data);
+static void gdnDestroyDouble(gpointer data);
+static void readRttInfo(GHashTable* rttInfo, FILE* rttFile);
+static void positionStream(FILE* stream);
 
 
 static AnalysisModule analysisModuleEval= {
@@ -57,6 +73,14 @@ static AnalysisModule analysisModuleEval= {
 	.writeAnalysisGraphsOptions= NULL,
 };
 
+static ModuleOption optionEvalRttFile= {
+	.longName= "eval-rtt-file",
+	.hasArg= REQUIRED_ARG,
+	{.arg= NULL},
+	.optionHelp= "specify the file containing rtt information",
+	.argHelp= "FILE",
+};
+
 
 /*
  * Analysis module registering function
@@ -64,6 +88,7 @@ static AnalysisModule analysisModuleEval= {
 static void registerAnalysisEval()
 {
 	g_queue_push_tail(&analysisModules, &analysisModuleEval);
+	g_queue_push_tail(&moduleOptions, &optionEvalRttFile);
 }
 
 
@@ -84,7 +109,27 @@ static void initAnalysisEval(SyncState* const syncState)
 	analysisData= malloc(sizeof(AnalysisDataEval));
 	syncState->analysisData= analysisData;
 
-	//readRttInfo(&analysisData->rttInfo, optionEvalRttFile);
+	analysisData->rttInfo= g_hash_table_new_full(&ghfRttKeyHash,
+		&gefRttKeyEqual, &gdnDestroyRttKey, &gdnDestroyDouble);
+	if (optionEvalRttFile.arg)
+	{
+		FILE* rttStream;
+		int retval;
+
+		rttStream= fopen(optionEvalRttFile.arg, "r");
+		if (rttStream == NULL)
+		{
+			g_error(strerror(errno));
+		}
+
+		readRttInfo(analysisData->rttInfo, rttStream);
+
+		retval= fclose(rttStream);
+		if (retval == EOF)
+		{
+			g_error(strerror(errno));
+		}
+	}
 
 	if (syncState->stats)
 	{
@@ -122,7 +167,7 @@ static void destroyAnalysisEval(SyncState* const syncState)
 		return;
 	}
 
-	//g_hash_table_destroy(analysisData->rttInfo);
+	g_hash_table_destroy(analysisData->rttInfo);
 	analysisData->rttInfo= NULL;
 
 	if (syncState->stats)
@@ -261,5 +306,217 @@ static void printAnalysisStatsEval(SyncState* const syncState)
 			printf(format, j, i, tpStats->inversionNb, tpStats->tooFastNb,
 				tpStats->noRTTInfoNb);
 		}
+	}
+}
+
+
+/*
+ * A GHashFunc for g_hash_table_new()
+ *
+ * Args:
+ *    key        struct RttKey*
+ */
+static guint ghfRttKeyHash(gconstpointer key)
+{
+	struct RttKey* rttKey;
+	uint32_t a, b, c;
+
+	rttKey= (struct RttKey*) key;
+
+	a= rttKey->saddr;
+	b= rttKey->daddr;
+	c= 0;
+	final(a, b, c);
+
+	return c;
+}
+
+
+/*
+ * A GDestroyNotify function for g_hash_table_new_full()
+ *
+ * Args:
+ *   data:         struct RttKey*
+ */
+static void gdnDestroyRttKey(gpointer data)
+{
+	free(data);
+}
+
+
+/*
+ * A GDestroyNotify function for g_hash_table_new_full()
+ *
+ * Args:
+ *   data:         double*
+ */
+static void gdnDestroyDouble(gpointer data)
+{
+	free(data);
+}
+
+
+/*
+ * A GEqualFunc for g_hash_table_new()
+ *
+ * Args:
+ *   a, b          RttKey*
+ *
+ * Returns:
+ *   TRUE if both values are equal
+ */
+static gboolean gefRttKeyEqual(gconstpointer a, gconstpointer b)
+{
+	const struct RttKey* rkA, * rkB;
+
+	rkA= (struct RttKey*) a;
+	rkB= (struct RttKey*) b;
+
+	if (rkA->saddr == rkB->saddr && rkA->daddr == rkB->daddr)
+	{
+		return TRUE;
+	}
+	else
+	{
+		return FALSE;
+	}
+}
+
+
+/*
+ * Read a file contain minimum round trip time values and fill an array with
+ * them. The file is formatted as such:
+ * <host1 IP> <host2 IP> <RTT in milliseconds>
+ * ip's should be in dotted quad format
+ *
+ * Args:
+ *   rttInfo:      double* rttInfo[RttKey], empty table, will be filled
+ *   rttStream:      stream from which to read
+ */
+static void readRttInfo(GHashTable* rttInfo, FILE* rttStream)
+{
+	char* line= NULL;
+	size_t len;
+	int retval;
+
+	positionStream(rttStream);
+	retval= getline(&line, &len, rttStream);
+	while(!feof(rttStream))
+	{
+		struct RttKey* rttKey;
+		char saddrDQ[20], daddrDQ[20];
+		double* rtt;
+		char tmp;
+		struct in_addr addr;
+		unsigned int i;
+		struct {
+			char* dq;
+			size_t offset;
+		} loopValues[] = {
+			{saddrDQ, offsetof(struct RttKey, saddr)},
+			{daddrDQ, offsetof(struct RttKey, daddr)}
+		};
+
+		if (retval == -1 && !feof(rttStream))
+		{
+			g_error(strerror(errno));
+		}
+
+		if (line[retval - 1] == '\n')
+		{
+			line[retval - 1]= '\0';
+		}
+
+		rtt= malloc(sizeof(double));
+		retval= sscanf(line, " %19s %19s %lf %c", saddrDQ, daddrDQ, rtt,
+			&tmp);
+		if (retval == EOF)
+		{
+			g_error(strerror(errno));
+		}
+		else if (retval != 3)
+		{
+			g_error("Error parsing RTT file, line was '%s'", line);
+		}
+
+		rttKey= malloc(sizeof(struct RttKey));
+		for (i= 0; i < sizeof(loopValues) / sizeof(*loopValues); i++)
+		{
+			retval= inet_aton(loopValues[i].dq, &addr);
+			if (retval == 0)
+			{
+				g_error("Error converting address '%s'", loopValues[i].dq);
+			}
+			*(uint32_t*) ((void*) rttKey + loopValues[i].offset)=
+				addr.s_addr;
+		}
+
+		g_hash_table_insert(rttInfo, rttKey, rtt);
+
+		positionStream(rttStream);
+		retval= getline(&line, &len, rttStream);
+	}
+
+	if (line)
+	{
+		free(line);
+	}
+}
+
+
+/*
+ * Advance stream over empty space, empty lines and lines that begin with '#'
+ *
+ * Args:
+ *   stream:     stream, at exit, will be over the first non-empty character
+ *               of a line of be at EOF
+ */
+static void positionStream(FILE* stream)
+{
+	int firstChar;
+	ssize_t retval;
+	char* line= NULL;
+	size_t len;
+
+	do
+	{
+		firstChar= fgetc(stream);
+		if (firstChar == (int) '#')
+		{
+			retval= getline(&line, &len, stream);
+			if (retval == -1)
+			{
+				if (feof(stream))
+				{
+					goto outEof;
+				}
+				else
+				{
+					g_error(strerror(errno));
+				}
+			}
+		}
+		else if (firstChar == (int) '\n' || firstChar == (int) ' ' ||
+			firstChar == (int) '\t')
+		{}
+		else if (firstChar == EOF)
+		{
+			goto outEof;
+		}
+		else
+		{
+			break;
+		}
+	} while (true);
+	retval= ungetc(firstChar, stream);
+	if (retval == EOF)
+	{
+		g_error("Error: ungetc()");
+	}
+
+outEof:
+	if (line)
+	{
+		free(line);
 	}
 }

@@ -26,7 +26,7 @@
 #include <unistd.h>
 
 #include "event_analysis.h"
-#include "sync_chain_lttv.h"
+#include "sync_chain.h"
 
 #include "event_matching_tcp.h"
 
