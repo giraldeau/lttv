@@ -397,8 +397,8 @@ static void analyzeMessageCHull(SyncState* const syncState, Message* const messa
 	if (message->inE->traceNum < message->outE->traceNum)
 	{
 		// CA is inE->traceNum
-		newPoint->x= message->inE->time;
-		newPoint->y= message->outE->time;
+		newPoint->x= message->inE->cpuTime;
+		newPoint->y= message->outE->cpuTime;
 		hullType= UPPER;
 		g_debug("Reception point hullArray[%lu][%lu] x= inE->time= %llu y= outE->time= %llu",
 			message->inE->traceNum, message->outE->traceNum, newPoint->x,
@@ -407,8 +407,8 @@ static void analyzeMessageCHull(SyncState* const syncState, Message* const messa
 	else
 	{
 		// CA is outE->traceNum
-		newPoint->x= message->outE->time;
-		newPoint->y= message->inE->time;
+		newPoint->x= message->outE->cpuTime;
+		newPoint->y= message->inE->cpuTime;
 		hullType= LOWER;
 		g_debug("Send point hullArray[%lu][%lu] x= inE->time= %llu y= outE->time= %llu",
 			message->inE->traceNum, message->outE->traceNum, newPoint->x,

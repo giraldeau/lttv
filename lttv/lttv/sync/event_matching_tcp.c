@@ -646,14 +646,14 @@ static void writeMessagePoint(FILE* stream, const Message* const message)
 	if (message->inE->traceNum < message->outE->traceNum)
 	{
 		// CA is inE->traceNum
-		x= message->inE->time;
-		y= message->outE->time;
+		x= message->inE->cpuTime;
+		y= message->outE->cpuTime;
 	}
 	else
 	{
 		// CA is outE->traceNum
-		x= message->outE->time;
-		y= message->inE->time;
+		x= message->outE->cpuTime;
+		y= message->inE->cpuTime;
 	}
 
 	fprintf(stream, "%20llu %20llu\n", x, y);

@@ -563,3 +563,18 @@ void gfDestroyEvent(gpointer data, gpointer user_data)
 
 	event->destroy(event);
 }
+
+
+/* Subtract two WallTime structs
+ *
+ * Args:
+ *   tA, tB:       WallTime
+ *
+ * Returns:
+ *   The result of tA - tB, as a double. This may incur a loss of
+ *   precision.
+ */
+double wallTimeSub(const WallTime const* tA, const WallTime const* tB)
+{
+	return tA->seconds - tB->seconds + (tA->nanosec - tB->nanosec) / 1e9;
+}

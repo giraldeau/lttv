@@ -79,10 +79,17 @@ typedef struct
 	bool unicast;
 } UDPEvent;
 
+typedef struct
+{
+	uint32_t seconds;
+	uint32_t nanosec;
+} WallTime;
+
 typedef struct _Event
 {
 	unsigned long traceNum;
-	uint64_t time;
+	uint64_t cpuTime;
+	WallTime wallTime;
 
 	// specific event structures and functions could be in separate files and
 	// type could be an int
@@ -146,6 +153,7 @@ void destroyEvent(Event* const event);
 void destroyTCPEvent(Event* const event);
 void destroyUDPEvent(Event* const event);
 void gfDestroyEvent(gpointer data, gpointer user_data);
+double wallTimeSub(const WallTime const* tA, const WallTime const* tB);
 
 // Message-related functions
 void printTCPSegment(const Message* const segment);

@@ -28,13 +28,16 @@ typedef struct
 {
 	unsigned int inversionNb,
 		tooFastNb,
-		noRTTInfoNb;
-} TracePairStats;
+		noRTTInfoNb,
+		total;
+} MessageStats;
 
 typedef struct
 {
 	double broadcastDiffSum;
-	TracePairStats** allStats;
+	unsigned int broadcastNb;
+
+	MessageStats** messageStats;
 } AnalysisStatsEval;
 
 struct RttKey

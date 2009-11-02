@@ -370,8 +370,9 @@ static gboolean processEventLTTVStandard(void* hookData, void* callData)
 	LttvTraceHook* traceHook;
 	LttvTracefileContext* tfc;
 	LttEvent* event;
-	LttTime time;
 	LttCycleCount tsc;
+	LttTime time;
+	WallTime wTime;
 	LttTrace* trace;
 	unsigned long traceNum;
 	struct marker_info* info;
@@ -384,15 +385,17 @@ static gboolean processEventLTTVStandard(void* hookData, void* callData)
 	syncState= (SyncState*) traceHook->hook_data;
 	processingData= (ProcessingDataLTTVStandard*) syncState->processingData;
 	event= ltt_tracefile_get_event(tfc->tf);
-	time= ltt_event_time(event);
-	tsc= trace->drift * ltt_event_cycle_count(event) + trace->offset;
 	info= marker_get_info_from_id(tfc->tf->mdata, event->event_id);
+	tsc= ltt_event_cycle_count(event);
+	time= ltt_event_time(event);
+	wTime.seconds= time.tv_sec;
+	wTime.nanosec= time.tv_nsec;
 
 	g_assert(g_hash_table_lookup_extended(processingData->traceNumTable,
 			trace, NULL, (gpointer*) &traceNum));
 
 	g_debug("XXXX process event: time: %ld.%09ld trace: %ld (%p) name: %s ",
-		(long) time.tv_sec, time.tv_nsec, traceNum, trace,
+		time.tv_sec, time.tv_nsec, traceNum, trace,
 		g_quark_to_string(info->name));
 
 	if (info->name == LTT_EVENT_DEV_XMIT_EXTENDED)
@@ -419,7 +422,8 @@ static gboolean processEventLTTVStandard(void* hookData, void* callData)
 
 		outE= malloc(sizeof(Event));
 		outE->traceNum= traceNum;
-		outE->time= tsc;
+		outE->cpuTime= tsc;
+		outE->wallTime= wTime;
 		outE->type= TCP;
 		outE->destroy= &destroyTCPEvent;
 		outE->event.tcpEvent= malloc(sizeof(TCPEvent));
@@ -486,7 +490,8 @@ static gboolean processEventLTTVStandard(void* hookData, void* callData)
 
 			inE= malloc(sizeof(Event));
 			inE->traceNum= traceNum;
-			inE->time= tsc;
+			inE->cpuTime= tsc;
+			inE->wallTime= wTime;
 			inE->event.tcpEvent= NULL;
 			inE->destroy= &destroyEvent;
 

@@ -24,6 +24,7 @@
 
 #include <arpa/inet.h>
 #include <errno.h>
+#include <math.h>
 #include <netinet/in.h>
 #include <stddef.h>
 #include <stdlib.h>
@@ -58,6 +59,9 @@ static void gdnDestroyRttKey(gpointer data);
 static void gdnDestroyDouble(gpointer data);
 static void readRttInfo(GHashTable* rttInfo, FILE* rttFile);
 static void positionStream(FILE* stream);
+
+static void gfSum(gpointer data, gpointer userData);
+static void gfSumSquares(gpointer data, gpointer userData);
 
 
 static AnalysisModule analysisModuleEval= {
@@ -133,15 +137,15 @@ static void initAnalysisEval(SyncState* const syncState)
 
 	if (syncState->stats)
 	{
-		analysisData->stats= malloc(sizeof(AnalysisStatsEval));
+		analysisData->stats= calloc(1, sizeof(AnalysisStatsEval));
 		analysisData->stats->broadcastDiffSum= 0.;
 
-		analysisData->stats->allStats= malloc(syncState->traceNb *
-			sizeof(TracePairStats*));
+		analysisData->stats->messageStats= malloc(syncState->traceNb *
+			sizeof(MessageStats*));
 		for (i= 0; i < syncState->traceNb; i++)
 		{
-			analysisData->stats->allStats[i]= calloc(syncState->traceNb,
-				sizeof(TracePairStats));
+			analysisData->stats->messageStats[i]= calloc(syncState->traceNb,
+				sizeof(MessageStats));
 		}
 	}
 }
@@ -174,9 +178,9 @@ static void destroyAnalysisEval(SyncState* const syncState)
 	{
 		for (i= 0; i < syncState->traceNb; i++)
 		{
-			free(analysisData->stats->allStats[i]);
+			free(analysisData->stats->messageStats[i]);
 		}
-		free(analysisData->stats->allStats);
+		free(analysisData->stats->messageStats);
 		free(analysisData->stats);
 	}
 
@@ -188,6 +192,8 @@ static void destroyAnalysisEval(SyncState* const syncState)
 /*
  * Perform analysis on an event pair.
  *
+ * Check if there is message inversion or messages that are too fast.
+ *
  * Args:
  *   syncState     container for synchronization data
  *   message       structure containing the events
@@ -195,13 +201,51 @@ static void destroyAnalysisEval(SyncState* const syncState)
 static void analyzeMessageEval(SyncState* const syncState, Message* const message)
 {
 	AnalysisDataEval* analysisData;
+	MessageStats* messageStats;
+	double* rttInfo;
+	double tt;
+	struct RttKey rttKey;
+
+	if (!syncState->stats)
+	{
+		return;
+	}
 
 	analysisData= (AnalysisDataEval*) syncState->analysisData;
+	messageStats=
+		&analysisData->stats->messageStats[message->outE->traceNum][message->inE->traceNum];
+
+	messageStats->total++;
+
+	tt= wallTimeSub(&message->inE->wallTime, &message->outE->wallTime);
+	if (tt <= 0)
+	{
+		messageStats->inversionNb++;
+	}
+
+	g_assert(message->inE->type == UDP);
+	rttKey.saddr= message->inE->event.udpEvent->datagramKey->saddr;
+	rttKey.daddr= message->inE->event.udpEvent->datagramKey->daddr;
+	rttInfo= g_hash_table_lookup(analysisData->rttInfo, &rttKey);
+
+	if (rttInfo)
+	{
+		if (tt < *rttInfo / 2.)
+		{
+			messageStats->tooFastNb++;
+		}
+	}
+	else
+	{
+		messageStats->noRTTInfoNb++;
+	}
 }
 
 
 /*
  * Perform analysis on multiple messages
+ *
+ * Measure the RTT
  *
  * Args:
  *   syncState     container for synchronization data
@@ -218,6 +262,8 @@ static void analyzeExchangeEval(SyncState* const syncState, Exchange* const exch
 /*
  * Perform analysis on muliple events
  *
+ * Sum the broadcast differential delays
+ *
  * Args:
  *   syncState     container for synchronization data
  *   broadcast     structure containing the events
@@ -225,8 +271,27 @@ static void analyzeExchangeEval(SyncState* const syncState, Exchange* const exch
 static void analyzeBroadcastEval(SyncState* const syncState, Broadcast* const broadcast)
 {
 	AnalysisDataEval* analysisData;
+	double sum= 0, squaresSum= 0;
+	double y;
+
+	if (!syncState->stats)
+	{
+		return;
+	}
 
 	analysisData= (AnalysisDataEval*) syncState->analysisData;
+
+	g_queue_foreach(broadcast->events, &gfSum, &sum);
+	g_queue_foreach(broadcast->events, &gfSumSquares, &squaresSum);
+
+	analysisData->stats->broadcastNb++;
+	// Because of numerical errors, this can at times be < 0
+	y= squaresSum / g_queue_get_length(broadcast->events) - pow(sum /
+		g_queue_get_length(broadcast->events), 2.);
+	if (y > 0)
+	{
+		analysisData->stats->broadcastDiffSum+= sqrt(y);
+	}
 }
 
 
@@ -285,26 +350,29 @@ static void printAnalysisStatsEval(SyncState* const syncState)
 	printf("Synchronization evaluation analysis stats:\n");
 	printf("\tsum of broadcast differential delays: %g\n",
 		analysisData->stats->broadcastDiffSum);
+	printf("\taverage broadcast differential delays: %g\n",
+		analysisData->stats->broadcastDiffSum /
+		analysisData->stats->broadcastNb);
 
 	printf("\tIndividual evaluation:\n"
-		"\t\tTrace pair  Inversions  Too fast    (No RTT info)\n");
+		"\t\tTrace pair  Inversions Too fast   (No RTT info) Total\n");
 
 	for (i= 0; i < syncState->traceNb; i++)
 	{
 		for (j= i + 1; j < syncState->traceNb; j++)
 		{
-			TracePairStats* tpStats;
-			const char* format= "\t\t%3d - %-3d   %-10u  %-10u  %u\n";
+			MessageStats* messageStats;
+			const char* format= "\t\t%3d - %-3d   %-10u %-10u %-10u    %u\n";
 
-			tpStats= &analysisData->stats->allStats[i][j];
+			messageStats= &analysisData->stats->messageStats[i][j];
 
-			printf(format, i, j, tpStats->inversionNb, tpStats->tooFastNb,
-				tpStats->noRTTInfoNb);
+			printf(format, i, j, messageStats->inversionNb, messageStats->tooFastNb,
+				messageStats->noRTTInfoNb, messageStats->total);
 
-			tpStats= &analysisData->stats->allStats[j][i];
+			messageStats= &analysisData->stats->messageStats[j][i];
 
-			printf(format, j, i, tpStats->inversionNb, tpStats->tooFastNb,
-				tpStats->noRTTInfoNb);
+			printf(format, j, i, messageStats->inversionNb, messageStats->tooFastNb,
+				messageStats->noRTTInfoNb, messageStats->total);
 		}
 	}
 }
@@ -451,6 +519,7 @@ static void readRttInfo(GHashTable* rttInfo, FILE* rttStream)
 				addr.s_addr;
 		}
 
+		*rtt/= 1e3;
 		g_hash_table_insert(rttInfo, rttKey, rtt);
 
 		positionStream(rttStream);
@@ -519,4 +588,42 @@ outEof:
 	{
 		free(line);
 	}
+}
+
+
+/*
+ * A GFunc for g_queue_foreach()
+ *
+ * Args:
+ *   data          Event*, a UDP broadcast event
+ *   user_data     double*, the running sum
+ *
+ * Returns:
+ *   Adds the time of the event to the sum
+ */
+static void gfSum(gpointer data, gpointer userData)
+{
+	Event* event= (Event*) data;
+
+	*(double*) userData+= event->wallTime.seconds + event->wallTime.nanosec /
+		1e9;
+}
+
+
+/*
+ * A GFunc for g_queue_foreach()
+ *
+ * Args:
+ *   data          Event*, a UDP broadcast event
+ *   user_data     double*, the running sum
+ *
+ * Returns:
+ *   Adds the square of the time of the event to the sum
+ */
+static void gfSumSquares(gpointer data, gpointer userData)
+{
+	Event* event= (Event*) data;
+
+	*(double*) userData+= pow(event->wallTime.seconds + event->wallTime.nanosec
+		/ 1e9, 2.);
 }

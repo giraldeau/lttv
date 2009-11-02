@@ -306,9 +306,9 @@ static void printMatchingStatsBroadcast(SyncState* const syncState)
 		matchingData->stats->totTransmit);
 	printf("\ttotal broadcasts datagrams received: %u\n",
 		matchingData->stats->totReceive);
-	printf("\ttotal broadcast groups for which all emissions were identified: %u\n",
+	printf("\ttotal broadcast groups for which all receptions were identified: %u\n",
 		matchingData->stats->totComplete);
-	printf("\ttotal broadcast groups missing some emissions: %u\n",
+	printf("\ttotal broadcast groups missing some receptions: %u\n",
 		matchingData->stats->totIncomplete);
 	if (matchingData->stats->totIncomplete > 0)
 	{

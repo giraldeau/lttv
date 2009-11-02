@@ -193,14 +193,14 @@ static void analyzeExchangeLinReg(SyncState* const syncState, Exchange* const ex
 
 	// Calculate the intermediate values for the
 	// least-squares analysis
-	dji= ((double) ackedMessage->inE->time - (double) ackedMessage->outE->time
-		+ (double) exchange->message->outE->time - (double)
-		exchange->message->inE->time) / 2;
-	eji= fabs((double) ackedMessage->inE->time - (double)
-		ackedMessage->outE->time - (double) exchange->message->outE->time +
-		(double) exchange->message->inE->time) / 2;
-	timoy= ((double) ackedMessage->outE->time + (double)
-		exchange->message->inE->time) / 2;
+	dji= ((double) ackedMessage->inE->cpuTime - (double) ackedMessage->outE->cpuTime
+		+ (double) exchange->message->outE->cpuTime - (double)
+		exchange->message->inE->cpuTime) / 2;
+	eji= fabs((double) ackedMessage->inE->cpuTime - (double)
+		ackedMessage->outE->cpuTime - (double) exchange->message->outE->cpuTime +
+		(double) exchange->message->inE->cpuTime) / 2;
+	timoy= ((double) ackedMessage->outE->cpuTime + (double)
+		exchange->message->inE->cpuTime) / 2;
 	ni= ackedMessage->outE->traceNum;
 	nj= ackedMessage->inE->traceNum;
 	fit= &analysisData->fitArray[nj][ni];
