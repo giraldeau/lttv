@@ -3457,6 +3457,9 @@ powerpc64, s390, sparc, sparc64.<br>
 0.160<br>
 0.161<br>
 0.162<br>
+0.163<br>
+0.164<br>
+0.165<br>
 </td>
 <td style="vertical-align: top;">
 0.65<br>
@@ -3589,6 +3592,10 @@ ltt-control 0.72 adds support for network synchronization markers.<br>
 LTTng 0.164 relicenses most tracer C files and headers, as well as immediate
 values C files to dual LGPL v2.1 / GPL v2 license, and most immediate values
 headers to dual BSD / GPL v2 license (phase 1).<br>
+LTTng 0.165 does a large refactoring/cleanup. It relicenses all the missing
+LTTng files that can be shared with the UST tracer. All code imported from
+relay.c is now in ltt-relay-splice.c, which is kept under the GPL license (and
+only useful within the kernel anyway).<br>
 </td>
 <td style="vertical-align: top;">
 </td>
