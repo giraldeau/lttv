@@ -7,7 +7,8 @@ unittest_SOURCES = \
 	unittest.c\
 	data_structures.c\
 	event_matching_broadcast.c\
+	event_matching_distributor.c\
 	event_matching_tcp.c\
-	event_analysis_linreg.c\
 	event_analysis_chull.c\
-	event_analysis_eval.c
+	event_analysis_eval.c\
+	event_analysis_linreg.c

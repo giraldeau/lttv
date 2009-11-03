@@ -303,14 +303,8 @@ void setupSyncChain(LttvTracesetContext* const traceSetContext)
 		syncState->graphs= NULL;
 	}
 
-	syncState->processingData= NULL;
-	result= g_queue_find_custom(&processingModules, "LTTV-standard",
-		&gcfCompareProcessing);
-	syncState->processingModule= (ProcessingModule*) result->data;
-
 	tracesetChainState->graphsStream= NULL;
-	if (syncState->graphs &&
-		syncState->processingModule->writeProcessingGraphsPlots != NULL)
+	if (syncState->graphs)
 	{
 		char* cwd;
 		int graphsFp;
@@ -338,18 +332,22 @@ void setupSyncChain(LttvTracesetContext* const traceSetContext)
 		free(cwd);
 	}
 
-	syncState->matchingData= NULL;
-	result= g_queue_find_custom(&matchingModules, "broadcast", &gcfCompareMatching);
-	syncState->matchingModule= (MatchingModule*) result->data;
-
 	syncState->analysisData= NULL;
 	result= g_queue_find_custom(&analysisModules, "eval",
 		&gcfCompareAnalysis);
 	syncState->analysisModule= (AnalysisModule*) result->data;
-
-	syncState->processingModule->initProcessing(syncState, traceSetContext);
-	syncState->matchingModule->initMatching(syncState);
 	syncState->analysisModule->initAnalysis(syncState);
+
+	syncState->matchingData= NULL;
+	result= g_queue_find_custom(&matchingModules, "broadcast", &gcfCompareMatching);
+	syncState->matchingModule= (MatchingModule*) result->data;
+	syncState->matchingModule->initMatching(syncState);
+
+	syncState->processingData= NULL;
+	result= g_queue_find_custom(&processingModules, "LTTV-standard",
+		&gcfCompareProcessing);
+	syncState->processingModule= (ProcessingModule*) result->data;
+	syncState->processingModule->initProcessing(syncState, traceSetContext);
 }
 
 

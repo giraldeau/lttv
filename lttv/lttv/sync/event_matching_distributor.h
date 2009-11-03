@@ -16,45 +16,19 @@
  * MA 02111-1307, USA.
  */
 
-#ifndef EVENT_ANALYSIS_EVAL_H
-#define EVENT_ANALYSIS_EVAL_H
+#ifndef EVENT_MATCHING_DISTRIBUTOR_H
+#define EVENT_MATCHING_DISTRIBUTOR_H
 
 #include <glib.h>
 
 #include "data_structures.h"
+#include "sync_chain.h"
 
-
-struct RttKey
-{
-	uint32_t saddr, daddr;
-};
 
 typedef struct
 {
-	unsigned int inversionNb,
-		tooFastNb,
-		noRTTInfoNb,
-		total;
-} MessageStats;
-
-typedef struct
-{
-	double broadcastDiffSum;
-	unsigned int broadcastNb;
-
-	MessageStats** messageStats;
-	/* double* exchangeRtt[RttKey]
-	 * For this table, saddr and daddr are swapped as necessary such that
-	 * saddr < daddr */
-	GHashTable* exchangeRtt;
-} AnalysisStatsEval;
-
-typedef struct
-{
-	// double* rttInfo[RttKey]
-	GHashTable* rttInfo;
-
-	AnalysisStatsEval* stats;
-} AnalysisDataEval;
+	// SyncState* distributedModules[]
+	GQueue* distributedModules;
+} MatchingDataDistributor;
 
 #endif

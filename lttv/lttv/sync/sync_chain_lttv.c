@@ -206,24 +206,8 @@ void syncTraceset(LttvTracesetContext* const traceSetContext)
 		syncState->graphs= NULL;
 	}
 
-	// Identify and initialize processing module
-	syncState->processingData= NULL;
-	if (optionSyncNull.present)
-	{
-		result= g_queue_find_custom(&processingModules, "LTTV-null",
-			&gcfCompareProcessing);
-	}
-	else
-	{
-		result= g_queue_find_custom(&processingModules, "LTTV-standard",
-			&gcfCompareProcessing);
-	}
-	g_assert(result != NULL);
-	syncState->processingModule= (ProcessingModule*) result->data;
-
 	graphsStream= NULL;
-	if (syncState->graphs &&
-		syncState->processingModule->writeProcessingGraphsPlots != NULL)
+	if (syncState->graphs)
 	{
 		char* cwd;
 		int graphsFp;
@@ -251,11 +235,27 @@ void syncTraceset(LttvTracesetContext* const traceSetContext)
 		free(cwd);
 	}
 
-	// Identify matching and analysis modules
+	// Identify and initialize modules
+	syncState->processingData= NULL;
+	if (optionSyncNull.present)
+	{
+		result= g_queue_find_custom(&processingModules, "LTTV-null",
+			&gcfCompareProcessing);
+	}
+	else
+	{
+		result= g_queue_find_custom(&processingModules, "LTTV-standard",
+			&gcfCompareProcessing);
+	}
+	g_assert(result != NULL);
+	syncState->processingModule= (ProcessingModule*) result->data;
+
+	syncState->matchingData= NULL;
 	result= g_queue_find_custom(&matchingModules, "TCP", &gcfCompareMatching);
 	g_assert(result != NULL);
 	syncState->matchingModule= (MatchingModule*) result->data;
 
+	syncState->analysisData= NULL;
 	result= g_queue_find_custom(&analysisModules, optionSyncAnalysis.arg,
 		&gcfCompareAnalysis);
 	if (result != NULL)
@@ -267,16 +267,12 @@ void syncTraceset(LttvTracesetContext* const traceSetContext)
 		g_error("Analysis module '%s' not found", optionSyncAnalysis.arg);
 	}
 
-	syncState->processingModule->initProcessing(syncState, traceSetContext);
-
-	syncState->matchingData= NULL;
-	syncState->analysisData= NULL;
-
 	if (!optionSyncNull.present)
 	{
-		syncState->matchingModule->initMatching(syncState);
 		syncState->analysisModule->initAnalysis(syncState);
+		syncState->matchingModule->initMatching(syncState);
 	}
+	syncState->processingModule->initProcessing(syncState, traceSetContext);
 
 	// Process traceset
 	lttv_process_traceset_seek_time(traceSetContext, ltt_time_zero);

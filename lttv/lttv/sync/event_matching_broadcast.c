@@ -198,13 +198,14 @@ static void matchEventBroadcast(SyncState* const syncState, Event* const event)
 				matchingData->stats->totReceive++;
 			}
 
-			// s'il est déjà dans pendingBroadcasts
-			//   l'ajouter à son broadcast
-			//   s'il y a traceNb éléments
-			//     le retirer de pending et le livrer à analysis
-			//     détruire le broadcast (et ses éléments)
-			// sinon
-			//   créer un broadcast et l'ajouter à pending
+			/* if event in pendingBroadcasts:
+			 *   add it to its broadcast
+			 *   if this broadcast has traceNb events:
+			 *     remove it from pending and deliver it to analysis
+			 *     destroy the broadcast (and its elements)
+			 * else:
+			 *   create a broadcast and add it to pending
+			 */
 
 			result=
 				g_hash_table_lookup_extended(matchingData->pendingBroadcasts,

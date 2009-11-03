@@ -99,15 +99,12 @@ bool isAcking(const Message* const ackSegment, const Message* const
  * Convert an IP address from 32 bit form to dotted quad
  *
  * Args:
- *   str:          A preallocated string of length >= 17
+ *   str:          A preallocated string of length >= 16
  *   addr:         Address
  */
 void convertIP(char* const str, const uint32_t addr)
 {
-	struct in_addr iaddr;
-
-	iaddr.s_addr= htonl(addr);
-	strcpy(str, inet_ntoa(iaddr));
+	strcpy(str, inet_ntoa((struct in_addr) {.s_addr= addr}));
 }
 
 
@@ -116,7 +113,7 @@ void convertIP(char* const str, const uint32_t addr)
  */
 void printTCPSegment(const Message* const segment)
 {
-	char saddr[17], daddr[17];
+	char saddr[16], daddr[16];
 	SegmentKey* segmentKey;
 
 	g_assert(segment->inE->type == TCP);
@@ -328,6 +325,7 @@ void destroyTCPEvent(Event* const event)
 	event->event.tcpEvent= NULL;
 	destroyEvent(event);
 }
+
 
 /*
  * Free the memory used by a base Event
@@ -545,7 +543,7 @@ void gdnDestroyBroadcast(gpointer data)
 void destroyBroadcast(Broadcast* const broadcast)
 {
 	g_queue_foreach(broadcast->events, &gfDestroyEvent, NULL);
-	g_queue_clear(broadcast->events);
+	g_queue_free(broadcast->events);
 	free(broadcast);
 }
 
@@ -576,5 +574,69 @@ void gfDestroyEvent(gpointer data, gpointer user_data)
  */
 double wallTimeSub(const WallTime const* tA, const WallTime const* tB)
 {
-	return tA->seconds - tB->seconds + (tA->nanosec - tB->nanosec) / 1e9;
+	return (double) tA->seconds - tB->seconds + ((double) tA->nanosec - tB->nanosec) / 1e9;
+}
+
+
+/*
+ * Allocate and copy a base event
+ *
+ * Args:
+ *   newEvent:     new event, pointer will be updated
+ *   event:        event to copy
+ */
+void copyEvent(const Event* const event, Event** const newEvent)
+{
+	g_assert(event->event.tcpEvent == NULL);
+
+	*newEvent= malloc(sizeof(Event));
+	memcpy(*newEvent, event, sizeof(Event));
+}
+
+
+/*
+ * Allocate and copy a TCP event
+ *
+ * Args:
+ *   newEvent:     new event, pointer will be updated
+ *   event:        event to copy
+ */
+void copyTCPEvent(const Event* const event, Event** const newEvent)
+{
+	g_assert(event->type == TCP);
+
+	*newEvent= malloc(sizeof(Event));
+	memcpy(*newEvent, event, sizeof(Event));
+
+	(*newEvent)->event.tcpEvent= malloc(sizeof(TCPEvent));
+	memcpy((*newEvent)->event.tcpEvent, event->event.tcpEvent,
+		sizeof(TCPEvent));
+
+	(*newEvent)->event.tcpEvent->segmentKey= malloc(sizeof(SegmentKey));
+	memcpy((*newEvent)->event.tcpEvent->segmentKey,
+		event->event.tcpEvent->segmentKey, sizeof(SegmentKey));
+}
+
+
+/*
+ * Allocate and copy a UDP event
+ *
+ * Args:
+ *   newEvent:     new event, pointer will be updated
+ *   event:        event to copy
+ */
+void copyUDPEvent(const Event* const event, Event** const newEvent)
+{
+	g_assert(event->type == UDP);
+
+	*newEvent= malloc(sizeof(Event));
+	memcpy(*newEvent, event, sizeof(Event));
+
+	(*newEvent)->event.udpEvent= malloc(sizeof(UDPEvent));
+	memcpy((*newEvent)->event.udpEvent, event->event.udpEvent,
+		sizeof(UDPEvent));
+
+	(*newEvent)->event.udpEvent->datagramKey= malloc(sizeof(DatagramKey));
+	memcpy((*newEvent)->event.udpEvent->datagramKey,
+		event->event.udpEvent->datagramKey, sizeof(DatagramKey));
 }

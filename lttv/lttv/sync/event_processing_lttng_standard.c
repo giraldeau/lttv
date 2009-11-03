@@ -425,16 +425,17 @@ static gboolean processEventLTTVStandard(void* hookData, void* callData)
 		outE->cpuTime= tsc;
 		outE->wallTime= wTime;
 		outE->type= TCP;
+		outE->copy= &copyTCPEvent;
 		outE->destroy= &destroyTCPEvent;
 		outE->event.tcpEvent= malloc(sizeof(TCPEvent));
 		outE->event.tcpEvent->direction= OUT;
 		outE->event.tcpEvent->segmentKey= malloc(sizeof(SegmentKey));
 		outE->event.tcpEvent->segmentKey->connectionKey.saddr=
-			ltt_event_get_unsigned(event, lttv_trace_get_hook_field(traceHook,
-					3));
+			htonl(ltt_event_get_unsigned(event,
+					lttv_trace_get_hook_field(traceHook, 3)));
 		outE->event.tcpEvent->segmentKey->connectionKey.daddr=
-			ltt_event_get_unsigned(event, lttv_trace_get_hook_field(traceHook,
-					4));
+			htonl(ltt_event_get_unsigned(event,
+					lttv_trace_get_hook_field(traceHook, 4)));
 		outE->event.tcpEvent->segmentKey->tot_len=
 			ltt_event_get_unsigned(event, lttv_trace_get_hook_field(traceHook,
 					5));
@@ -493,6 +494,7 @@ static gboolean processEventLTTVStandard(void* hookData, void* callData)
 			inE->cpuTime= tsc;
 			inE->wallTime= wTime;
 			inE->event.tcpEvent= NULL;
+			inE->copy= &copyEvent;
 			inE->destroy= &destroyEvent;
 
 			skb= (void*) (long) ltt_event_get_long_unsigned(event,
@@ -535,15 +537,16 @@ static gboolean processEventLTTVStandard(void* hookData, void* callData)
 
 			inE->type= TCP;
 			inE->event.tcpEvent= malloc(sizeof(TCPEvent));
+			inE->copy= &copyTCPEvent;
 			inE->destroy= &destroyTCPEvent;
 			inE->event.tcpEvent->direction= IN;
 			inE->event.tcpEvent->segmentKey= malloc(sizeof(SegmentKey));
 			inE->event.tcpEvent->segmentKey->connectionKey.saddr=
-				ltt_event_get_unsigned(event,
-					lttv_trace_get_hook_field(traceHook, 1));
+				htonl(ltt_event_get_unsigned(event,
+						lttv_trace_get_hook_field(traceHook, 1)));
 			inE->event.tcpEvent->segmentKey->connectionKey.daddr=
-				ltt_event_get_unsigned(event,
-					lttv_trace_get_hook_field(traceHook, 2));
+				htonl(ltt_event_get_unsigned(event,
+						lttv_trace_get_hook_field(traceHook, 2)));
 			inE->event.tcpEvent->segmentKey->tot_len=
 				ltt_event_get_unsigned(event,
 					lttv_trace_get_hook_field(traceHook, 3));
@@ -613,15 +616,16 @@ static gboolean processEventLTTVStandard(void* hookData, void* callData)
 
 			inE->type= UDP;
 			inE->event.udpEvent= malloc(sizeof(UDPEvent));
+			inE->copy= &copyUDPEvent;
 			inE->destroy= &destroyUDPEvent;
 			inE->event.udpEvent->direction= IN;
 			inE->event.udpEvent->datagramKey= malloc(sizeof(DatagramKey));
 			inE->event.udpEvent->datagramKey->saddr=
-				ltt_event_get_unsigned(event,
-					lttv_trace_get_hook_field(traceHook, 1));
+				htonl(ltt_event_get_unsigned(event,
+					lttv_trace_get_hook_field(traceHook, 1)));
 			inE->event.udpEvent->datagramKey->daddr=
-				ltt_event_get_unsigned(event,
-					lttv_trace_get_hook_field(traceHook, 2));
+				htonl(ltt_event_get_unsigned(event,
+					lttv_trace_get_hook_field(traceHook, 2)));
 			inE->event.udpEvent->unicast= ltt_event_get_unsigned(event,
 				lttv_trace_get_hook_field(traceHook, 3)) == 0 ? false : true;
 			inE->event.udpEvent->datagramKey->ulen=

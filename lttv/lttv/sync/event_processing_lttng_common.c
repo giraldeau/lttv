@@ -147,12 +147,12 @@ void registerHooks(GArray* hookListList, LttvTracesetContext* const
 			guint old_len;
 			bool registerHook;
 
-			registerHook= true;
+			registerHook= false;
 			for (k= 0; k < TYPE_COUNT; k++)
 			{
-				if (eventTypes[k] && eventHookInfoList[j].eventTypes[k] == false)
+				if (eventTypes[k] && eventHookInfoList[j].eventTypes[k])
 				{
-					registerHook= false;
+					registerHook= true;
 					break;
 				}
 			}

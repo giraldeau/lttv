@@ -100,6 +100,7 @@ typedef struct _Event
 		UDPEvent* udpEvent;
 	} event;
 
+	void (*copy)(const struct _Event* const event, struct _Event** const newEvent);
 	void (*destroy)(struct _Event* const event);
 } Event;
 
@@ -149,6 +150,9 @@ void gdnDestroyDatagramKey(gpointer data);
 
 // Event-related functions
 void gdnDestroyEvent(gpointer data);
+void copyEvent(const Event* const event, Event** const newEvent);
+void copyTCPEvent(const Event* const event, Event** const newEvent);
+void copyUDPEvent(const Event* const event, Event** const newEvent);
 void destroyEvent(Event* const event);
 void destroyTCPEvent(Event* const event);
 void destroyUDPEvent(Event* const event);

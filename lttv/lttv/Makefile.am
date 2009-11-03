@@ -60,11 +60,12 @@ lttv_real_SOURCES = \
 	sync/event_processing_lttng_common.c\
 	sync/event_processing_lttng_standard.c\
 	sync/event_processing_lttng_null.c\
-	sync/event_matching_tcp.c\
 	sync/event_matching_broadcast.c\
-	sync/event_analysis_linreg.c\
+	sync/event_matching_distributor.c\
+	sync/event_matching_tcp.c\
 	sync/event_analysis_chull.c\
-	sync/event_analysis_eval.c
+	sync/event_analysis_eval.c\
+	sync/event_analysis_linreg.c
 
 lttvinclude_HEADERS = \
 	attribute.h\

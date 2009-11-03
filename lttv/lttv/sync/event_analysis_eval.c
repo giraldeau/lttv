@@ -17,6 +17,7 @@
  */
 
 #define _GNU_SOURCE
+#define _ISOC99_SOURCE
 
 #ifdef HAVE_CONFIG_H
 #include <config.h>
@@ -62,6 +63,7 @@ static void positionStream(FILE* stream);
 
 static void gfSum(gpointer data, gpointer userData);
 static void gfSumSquares(gpointer data, gpointer userData);
+static void ghfPrintExchangeRtt(gpointer key, gpointer value, gpointer user_data);
 
 
 static AnalysisModule analysisModuleEval= {
@@ -147,6 +149,10 @@ static void initAnalysisEval(SyncState* const syncState)
 			analysisData->stats->messageStats[i]= calloc(syncState->traceNb,
 				sizeof(MessageStats));
 		}
+
+		analysisData->stats->exchangeRtt=
+			g_hash_table_new_full(&ghfRttKeyHash, &gefRttKeyEqual,
+				&gdnDestroyRttKey, &gdnDestroyDouble);
 	}
 }
 
@@ -181,6 +187,9 @@ static void destroyAnalysisEval(SyncState* const syncState)
 			free(analysisData->stats->messageStats[i]);
 		}
 		free(analysisData->stats->messageStats);
+
+		g_hash_table_destroy(analysisData->stats->exchangeRtt);
+
 		free(analysisData->stats);
 	}
 
@@ -202,7 +211,7 @@ static void analyzeMessageEval(SyncState* const syncState, Message* const messag
 {
 	AnalysisDataEval* analysisData;
 	MessageStats* messageStats;
-	double* rttInfo;
+	double* rtt;
 	double tt;
 	struct RttKey rttKey;
 
@@ -223,14 +232,19 @@ static void analyzeMessageEval(SyncState* const syncState, Message* const messag
 		messageStats->inversionNb++;
 	}
 
-	g_assert(message->inE->type == UDP);
-	rttKey.saddr= message->inE->event.udpEvent->datagramKey->saddr;
-	rttKey.daddr= message->inE->event.udpEvent->datagramKey->daddr;
-	rttInfo= g_hash_table_lookup(analysisData->rttInfo, &rttKey);
+	g_assert(message->inE->type == TCP);
+	rttKey.saddr=
+		message->inE->event.tcpEvent->segmentKey->connectionKey.saddr;
+	rttKey.daddr=
+		message->inE->event.tcpEvent->segmentKey->connectionKey.daddr;
+	rtt= g_hash_table_lookup(analysisData->rttInfo, &rttKey);
+	g_debug("rttInfo, looking up (%u, %u)->(%f)", rttKey.saddr,
+		rttKey.daddr, rtt ? *rtt : NAN);
 
-	if (rttInfo)
+	if (rtt)
 	{
-		if (tt < *rttInfo / 2.)
+		g_debug("rttInfo, tt: %f rtt / 2: %f", tt, *rtt / 2.);
+		if (tt < *rtt / 2.)
 		{
 			messageStats->tooFastNb++;
 		}
@@ -253,9 +267,44 @@ static void analyzeMessageEval(SyncState* const syncState, Message* const messag
  */
 static void analyzeExchangeEval(SyncState* const syncState, Exchange* const exchange)
 {
-	AnalysisDataEval* analysisData;
+	AnalysisDataEval* analysisData= syncState->analysisData;
+	Message* m1= g_queue_peek_tail(exchange->acks);
+	Message* m2= exchange->message;
+	struct RttKey* rttKey;
+	double* rtt, * exchangeRtt;
 
-	analysisData= (AnalysisDataEval*) syncState->analysisData;
+	if (!syncState->stats)
+	{
+		return;
+	}
+
+	// (T2 - T1) - (T3 - T4)
+	rtt= malloc(sizeof(double));
+	*rtt= wallTimeSub(&m1->inE->wallTime, &m1->outE->wallTime) -
+		wallTimeSub(&m2->outE->wallTime, &m2->inE->wallTime);
+
+	g_assert(m1->inE->type == TCP);
+	rttKey= malloc(sizeof(struct RttKey));
+	rttKey->saddr=
+		MIN(m1->inE->event.tcpEvent->segmentKey->connectionKey.saddr,
+			m1->inE->event.tcpEvent->segmentKey->connectionKey.daddr);
+	rttKey->daddr=
+		MAX(m1->inE->event.tcpEvent->segmentKey->connectionKey.saddr,
+			m1->inE->event.tcpEvent->segmentKey->connectionKey.daddr);
+	exchangeRtt= g_hash_table_lookup(analysisData->stats->exchangeRtt,
+		rttKey);
+
+	if (exchangeRtt)
+	{
+		if (*rtt < *exchangeRtt)
+		{
+			g_hash_table_replace(analysisData->stats->exchangeRtt, rttKey, rtt);
+		}
+	}
+	else
+	{
+		g_hash_table_insert(analysisData->stats->exchangeRtt, rttKey, rtt);
+	}
 }
 
 
@@ -305,7 +354,7 @@ static void analyzeBroadcastEval(SyncState* const syncState, Broadcast* const br
  *   syncState     container for synchronization data.
  *
  * Returns:
- *   Factors[traceNb] synchronization factors for each trace
+ *   Factors[traceNb] identity factors for each trace
  */
 static GArray* finalizeAnalysisEval(SyncState* const syncState)
 {
@@ -375,6 +424,58 @@ static void printAnalysisStatsEval(SyncState* const syncState)
 				messageStats->noRTTInfoNb, messageStats->total);
 		}
 	}
+
+	printf("\tRound-trip times:\n"
+		"\t\tHost pair                          RTT from exchanges  RTTs from file (ms)\n");
+	g_hash_table_foreach(analysisData->stats->exchangeRtt,
+		&ghfPrintExchangeRtt, analysisData->rttInfo);
+}
+
+
+/*
+ * A GHFunc for g_hash_table_foreach()
+ *
+ * Args:
+ *   key:          RttKey* where saddr < daddr
+ *   value:        double*, RTT estimated from exchanges
+ *   user_data     GHashTable* rttInfo
+ */
+static void ghfPrintExchangeRtt(gpointer key, gpointer value, gpointer user_data)
+{
+	char addr1[16], addr2[16];
+	struct RttKey* rttKey1= key;
+	struct RttKey rttKey2= {rttKey1->daddr, rttKey1->saddr};
+	double* fileRtt1, *fileRtt2;
+	GHashTable* rttInfo= user_data;
+
+	convertIP(addr1, rttKey1->saddr);
+	convertIP(addr2, rttKey1->daddr);
+
+	fileRtt1= g_hash_table_lookup(rttInfo, rttKey1);
+	fileRtt2= g_hash_table_lookup(rttInfo, &rttKey2);
+
+	printf("\t\t(%15s, %-15s) %-18.3f  ", addr1, addr2, *(double*) value * 1e3);
+
+	if (fileRtt1 || fileRtt2)
+	{
+		if (fileRtt1)
+		{
+			printf("%.3f", *fileRtt1 * 1e3);
+		}
+		if (fileRtt1 && fileRtt2)
+		{
+			printf(", ");
+		}
+		if (fileRtt2)
+		{
+			printf("%.3f", *fileRtt2 * 1e3);
+		}
+	}
+	else
+	{
+		printf("-");
+	}
+	printf("\n");
 }
 
 
@@ -520,6 +621,8 @@ static void readRttInfo(GHashTable* rttInfo, FILE* rttStream)
 		}
 
 		*rtt/= 1e3;
+		g_debug("rttInfo, Inserting (%u, %u)->(%f)", rttKey->saddr,
+			rttKey->daddr, *rtt);
 		g_hash_table_insert(rttInfo, rttKey, rtt);
 
 		positionStream(rttStream);
