@@ -47,8 +47,6 @@ static void destroyProcessingLTTVStandard(SyncState* const syncState);
 
 static void finalizeProcessingLTTVStandard(SyncState* const syncState);
 static void printProcessingStatsLTTVStandard(SyncState* const syncState);
-static void writeProcessingGraphsPlotsLTTVStandard(FILE* stream, SyncState*
-	const syncState, const unsigned int i, const unsigned int j);
 static void writeProcessingGraphsOptionsLTTVStandard(FILE* stream, SyncState*
 	const syncState, const unsigned int i, const unsigned int j);
 
@@ -64,7 +62,7 @@ static ProcessingModule processingModuleLTTVStandard = {
 	.destroyProcessing= &destroyProcessingLTTVStandard,
 	.finalizeProcessing= &finalizeProcessingLTTVStandard,
 	.printProcessingStats= &printProcessingStatsLTTVStandard,
-	.writeProcessingGraphsPlots= &writeProcessingGraphsPlotsLTTVStandard,
+	.writeProcessingGraphsPlots= NULL,
 	.writeProcessingGraphsOptions= &writeProcessingGraphsOptionsLTTVStandard,
 };
 
@@ -224,15 +222,14 @@ static void finalizeProcessingLTTVStandard(SyncState* const syncState)
 
 
 /*
- * Print statistics related to processing and downstream modules. Must be
- * called after finalizeProcessing.
+ * Print statistics related to processing Must be called after
+ * finalizeProcessing.
  *
  * Args:
  *   syncState     container for synchronization data.
  */
 static void printProcessingStatsLTTVStandard(SyncState* const syncState)
 {
-	unsigned int i;
 	ProcessingDataLTTVStandard* processingData;
 
 	if (!syncState->stats)
@@ -260,24 +257,6 @@ static void printProcessingStatsLTTVStandard(SyncState* const syncState)
 	{
 		printf("\tsent packets that are TCP: %d\n",
 			processingData->stats->totOutE);
-	}
-
-	if (syncState->matchingModule->printMatchingStats != NULL)
-	{
-		syncState->matchingModule->printMatchingStats(syncState);
-	}
-
-	printf("Resulting synchronization factors:\n");
-	for (i= 0; i < syncState->traceNb; i++)
-	{
-		LttTrace* t;
-
-		t= processingData->traceSetContext->traces[i]->t;
-
-		printf("\ttrace %u drift= %g offset= %g (%f) start time= %ld.%09ld\n",
-			i, t->drift, t->offset, (double) tsc_to_uint64(t->freq_scale,
-				t->start_freq, t->offset) / NANOSECONDS_PER_SECOND,
-			t->start_time_from_tsc.tv_sec, t->start_time_from_tsc.tv_nsec);
 	}
 }
 
@@ -670,29 +649,7 @@ static gboolean processEventLTTVStandard(void* hookData, void* callData)
 
 
 /*
- * Write the processing-specific graph lines in the gnuplot script (none at
- * the moment). Call the downstream module's graph function.
- *
- * Args:
- *   stream:       stream where to write the data
- *   syncState:    container for synchronization data
- *   i:            first trace number
- *   j:            second trace number, garanteed to be larger than i
- */
-static void writeProcessingGraphsPlotsLTTVStandard(FILE* stream, SyncState*
-	const syncState, const unsigned int i, const unsigned int j)
-{
-	if (syncState->matchingModule->writeMatchingGraphsPlots != NULL)
-	{
-		syncState->matchingModule->writeMatchingGraphsPlots(stream, syncState,
-			i, j);
-	}
-}
-
-
-/*
- * Write the processing-specific options in the gnuplot script. Call the
- * downstream module's options function.
+ * Write the processing-specific options in the gnuplot script.
  *
  * Args:
  *   stream:       stream where to write the data
@@ -712,6 +669,11 @@ static void writeProcessingGraphsOptionsLTTVStandard(FILE* stream, SyncState*
 	traceJ= processingData->traceSetContext->traces[j]->t;
 
 	fprintf(stream,
+        "set key inside right bottom\n"
+        "set xlabel \"Clock %1$u\"\n"
+        "set xtics nomirror\n"
+        "set ylabel \"Clock %3$u\"\n"
+        "set ytics nomirror\n"
 		"set x2label \"Clock %1$d (s)\"\n"
 		"set x2range [GPVAL_X_MIN / %2$.1f : GPVAL_X_MAX / %2$.1f]\n"
 		"set x2tics\n"
@@ -719,10 +681,4 @@ static void writeProcessingGraphsOptionsLTTVStandard(FILE* stream, SyncState*
 		"set y2range [GPVAL_Y_MIN / %4$.1f : GPVAL_Y_MAX / %4$.1f]\n"
 		"set y2tics\n", i, (double) traceI->start_freq / traceI->freq_scale,
 		j, (double) traceJ->start_freq / traceJ->freq_scale);
-
-	if (syncState->matchingModule->writeMatchingGraphsOptions != NULL)
-	{
-		syncState->matchingModule->writeMatchingGraphsOptions(stream,
-			syncState, i, j);
-	}
 }

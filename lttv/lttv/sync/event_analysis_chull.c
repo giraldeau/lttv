@@ -510,7 +510,7 @@ static GArray* finalizeAnalysisCHull(SyncState* const syncState)
 
 	analysisData= (AnalysisDataCHull*) syncState->analysisData;
 
-	if (syncState->graphs)
+	if (syncState->graphs && analysisData->graphsData->hullPoints != NULL)
 	{
 		writeGraphFiles(syncState);
 		closeGraphFiles(syncState);

@@ -45,8 +45,6 @@ static GArray* finalizeMatchingTCP(SyncState* const syncState);
 static void printMatchingStatsTCP(SyncState* const syncState);
 static void writeMatchingGraphsPlotsTCP(FILE* stream, SyncState* const
 	syncState, const unsigned int i, const unsigned int j);
-static void writeMatchingGraphsOptionsTCP(FILE* stream, SyncState* const
-	syncState, const unsigned int i, const unsigned int j);
 
 // Functions specific to this module
 static void registerMatchingTCP() __attribute__((constructor (101)));
@@ -77,7 +75,7 @@ static MatchingModule matchingModuleTCP = {
 	.finalizeMatching= &finalizeMatchingTCP,
 	.printMatchingStats= &printMatchingStatsTCP,
 	.writeMatchingGraphsPlots= &writeMatchingGraphsPlotsTCP,
-	.writeMatchingGraphsOptions= &writeMatchingGraphsOptionsTCP,
+	.writeMatchingGraphsOptions= NULL,
 };
 
 
@@ -275,8 +273,8 @@ static GArray* finalizeMatchingTCP(SyncState* const syncState)
 
 
 /*
- * Print statistics related to matching and downstream modules. Must be
- * called after finalizeMatching.
+ * Print statistics related to matching. Must be called after
+ * finalizeMatching.
  *
  * Args:
  *   syncState     container for synchronization data.
@@ -317,11 +315,6 @@ static void printMatchingStatsTCP(SyncState* const syncState)
 			matchingData->stats->totExchangeEffective);
 		printf("\ttotal synchronization exchanges: %u\n",
 			matchingData->stats->totExchangeSync);
-	}
-
-	if (syncState->analysisModule->printAnalysisStats != NULL)
-	{
-		syncState->analysisModule->printAnalysisStats(syncState);
 	}
 }
 
@@ -702,8 +695,7 @@ static void closeGraphDataFiles(SyncState* const syncState)
 
 
 /*
- * Write the matching-specific graph lines in the gnuplot script. Call the
- * downstream module's graph function.
+ * Write the matching-specific graph lines in the gnuplot script.
  *
  * Args:
  *   stream:       stream where to write the data
@@ -721,31 +713,4 @@ static void writeMatchingGraphsPlotsTCP(FILE* stream, SyncState* const
 		"\t\"matching_tcp-%2$03d_to_%1$03d.data\" "
 			"title \"Received messages\" with points linetype 4 "
 			"linecolor rgb \"#6699cc\" pointtype 11 pointsize 2, \\\n", i, j);
-
-	if (syncState->analysisModule->writeAnalysisGraphsPlots != NULL)
-	{
-		syncState->analysisModule->writeAnalysisGraphsPlots(stream, syncState,
-			i, j);
-	}
-}
-
-
-/*
- * Write the matching-specific options in the gnuplot script (none). Call the
- * downstream module's options function.
- *
- * Args:
- *   stream:       stream where to write the data
- *   syncState:    container for synchronization data
- *   i:            first trace number
- *   j:            second trace number, garanteed to be larger than i
- */
-static void writeMatchingGraphsOptionsTCP(FILE* stream, SyncState* const
-	syncState, const unsigned int i, const unsigned int j)
-{
-	if (syncState->analysisModule->writeAnalysisGraphsOptions != NULL)
-	{
-		syncState->analysisModule->writeAnalysisGraphsOptions(stream,
-			syncState, i, j);
-	}
 }

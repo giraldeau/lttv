@@ -124,7 +124,7 @@ static void init()
 		"synchronization points", "none", LTTV_OPT_NONE, &optionEvalGraphs,
 		NULL, NULL);
 
-	retval= snprintf(graphsDir, sizeof(graphsDir), "graphs-%d", getpid());
+	retval= snprintf(graphsDir, sizeof(graphsDir), "eval-graphs-%d", getpid());
 	if (retval > sizeof(graphsDir) - 1)
 	{
 		graphsDir[sizeof(graphsDir) - 1]= '\0';
@@ -339,7 +339,8 @@ void setupSyncChain(LttvTracesetContext* const traceSetContext)
 	syncState->analysisModule->initAnalysis(syncState);
 
 	syncState->matchingData= NULL;
-	result= g_queue_find_custom(&matchingModules, "broadcast", &gcfCompareMatching);
+	result= g_queue_find_custom(&matchingModules, "distributor",
+		&gcfCompareMatching);
 	syncState->matchingModule= (MatchingModule*) result->data;
 	syncState->matchingModule->initMatching(syncState);
 
@@ -363,6 +364,7 @@ void teardownSyncChain(LttvTracesetContext* const traceSetContext)
 	SyncState* syncState;
 	struct timeval endTime;
 	struct rusage endUsage;
+	unsigned int i, j;
 	int retval;
 
 	tracesetChainState= g_hash_table_lookup(tracesetChainStates, traceSetContext);
@@ -373,8 +375,6 @@ void teardownSyncChain(LttvTracesetContext* const traceSetContext)
 	// Write graphs file
 	if (tracesetChainState->graphsStream != NULL)
 	{
-		unsigned int i, j;
-
 		fprintf(tracesetChainState->graphsStream,
 			"#!/usr/bin/gnuplot\n\n"
 			"set terminal postscript eps color size 8in,6in\n");
@@ -384,19 +384,34 @@ void teardownSyncChain(LttvTracesetContext* const traceSetContext)
 		{
 			for (j= i + 1; j < syncState->traceNb; j++)
 			{
-				long pos;
+				long pos1, pos2, trunc;
 
 				fprintf(tracesetChainState->graphsStream,
 					"\nset output \"%03d-%03d.eps\"\n"
 					"plot \\\n", i, j);
+				pos1= ftell(tracesetChainState->graphsStream);
 
-				syncState->processingModule->writeProcessingGraphsPlots(tracesetChainState->graphsStream,
-					syncState, i, j);
+				if (syncState->analysisModule->writeAnalysisGraphsPlots)
+				{
+					syncState->analysisModule->writeAnalysisGraphsPlots(tracesetChainState->graphsStream,
+						syncState, i, j);
+				}
 
-				// Remove the ", \\\n" from the last graph plot line
 				fflush(tracesetChainState->graphsStream);
-				pos= ftell(tracesetChainState->graphsStream);
-				if (ftruncate(fileno(tracesetChainState->graphsStream), pos - 4) == -1)
+				pos2= ftell(tracesetChainState->graphsStream);
+				if (pos1 != pos2)
+				{
+					// Remove the ", \\\n" from the last graph plot line
+					trunc= pos2 - 4;
+				}
+				else
+				{
+					// Remove the "plot \\\n" line to avoid creating an invalid
+					// gnuplot script
+					trunc= pos2 - 7;
+				}
+
+				if (ftruncate(fileno(tracesetChainState->graphsStream), trunc) == -1)
 				{
 					g_error(strerror(errno));
 				}
@@ -407,18 +422,18 @@ void teardownSyncChain(LttvTracesetContext* const traceSetContext)
 
 				fprintf(tracesetChainState->graphsStream,
 					"\nset output \"%1$03d-%2$03d.eps\"\n"
-					"set key inside right bottom\n"
-					"set title \"\"\n"
-					"set xlabel \"Clock %1$u\"\n"
-					"set xtics nomirror\n"
-					"set ylabel \"Clock %2$u\"\n"
-					"set ytics nomirror\n", i, j);
+					"set title \"\"\n", i, j);
 
-				syncState->processingModule->writeProcessingGraphsOptions(tracesetChainState->graphsStream,
-					syncState, i, j);
+				if (syncState->analysisModule->writeAnalysisGraphsOptions)
+				{
+					syncState->analysisModule->writeAnalysisGraphsOptions(tracesetChainState->graphsStream,
+						syncState, i, j);
+				}
 
-				fprintf(tracesetChainState->graphsStream,
-					"replot\n");
+				if (pos1 != pos2)
+				{
+					fprintf(tracesetChainState->graphsStream, "replot\n");
+				}
 			}
 		}
 
@@ -432,6 +447,27 @@ void teardownSyncChain(LttvTracesetContext* const traceSetContext)
 	{
 		syncState->processingModule->printProcessingStats(syncState);
 	}
+	if (syncState->matchingModule->printMatchingStats != NULL)
+	{
+		syncState->matchingModule->printMatchingStats(syncState);
+	}
+	if (syncState->analysisModule->printAnalysisStats != NULL)
+	{
+		syncState->analysisModule->printAnalysisStats(syncState);
+	}
+
+	printf("Resulting synchronization factors:\n");
+    for (i= 0; i < syncState->traceNb; i++)
+    {
+        LttTrace* t;
+
+        t= traceSetContext->traces[i]->t;
+
+        printf("\ttrace %u drift= %g offset= %g (%f) start time= %ld.%09ld\n",
+            i, t->drift, t->offset, (double) tsc_to_uint64(t->freq_scale,
+                t->start_freq, t->offset) / NANOSECONDS_PER_SECOND,
+            t->start_time_from_tsc.tv_sec, t->start_time_from_tsc.tv_nsec);
+    }
 
 	syncState->processingModule->destroyProcessing(syncState);
 	if (syncState->matchingModule != NULL)

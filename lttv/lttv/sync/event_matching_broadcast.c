@@ -286,8 +286,8 @@ static GArray* finalizeMatchingBroadcast(SyncState* const syncState)
 
 
 /*
- * Print statistics related to matching and downstream modules. Must be
- * called after finalizeMatching.
+ * Print statistics related to matching. Must be called after
+ * finalizeMatching.
  *
  * Args:
  *   syncState     container for synchronization data.
@@ -317,10 +317,5 @@ static void printMatchingStatsBroadcast(SyncState* const syncState)
 			(double) (matchingData->stats->totReceive -
 				matchingData->stats->totComplete * syncState->traceNb) /
 			matchingData->stats->totIncomplete);
-	}
-
-	if (syncState->analysisModule->printAnalysisStats != NULL)
-	{
-		syncState->analysisModule->printAnalysisStats(syncState);
 	}
 }
