@@ -51,10 +51,47 @@ typedef struct
 
 typedef struct
 {
+	/* FILE* ttPoints[row][col] where
+	 *   row= outE->traceNum
+	 *   col= inE->traceNum
+	 *
+	 * This array contains file pointers to files where "trip times" (message
+	 * latency) histogram values are outputted. Each trace-pair has two files,
+	 * one for each message direction. The elements on the diagonal are not
+	 * initialized.
+	 */
+	FILE*** ttPoints;
+
+	// uint32_t ttBinsArray[row][col][binNum];
+	// Row and col have the same structure as ttPoints
+	uint32_t*** ttBinsArray;
+	// uint32_t ttBinsTotal[row][col];
+	// Row and col have the same structure as ttPoints
+	uint32_t** ttBinsTotal;
+
+	/* FILE* hrttPoints[traceNum][traceNum] where
+	 *   row > col, other elements are not initialized
+	 *
+	 * This array contains file pointers to files where half round trip times
+	 * (evaluated from exchanges) histogram values are outputted.
+	 */
+	FILE*** hrttPoints;
+
+	// uint32_t hrttBinsArray[row][col][binNum];
+	// Row and col have the same structure as hrttPoints
+	uint32_t*** hrttBinsArray;
+	// uint32_t hrttBinsTotal[row][col];
+	// Row and col have the same structure as hrttPoints
+	uint32_t** hrttBinsTotal;
+} AnalysisGraphsEval;
+
+typedef struct
+{
 	// double* rttInfo[RttKey]
 	GHashTable* rttInfo;
 
 	AnalysisStatsEval* stats;
+	AnalysisGraphsEval* graphs;
 } AnalysisDataEval;
 
 #endif
