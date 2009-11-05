@@ -42,10 +42,10 @@ typedef struct
 		broadcast);
 	GArray* (*finalizeAnalysis)(struct _SyncState* const syncState);
 	void (*printAnalysisStats)(struct _SyncState* const syncState);
-	void (*writeAnalysisGraphsPlots)(FILE* stream, struct _SyncState* const
-		syncState, const unsigned int i, const unsigned int j);
-	void (*writeAnalysisGraphsOptions)(FILE* stream, struct _SyncState* const
-		syncState, const unsigned int i, const unsigned int j);
+	void (*writeAnalysisGraphsPlots)(struct _SyncState* const syncState, const
+		unsigned int i, const unsigned int j);
+	void (*writeAnalysisGraphsOptions)(struct _SyncState* const syncState,
+		const unsigned int i, const unsigned int j);
 } AnalysisModule;
 
 #endif

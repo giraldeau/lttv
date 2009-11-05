@@ -52,10 +52,10 @@ static void analyzeBroadcastEval(SyncState* const syncState, Broadcast* const
 	broadcast);
 static GArray* finalizeAnalysisEval(SyncState* const syncState);
 static void printAnalysisStatsEval(SyncState* const syncState);
-static void writeAnalysisGraphsPlotsEval(FILE* stream, SyncState* const
-	syncState, const unsigned int i, const unsigned int j);
-static void writeAnalysisGraphsOptionsEval(FILE* stream, SyncState*
-    const syncState, const unsigned int i, const unsigned int j);
+static void writeAnalysisGraphsPlotsEval(SyncState* const syncState, const
+	unsigned int i, const unsigned int j);
+static void writeAnalysisGraphsOptionsEval(SyncState* const syncState, const
+	unsigned int i, const unsigned int j);
 
 // Functions specific to this module
 static void registerAnalysisEval() __attribute__((constructor (102)));
@@ -172,7 +172,7 @@ static void initAnalysisEval(SyncState* const syncState)
 				&gdnDestroyRttKey, &gdnDestroyDouble);
 	}
 
-	if (syncState->graphs)
+	if (syncState->graphsStream)
 	{
 		binBase= exp10(6. / (binNb - 2));
 		analysisData->graphs= malloc(sizeof(AnalysisGraphsEval));
@@ -198,7 +198,7 @@ static void initGraphs(SyncState* const syncState)
 	char name[36];
 	AnalysisDataEval* analysisData= syncState->analysisData;
 
-	cwd= changeToGraphDir(syncState->graphs);
+	cwd= changeToGraphDir(syncState->graphsDir);
 
 	analysisData->graphs->ttPoints= malloc(syncState->traceNb *
 		sizeof(FILE**));
@@ -438,7 +438,7 @@ static void destroyAnalysisEval(SyncState* const syncState)
 		free(analysisData->stats);
 	}
 
-	if (syncState->graphs && analysisData->graphs)
+	if (syncState->graphsStream && analysisData->graphs)
 	{
 		destroyGraphs(syncState);
 		free(analysisData->graphs);
@@ -482,7 +482,7 @@ static void analyzeMessageEval(SyncState* const syncState, Message* const messag
 	{
 		messageStats->inversionNb++;
 	}
-	else if (syncState->graphs)
+	else if (syncState->graphsStream)
 	{
 		analysisData->graphs->ttBinsArray[message->outE->traceNum][message->inE->traceNum][binNum(tt)]++;
 		analysisData->graphs->ttBinsTotal[message->outE->traceNum][message->inE->traceNum]++;
@@ -539,7 +539,7 @@ static void analyzeExchangeEval(SyncState* const syncState, Exchange* const exch
 	*rtt= wallTimeSub(&m1->inE->wallTime, &m1->outE->wallTime) -
 		wallTimeSub(&m2->outE->wallTime, &m2->inE->wallTime);
 
-	if (syncState->graphs)
+	if (syncState->graphsStream)
 	{
 		unsigned int row= MAX(m1->inE->traceNum, m1->outE->traceNum);
 		unsigned int col= MIN(m1->inE->traceNum, m1->outE->traceNum);
@@ -627,7 +627,7 @@ static GArray* finalizeAnalysisEval(SyncState* const syncState)
 	unsigned int i;
 	AnalysisDataEval* analysisData= syncState->analysisData;
 
-	if (syncState->graphs && analysisData->graphs)
+	if (syncState->graphsStream && analysisData->graphs)
 	{
 		writeGraphFiles(syncState);
 		destroyGraphs(syncState);
@@ -1088,15 +1088,14 @@ static double binEnd(const unsigned int binNum)
  * Write the analysis-specific graph lines in the gnuplot script.
  *
  * Args:
- *   stream:       stream where to write the data
  *   syncState:    container for synchronization data
  *   i:            first trace number
  *   j:            second trace number, garanteed to be larger than i
  */
-static void writeAnalysisGraphsPlotsEval(FILE* stream, SyncState* const
-	syncState, const unsigned int i, const unsigned int j)
+static void writeAnalysisGraphsPlotsEval(SyncState* const syncState, const
+	unsigned int i, const unsigned int j)
 {
-	fprintf(stream,
+	fprintf(syncState->graphsStream,
 		"\t\"analysis_eval_hrtt-%2$03d_and_%1$03d.data\" "
 			"title \"RTT/2\" with boxes linetype 1 linewidth 3 "
 			"linecolor rgb \"black\" fill transparent solid 0.75, \\\n"
@@ -1108,7 +1107,7 @@ static void writeAnalysisGraphsPlotsEval(FILE* stream, SyncState* const
 			"linecolor rgb \"black\" fill transparent solid 0.25, \\\n"*/
 			, i, j);
 	/*
-	fprintf(stream,
+	fprintf(syncState->graphsStream,
 		"\t\"analysis_eval_hrtt-%2$03d_and_%1$03d.data\" "
 			"title \"RTT/2\" with linespoints linetype 1 linewidth 3 "
 			"linecolor rgb \"black\", \\\n"
@@ -1126,15 +1125,14 @@ static void writeAnalysisGraphsPlotsEval(FILE* stream, SyncState* const
  * Write the analysis-specific options in the gnuplot script.
  *
  * Args:
- *   stream:       stream where to write the data
  *   syncState:    container for synchronization data
  *   i:            first trace number
  *   j:            second trace number, garanteed to be larger than i
  */
-static void writeAnalysisGraphsOptionsEval(FILE* stream, SyncState*
-    const syncState, const unsigned int i, const unsigned int j)
+static void writeAnalysisGraphsOptionsEval(SyncState* const syncState, const
+	unsigned int i, const unsigned int j)
 {
-	fprintf(stream,
+	fprintf(syncState->graphsStream,
 		"set xlabel \"Message Latency (s)\"\n"
 		"set ylabel \"Proportion of messages per second\"\n");
 }

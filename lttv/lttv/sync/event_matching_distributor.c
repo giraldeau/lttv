@@ -42,7 +42,6 @@ struct GraphAggregate
 	/* Offset whithin Matching module of the field* containing the function
 	 * pointer */
 	size_t offset;
-	FILE* stream;
 	unsigned int i, j;
 };
 
@@ -55,10 +54,10 @@ static void matchEventDistributor(SyncState* const syncState, Event* const
 	event);
 static GArray* finalizeMatchingDistributor(SyncState* const syncState);
 static void printMatchingStatsDistributor(SyncState* const syncState);
-static void writeMatchingGraphsPlotsDistributor(FILE* stream, SyncState* const
-	syncState, const unsigned int i, const unsigned int j);
-static void writeMatchingGraphsOptionsDistributor(FILE* stream, SyncState*
-	const syncState, const unsigned int i, const unsigned int j);
+static void writeMatchingGraphsPlotsDistributor(SyncState* const syncState,
+	const unsigned int i, const unsigned int j);
+static void writeMatchingGraphsOptionsDistributor(SyncState* const syncState,
+	const unsigned int i, const unsigned int j);
 
 // Functions specific to this module
 static void registerMatchingDistributor() __attribute__((constructor (101)));
@@ -207,19 +206,18 @@ static void printMatchingStatsDistributor(SyncState* const syncState)
  * Call the distributed graph lines functions (when they exist).
  *
  * Args:
- *   stream:       stream where to write the data
  *   syncState:    container for synchronization data
  *   i:            first trace number
  *   j:            second trace number, garanteed to be larger than i
  */
-static void writeMatchingGraphsPlotsDistributor(FILE* stream, SyncState* const
-	syncState, const unsigned int i, const unsigned int j)
+static void writeMatchingGraphsPlotsDistributor(SyncState* const syncState,
+	const unsigned int i, const unsigned int j)
 {
 	MatchingDataDistributor* matchingData= syncState->matchingData;
 
 	g_queue_foreach(matchingData->distributedModules, &gfGraphFunctionCall,
 		&(struct GraphAggregate) {offsetof(MatchingModule,
-			writeMatchingGraphsPlots), stream, i, j});
+			writeMatchingGraphsPlots), i, j});
 }
 
 
@@ -227,19 +225,18 @@ static void writeMatchingGraphsPlotsDistributor(FILE* stream, SyncState* const
  * Call the distributed graph options functions (when they exist).
  *
  * Args:
- *   stream:       stream where to write the data
  *   syncState:    container for synchronization data
  *   i:            first trace number
  *   j:            second trace number, garanteed to be larger than i
  */
-static void writeMatchingGraphsOptionsDistributor(FILE* stream, SyncState*
-	const syncState, const unsigned int i, const unsigned int j)
+static void writeMatchingGraphsOptionsDistributor(SyncState* const syncState,
+	const unsigned int i, const unsigned int j)
 {
 	MatchingDataDistributor* matchingData= syncState->matchingData;
 
 	g_queue_foreach(matchingData->distributedModules, &gfGraphFunctionCall,
 		&(struct GraphAggregate) {offsetof(MatchingModule,
-			writeMatchingGraphsOptions), stream, i, j});
+			writeMatchingGraphsOptions), i, j});
 }
 
 
@@ -359,11 +356,11 @@ void gfGraphFunctionCall(gpointer data, gpointer user_data)
 {
 	SyncState* parallelSS= data;
 	struct GraphAggregate* aggregate= user_data;
-	void (*graphFunction)(FILE* , struct _SyncState*, const unsigned int,
-		const unsigned int)= (void*) data + (size_t) aggregate->offset;
+	void (*graphFunction)(struct _SyncState*, const unsigned int, const
+		unsigned int)= (void*) data + (size_t) aggregate->offset;
 
 	if (graphFunction != NULL)
 	{
-		graphFunction(aggregate->stream, parallelSS, aggregate->i, aggregate->j);
+		graphFunction(parallelSS, aggregate->i, aggregate->j);
 	}
 }

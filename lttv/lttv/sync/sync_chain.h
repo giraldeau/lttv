@@ -30,7 +30,8 @@ typedef struct _SyncState
 {
 	unsigned int traceNb;
 	bool stats;
-	const char* graphs;
+	FILE* graphsStream;
+	const char* graphsDir;
 
 	const ProcessingModule* processingModule;
 	void* processingData;
@@ -46,7 +47,7 @@ typedef struct
 	enum {
 		NO_ARG,
 		REQUIRED_ARG,
-		//OPTIONAL_ARG,
+		//OPTIONAL_ARG, // Not yet implemented because not supported by LTTV
 		HAS_ARG_COUNT // This must be the last field
 	} hasArg;
 	union

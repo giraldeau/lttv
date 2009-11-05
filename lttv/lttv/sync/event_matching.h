@@ -38,10 +38,10 @@ typedef struct
 		event);
 	GArray* (*finalizeMatching)(struct _SyncState* const syncState);
 	void (*printMatchingStats)(struct _SyncState* const syncState);
-	void (*writeMatchingGraphsPlots)(FILE* stream, struct _SyncState* const
-		syncState, const unsigned int i, const unsigned int j);
-	void (*writeMatchingGraphsOptions)(FILE* stream, struct _SyncState* const
-		syncState, const unsigned int i, const unsigned int j);
+	void (*writeMatchingGraphsPlots)(struct _SyncState* const syncState, const
+		unsigned int i, const unsigned int j);
+	void (*writeMatchingGraphsOptions)(struct _SyncState* const syncState,
+		const unsigned int i, const unsigned int j);
 } MatchingModule;
 
 #endif

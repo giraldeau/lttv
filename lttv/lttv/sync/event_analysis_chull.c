@@ -60,8 +60,8 @@ static void analyzeMessageCHull(SyncState* const syncState, Message* const
 	message);
 static GArray* finalizeAnalysisCHull(SyncState* const syncState);
 static void printAnalysisStatsCHull(SyncState* const syncState);
-static void writeAnalysisGraphsPlotsCHull(FILE* stream, SyncState* const
-	syncState, const unsigned int i, const unsigned int j);
+static void writeAnalysisGraphsPlotsCHull(SyncState* const syncState, const
+	unsigned int i, const unsigned int j);
 
 // Functions specific to this module
 static void registerAnalysisCHull() __attribute__((constructor (101)));
@@ -167,7 +167,7 @@ static void initAnalysisCHull(SyncState* const syncState)
 		analysisData->stats->allFactors= NULL;
 	}
 
-	if (syncState->graphs)
+	if (syncState->graphsStream)
 	{
 		analysisData->graphsData= malloc(sizeof(AnalysisGraphsDataCHull));
 		openGraphFiles(syncState);
@@ -193,7 +193,7 @@ static void openGraphFiles(SyncState* const syncState)
 
 	analysisData= (AnalysisDataCHull*) syncState->analysisData;
 
-	cwd= changeToGraphDir(syncState->graphs);
+	cwd= changeToGraphDir(syncState->graphsDir);
 
 	analysisData->graphsData->hullPoints= malloc(syncState->traceNb *
 		sizeof(FILE**));
@@ -357,7 +357,7 @@ static void destroyAnalysisCHull(SyncState* const syncState)
 		free(analysisData->stats);
 	}
 
-	if (syncState->graphs)
+	if (syncState->graphsStream)
 	{
 		if (analysisData->graphsData->hullPoints != NULL)
 		{
@@ -510,7 +510,7 @@ static GArray* finalizeAnalysisCHull(SyncState* const syncState)
 
 	analysisData= (AnalysisDataCHull*) syncState->analysisData;
 
-	if (syncState->graphs && analysisData->graphsData->hullPoints != NULL)
+	if (syncState->graphsStream && analysisData->graphsData->hullPoints != NULL)
 	{
 		writeGraphFiles(syncState);
 		closeGraphFiles(syncState);
@@ -520,14 +520,14 @@ static GArray* finalizeAnalysisCHull(SyncState* const syncState)
 
 	factors= reduceFactors(syncState, allFactors);
 
-	if (syncState->stats || syncState->graphs)
+	if (syncState->stats || syncState->graphsStream)
 	{
 		if (syncState->stats)
 		{
 			analysisData->stats->allFactors= allFactors;
 		}
 
-		if (syncState->graphs)
+		if (syncState->graphsStream)
 		{
 			analysisData->graphsData->allFactors= allFactors;
 		}
@@ -1522,20 +1522,19 @@ static void getFactors(FactorsCHull** const allFactors, unsigned int** const
  * Write the analysis-specific graph lines in the gnuplot script.
  *
  * Args:
- *   stream:       stream where to write the data
  *   syncState:    container for synchronization data
  *   i:            first trace number
  *   j:            second trace number, garanteed to be larger than i
  */
-void writeAnalysisGraphsPlotsCHull(FILE* stream, SyncState* const syncState,
-	const unsigned int i, const unsigned int j)
+void writeAnalysisGraphsPlotsCHull(SyncState* const syncState, const unsigned
+	int i, const unsigned int j)
 {
 	AnalysisDataCHull* analysisData;
 	FactorsCHull* factorsCHull;
 
 	analysisData= (AnalysisDataCHull*) syncState->analysisData;
 
-	fprintf(stream,
+	fprintf(syncState->graphsStream,
 		"\t\"analysis_chull-%1$03d_to_%2$03d.data\" "
 			"title \"Lower half-hull\" with linespoints "
 			"linecolor rgb \"#015a01\" linetype 4 pointtype 8 pointsize 0.8, \\\n"
@@ -1547,7 +1546,7 @@ void writeAnalysisGraphsPlotsCHull(FILE* stream, SyncState* const syncState,
 	factorsCHull= &analysisData->graphsData->allFactors[j][i];
 	if (factorsCHull->type == EXACT)
 	{
-		fprintf(stream,
+		fprintf(syncState->graphsStream,
 			"\t%7g + %7g * x "
 				"title \"Exact conversion\" with lines "
 				"linecolor rgb \"black\" linetype 1, \\\n",
@@ -1555,17 +1554,17 @@ void writeAnalysisGraphsPlotsCHull(FILE* stream, SyncState* const syncState,
 	}
 	else if (factorsCHull->type == MIDDLE)
 	{
-		fprintf(stream,
+		fprintf(syncState->graphsStream,
 			"\t%.2f + %.10f * x "
 				"title \"Min conversion\" with lines "
 				"linecolor rgb \"black\" linetype 5, \\\n",
 				factorsCHull->min->offset, factorsCHull->min->drift);
-		fprintf(stream,
+		fprintf(syncState->graphsStream,
 			"\t%.2f + %.10f * x "
 				"title \"Max conversion\" with lines "
 				"linecolor rgb \"black\" linetype 8, \\\n",
 				factorsCHull->max->offset, factorsCHull->max->drift);
-		fprintf(stream,
+		fprintf(syncState->graphsStream,
 			"\t%.2f + %.10f * x "
 				"title \"Middle conversion\" with lines "
 				"linecolor rgb \"gray60\" linetype 1, \\\n",
@@ -1573,7 +1572,7 @@ void writeAnalysisGraphsPlotsCHull(FILE* stream, SyncState* const syncState,
 	}
 	else if (factorsCHull->type == FALLBACK)
 	{
-		fprintf(stream,
+		fprintf(syncState->graphsStream,
 			"\t%.2f + %.10f * x "
 				"title \"Fallback conversion\" with lines "
 				"linecolor rgb \"gray60\" linetype 1, \\\n",
@@ -1583,7 +1582,7 @@ void writeAnalysisGraphsPlotsCHull(FILE* stream, SyncState* const syncState,
 	{
 		if (factorsCHull->min->drift != -INFINITY)
 		{
-			fprintf(stream,
+			fprintf(syncState->graphsStream,
 				"\t%.2f + %.10f * x "
 					"title \"Min conversion\" with lines "
 					"linecolor rgb \"black\" linetype 5, \\\n",
@@ -1592,7 +1591,7 @@ void writeAnalysisGraphsPlotsCHull(FILE* stream, SyncState* const syncState,
 
 		if (factorsCHull->max->drift != INFINITY)
 		{
-			fprintf(stream,
+			fprintf(syncState->graphsStream,
 				"\t%.2f + %.10f * x "
 					"title \"Max conversion\" with lines "
 					"linecolor rgb \"black\" linetype 8, \\\n",
@@ -1603,7 +1602,7 @@ void writeAnalysisGraphsPlotsCHull(FILE* stream, SyncState* const syncState,
 	{
 		if (factorsCHull->min != NULL && factorsCHull->min->drift != -INFINITY)
 		{
-			fprintf(stream,
+			fprintf(syncState->graphsStream,
 				"\t%.2f + %.10f * x "
 					"title \"Min conversion\" with lines "
 					"linecolor rgb \"black\" linetype 5, \\\n",
@@ -1612,7 +1611,7 @@ void writeAnalysisGraphsPlotsCHull(FILE* stream, SyncState* const syncState,
 
 		if (factorsCHull->max != NULL && factorsCHull->max->drift != INFINITY)
 		{
-			fprintf(stream,
+			fprintf(syncState->graphsStream,
 				"\t%.2f + %.10f * x "
 					"title \"Max conversion\" with lines "
 					"linecolor rgb \"black\" linetype 8, \\\n",

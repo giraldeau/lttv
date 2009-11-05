@@ -47,8 +47,8 @@ static void destroyProcessingLTTVStandard(SyncState* const syncState);
 
 static void finalizeProcessingLTTVStandard(SyncState* const syncState);
 static void printProcessingStatsLTTVStandard(SyncState* const syncState);
-static void writeProcessingGraphsOptionsLTTVStandard(FILE* stream, SyncState*
-	const syncState, const unsigned int i, const unsigned int j);
+static void writeProcessingGraphsOptionsLTTVStandard(SyncState* const
+	syncState, const unsigned int i, const unsigned int j);
 
 // Functions specific to this module
 static void registerProcessingLTTVStandard() __attribute__((constructor (102)));
@@ -652,13 +652,12 @@ static gboolean processEventLTTVStandard(void* hookData, void* callData)
  * Write the processing-specific options in the gnuplot script.
  *
  * Args:
- *   stream:       stream where to write the data
  *   syncState:    container for synchronization data
  *   i:            first trace number
  *   j:            second trace number, garanteed to be larger than i
  */
-static void writeProcessingGraphsOptionsLTTVStandard(FILE* stream, SyncState*
-	const syncState, const unsigned int i, const unsigned int j)
+static void writeProcessingGraphsOptionsLTTVStandard(SyncState* const
+	syncState, const unsigned int i, const unsigned int j)
 {
 	ProcessingDataLTTVStandard* processingData;
 	LttTrace* traceI, * traceJ;
@@ -668,7 +667,7 @@ static void writeProcessingGraphsOptionsLTTVStandard(FILE* stream, SyncState*
 	traceI= processingData->traceSetContext->traces[i]->t;
 	traceJ= processingData->traceSetContext->traces[j]->t;
 
-	fprintf(stream,
+	fprintf(syncState->graphsStream,
         "set key inside right bottom\n"
         "set xlabel \"Clock %1$u\"\n"
         "set xtics nomirror\n"

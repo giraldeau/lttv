@@ -43,8 +43,8 @@ static void destroyMatchingTCP(SyncState* const syncState);
 static void matchEventTCP(SyncState* const syncState, Event* const event);
 static GArray* finalizeMatchingTCP(SyncState* const syncState);
 static void printMatchingStatsTCP(SyncState* const syncState);
-static void writeMatchingGraphsPlotsTCP(FILE* stream, SyncState* const
-	syncState, const unsigned int i, const unsigned int j);
+static void writeMatchingGraphsPlotsTCP(SyncState* const syncState, const
+	unsigned int i, const unsigned int j);
 
 // Functions specific to this module
 static void registerMatchingTCP() __attribute__((constructor (101)));
@@ -137,7 +137,7 @@ static void initMatchingTCP(SyncState* const syncState)
 		matchingData->stats= NULL;
 	}
 
-	if (syncState->graphs)
+	if (syncState->graphsStream)
 	{
 		openGraphDataFiles(syncState);
 	}
@@ -217,7 +217,7 @@ static void partialDestroyMatchingTCP(SyncState* const syncState)
 	g_hash_table_destroy(matchingData->unMatchedOutE);
 	g_hash_table_destroy(matchingData->unAcked);
 
-	if (syncState->graphs && matchingData->messagePoints)
+	if (syncState->graphsStream && matchingData->messagePoints)
 	{
 		closeGraphDataFiles(syncState);
 	}
@@ -372,7 +372,7 @@ static void matchEvents(SyncState* const syncState, Event* const event,
 			return;
 		}
 
-		if (syncState->graphs)
+		if (syncState->graphsStream)
 		{
 			writeMessagePoint(matchingData->messagePoints[packet->inE->traceNum][packet->outE->traceNum],
 				packet);
@@ -590,7 +590,7 @@ static void openGraphDataFiles(SyncState* const syncState)
 
 	matchingData= (MatchingDataTCP*) syncState->matchingData;
 
-	cwd= changeToGraphDir(syncState->graphs);
+	cwd= changeToGraphDir(syncState->graphsDir);
 
 	matchingData->messagePoints= malloc(syncState->traceNb * sizeof(FILE**));
 	for (i= 0; i < syncState->traceNb; i++)
@@ -630,7 +630,7 @@ static void openGraphDataFiles(SyncState* const syncState)
  *
  * Args:
  *   stream:       FILE*, file pointer where to write the point
- *   message:       message for which to write the point
+ *   message:      message for which to write the point
  */
 static void writeMessagePoint(FILE* stream, const Message* const message)
 {
@@ -698,15 +698,14 @@ static void closeGraphDataFiles(SyncState* const syncState)
  * Write the matching-specific graph lines in the gnuplot script.
  *
  * Args:
- *   stream:       stream where to write the data
  *   syncState:    container for synchronization data
  *   i:            first trace number
  *   j:            second trace number, garanteed to be larger than i
  */
-static void writeMatchingGraphsPlotsTCP(FILE* stream, SyncState* const
-	syncState, const unsigned int i, const unsigned int j)
+static void writeMatchingGraphsPlotsTCP(SyncState* const syncState, const
+	unsigned int i, const unsigned int j)
 {
-	fprintf(stream,
+	fprintf(syncState->graphsStream,
 		"\t\"matching_tcp-%1$03d_to_%2$03d.data\" "
 			"title \"Sent messages\" with points linetype 4 "
 			"linecolor rgb \"#98fc66\" pointtype 9 pointsize 2, \\\n"

@@ -169,7 +169,6 @@ void syncTraceset(LttvTracesetContext* const traceSetContext)
 	struct timeval startTime, endTime;
 	struct rusage startUsage, endUsage;
 	GList* result;
-	FILE* graphsStream;
 	unsigned int i, j;
 	int retval;
 
@@ -200,22 +199,13 @@ void syncTraceset(LttvTracesetContext* const traceSetContext)
 
 	if (optionSyncGraphs.present)
 	{
-		syncState->graphs= optionSyncGraphsDir.arg;
-	}
-	else
-	{
-		syncState->graphs= NULL;
-	}
-
-	graphsStream= NULL;
-	if (syncState->graphs)
-	{
 		char* cwd;
 		int graphsFp;
 
 		// Create the graph directory right away in case the module initialization
 		// functions have something to write in it.
-		cwd= changeToGraphDir(syncState->graphs);
+		syncState->graphsDir= optionSyncGraphsDir.arg;
+		cwd= changeToGraphDir(optionSyncGraphsDir.arg);
 
 		if ((graphsFp= open("graphs.gnu", O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR |
 				S_IWUSR | S_IXUSR | S_IRGRP | S_IWGRP | S_IXGRP | S_IROTH
@@ -223,7 +213,7 @@ void syncTraceset(LttvTracesetContext* const traceSetContext)
 		{
 			g_error(strerror(errno));
 		}
-		if ((graphsStream= fdopen(graphsFp, "w")) == NULL)
+		if ((syncState->graphsStream= fdopen(graphsFp, "w")) == NULL)
 		{
 			g_error(strerror(errno));
 		}
@@ -234,6 +224,11 @@ void syncTraceset(LttvTracesetContext* const traceSetContext)
 			g_error(strerror(errno));
 		}
 		free(cwd);
+	}
+	else
+	{
+		syncState->graphsStream= NULL;
+		syncState->graphsDir= NULL;
 	}
 
 	// Identify and initialize modules
@@ -284,9 +279,9 @@ void syncTraceset(LttvTracesetContext* const traceSetContext)
 	syncState->processingModule->finalizeProcessing(syncState);
 
 	// Write graphs file
-	if (graphsStream != NULL)
+	if (optionSyncGraphs.present)
 	{
-		fprintf(graphsStream,
+		fprintf(syncState->graphsStream,
 			"#!/usr/bin/gnuplot\n\n"
 			"set terminal postscript eps color size 8in,6in\n");
 
@@ -297,28 +292,28 @@ void syncTraceset(LttvTracesetContext* const traceSetContext)
 			{
 				long pos1, pos2, trunc;
 
-				fprintf(graphsStream,
+				fprintf(syncState->graphsStream,
 					"\nset output \"%03d-%03d.eps\"\n"
 					"plot \\\n", i, j);
 
 				if (syncState->processingModule->writeProcessingGraphsPlots)
 				{
-					syncState->processingModule->writeProcessingGraphsPlots(graphsStream,
-						syncState, i, j);
+					syncState->processingModule->writeProcessingGraphsPlots(syncState,
+						i, j);
 				}
 				if (syncState->matchingModule->writeMatchingGraphsPlots)
 				{
-					syncState->matchingModule->writeMatchingGraphsPlots(graphsStream,
-						syncState, i, j);
+					syncState->matchingModule->writeMatchingGraphsPlots(syncState,
+						i, j);
 				}
 				if (syncState->analysisModule->writeAnalysisGraphsPlots)
 				{
-					syncState->analysisModule->writeAnalysisGraphsPlots(graphsStream,
-						syncState, i, j);
+					syncState->analysisModule->writeAnalysisGraphsPlots(syncState,
+						i, j);
 				}
 
-				fflush(graphsStream);
-				pos2= ftell(graphsStream);
+				fflush(syncState->graphsStream);
+				pos2= ftell(syncState->graphsStream);
 				if (pos1 != pos2)
 				{
 					// Remove the ", \\\n" from the last graph plot line
@@ -331,43 +326,43 @@ void syncTraceset(LttvTracesetContext* const traceSetContext)
 					trunc= pos2 - 7;
 				}
 
-				if (ftruncate(fileno(graphsStream), trunc) == -1)
+				if (ftruncate(fileno(syncState->graphsStream), trunc) == -1)
 				{
 					g_error(strerror(errno));
 				}
-				if (fseek(graphsStream, 0, SEEK_END) == -1)
+				if (fseek(syncState->graphsStream, 0, SEEK_END) == -1)
 				{
 					g_error(strerror(errno));
 				}
 
-				fprintf(graphsStream,
+				fprintf(syncState->graphsStream,
 					"\nset output \"%03d-%03d.eps\"\n"
 					"set title \"\"\n", i, j);
 
 				if (syncState->processingModule->writeProcessingGraphsOptions)
 				{
-					syncState->processingModule->writeProcessingGraphsOptions(graphsStream,
-						syncState, i, j);
+					syncState->processingModule->writeProcessingGraphsOptions(syncState,
+						i, j);
 				}
 				if (syncState->matchingModule->writeMatchingGraphsOptions)
 				{
-					syncState->matchingModule->writeMatchingGraphsOptions(graphsStream,
-						syncState, i, j);
+					syncState->matchingModule->writeMatchingGraphsOptions(syncState,
+						i, j);
 				}
 				if (syncState->analysisModule->writeAnalysisGraphsOptions)
 				{
-					syncState->analysisModule->writeAnalysisGraphsOptions(graphsStream,
-						syncState, i, j);
+					syncState->analysisModule->writeAnalysisGraphsOptions(syncState,
+						i, j);
 				}
 
 				if (pos1 != pos2)
 				{
-					fprintf(graphsStream, "replot\n");
+					fprintf(syncState->graphsStream, "replot\n");
 				}
 			}
 		}
 
-		if (fclose(graphsStream) != 0)
+		if (fclose(syncState->graphsStream) != 0)
 		{
 			g_error(strerror(errno));
 		}

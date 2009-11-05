@@ -44,8 +44,8 @@ static void destroyAnalysisLinReg(SyncState* const syncState);
 static void analyzeExchangeLinReg(SyncState* const syncState, Exchange* const exchange);
 static GArray* finalizeAnalysisLinReg(SyncState* const syncState);
 static void printAnalysisStatsLinReg(SyncState* const syncState);
-static void writeAnalysisGraphsPlotsLinReg(FILE* stream, SyncState* const
-	syncState, const unsigned int i, const unsigned int j);
+static void writeAnalysisGraphsPlotsLinReg(SyncState* const syncState, const
+	unsigned int i, const unsigned int j);
 
 // Functions specific to this module
 static void registerAnalysisLinReg() __attribute__((constructor (102)));
@@ -745,13 +745,12 @@ static gint gcfGraphTraceCompare(gconstpointer a, gconstpointer b)
  * Write the analysis-specific graph lines in the gnuplot script.
  *
  * Args:
- *   stream:       stream where to write the data
  *   syncState:    container for synchronization data
  *   i:            first trace number, on the x axis
  *   j:            second trace number, garanteed to be larger than i
  */
-void writeAnalysisGraphsPlotsLinReg(FILE* stream, SyncState* const syncState,
-	const unsigned int i, const unsigned int j)
+void writeAnalysisGraphsPlotsLinReg(SyncState* const syncState, const unsigned
+	int i, const unsigned int j)
 {
 	AnalysisDataLinReg* analysisData;
 	Fit* fit;
@@ -759,7 +758,7 @@ void writeAnalysisGraphsPlotsLinReg(FILE* stream, SyncState* const syncState,
 	analysisData= (AnalysisDataLinReg*) syncState->analysisData;
 	fit= &analysisData->fitArray[j][i];
 
-	fprintf(stream,
+	fprintf(syncState->graphsStream,
 		"\t%7g + %7g * x "
 		"title \"Linreg conversion\" with lines "
 		"linecolor rgb \"gray60\" linetype 1, \\\n",

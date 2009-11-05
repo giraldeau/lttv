@@ -45,10 +45,10 @@ typedef struct
 	 * graphs to be created at all. If it provides the next function, it must
 	 * also provide the second next function.
 	 */
-	void (*writeProcessingGraphsPlots)(FILE* stream, struct _SyncState* const
-		syncState, const unsigned int i, const unsigned int j);
-	void (*writeProcessingGraphsOptions)(FILE* stream, struct _SyncState*
-		const syncState, const unsigned int i, const unsigned int j);
+	void (*writeProcessingGraphsPlots)(struct _SyncState* const syncState,
+		const unsigned int i, const unsigned int j);
+	void (*writeProcessingGraphsOptions)(struct _SyncState* const syncState,
+		const unsigned int i, const unsigned int j);
 } ProcessingModule;
 
 #endif

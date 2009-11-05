@@ -54,7 +54,6 @@ struct TracesetChainState {
 	SyncState* syncState;
 	struct timeval startTime;
 	struct rusage startUsage;
-	FILE* graphsStream;
 };
 
 static LttvHooks* before_traceset, * before_trace, * event_hook, * after_traceset;
@@ -296,22 +295,13 @@ void setupSyncChain(LttvTracesetContext* const traceSetContext)
 
 	if (optionEvalGraphs)
 	{
-		syncState->graphs= optionEvalGraphsDir;
-	}
-	else
-	{
-		syncState->graphs= NULL;
-	}
-
-	tracesetChainState->graphsStream= NULL;
-	if (syncState->graphs)
-	{
 		char* cwd;
 		int graphsFp;
 
 		// Create the graph directory right away in case the module initialization
 		// functions have something to write in it.
-		cwd= changeToGraphDir(syncState->graphs);
+		syncState->graphsDir= optionEvalGraphsDir;
+		cwd= changeToGraphDir(optionEvalGraphsDir);
 
 		if ((graphsFp= open("graphs.gnu", O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR |
 				S_IWUSR | S_IXUSR | S_IRGRP | S_IWGRP | S_IXGRP | S_IROTH
@@ -319,7 +309,7 @@ void setupSyncChain(LttvTracesetContext* const traceSetContext)
 		{
 			g_error(strerror(errno));
 		}
-		if ((tracesetChainState->graphsStream= fdopen(graphsFp, "w")) == NULL)
+		if ((syncState->graphsStream= fdopen(graphsFp, "w")) == NULL)
 		{
 			g_error(strerror(errno));
 		}
@@ -330,6 +320,11 @@ void setupSyncChain(LttvTracesetContext* const traceSetContext)
 			g_error(strerror(errno));
 		}
 		free(cwd);
+	}
+	else
+	{
+		syncState->graphsStream= NULL;
+		syncState->graphsDir= NULL;
 	}
 
 	syncState->analysisData= NULL;
@@ -373,9 +368,9 @@ void teardownSyncChain(LttvTracesetContext* const traceSetContext)
 	syncState->processingModule->finalizeProcessing(syncState);
 
 	// Write graphs file
-	if (tracesetChainState->graphsStream != NULL)
+	if (optionEvalGraphs)
 	{
-		fprintf(tracesetChainState->graphsStream,
+		fprintf(syncState->graphsStream,
 			"#!/usr/bin/gnuplot\n\n"
 			"set terminal postscript eps color size 8in,6in\n");
 
@@ -386,19 +381,19 @@ void teardownSyncChain(LttvTracesetContext* const traceSetContext)
 			{
 				long pos1, pos2, trunc;
 
-				fprintf(tracesetChainState->graphsStream,
+				fprintf(syncState->graphsStream,
 					"\nset output \"%03d-%03d.eps\"\n"
 					"plot \\\n", i, j);
-				pos1= ftell(tracesetChainState->graphsStream);
+				pos1= ftell(syncState->graphsStream);
 
 				if (syncState->analysisModule->writeAnalysisGraphsPlots)
 				{
-					syncState->analysisModule->writeAnalysisGraphsPlots(tracesetChainState->graphsStream,
-						syncState, i, j);
+					syncState->analysisModule->writeAnalysisGraphsPlots(syncState,
+						i, j);
 				}
 
-				fflush(tracesetChainState->graphsStream);
-				pos2= ftell(tracesetChainState->graphsStream);
+				fflush(syncState->graphsStream);
+				pos2= ftell(syncState->graphsStream);
 				if (pos1 != pos2)
 				{
 					// Remove the ", \\\n" from the last graph plot line
@@ -411,33 +406,33 @@ void teardownSyncChain(LttvTracesetContext* const traceSetContext)
 					trunc= pos2 - 7;
 				}
 
-				if (ftruncate(fileno(tracesetChainState->graphsStream), trunc) == -1)
+				if (ftruncate(fileno(syncState->graphsStream), trunc) == -1)
 				{
 					g_error(strerror(errno));
 				}
-				if (fseek(tracesetChainState->graphsStream, 0, SEEK_END) == -1)
+				if (fseek(syncState->graphsStream, 0, SEEK_END) == -1)
 				{
 					g_error(strerror(errno));
 				}
 
-				fprintf(tracesetChainState->graphsStream,
+				fprintf(syncState->graphsStream,
 					"\nset output \"%1$03d-%2$03d.eps\"\n"
 					"set title \"\"\n", i, j);
 
 				if (syncState->analysisModule->writeAnalysisGraphsOptions)
 				{
-					syncState->analysisModule->writeAnalysisGraphsOptions(tracesetChainState->graphsStream,
-						syncState, i, j);
+					syncState->analysisModule->writeAnalysisGraphsOptions(syncState,
+						i, j);
 				}
 
 				if (pos1 != pos2)
 				{
-					fprintf(tracesetChainState->graphsStream, "replot\n");
+					fprintf(syncState->graphsStream, "replot\n");
 				}
 			}
 		}
 
-		if (fclose(tracesetChainState->graphsStream) != 0)
+		if (fclose(syncState->graphsStream) != 0)
 		{
 			g_error(strerror(errno));
 		}
