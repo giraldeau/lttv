@@ -218,6 +218,10 @@ void syncTraceset(LttvTracesetContext* const traceSetContext)
 			g_error(strerror(errno));
 		}
 
+		fprintf(syncState->graphsStream,
+			"#!/usr/bin/gnuplot\n\n"
+			"set terminal postscript eps color size 8in,6in\n");
+
 		retval= chdir(cwd);
 		if (retval == -1)
 		{
@@ -281,10 +285,6 @@ void syncTraceset(LttvTracesetContext* const traceSetContext)
 	// Write graphs file
 	if (optionSyncGraphs.present)
 	{
-		fprintf(syncState->graphsStream,
-			"#!/usr/bin/gnuplot\n\n"
-			"set terminal postscript eps color size 8in,6in\n");
-
 		// Cover the upper triangular matrix, i is the reference node.
 		for (i= 0; i < syncState->traceNb; i++)
 		{
@@ -293,7 +293,8 @@ void syncTraceset(LttvTracesetContext* const traceSetContext)
 				long pos1, pos2, trunc;
 
 				fprintf(syncState->graphsStream,
-					"\nset output \"%03d-%03d.eps\"\n"
+					"\nreset\n"
+					"set output \"%03d-%03d.eps\"\n"
 					"plot \\\n", i, j);
 
 				if (syncState->processingModule->writeProcessingGraphsPlots)

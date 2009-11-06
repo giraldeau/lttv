@@ -42,48 +42,51 @@ typedef struct
 	double broadcastDiffSum;
 	unsigned int broadcastNb;
 
+	// MessageStats messageStats[traceNb][traceNb]
 	MessageStats** messageStats;
+
 	/* double* exchangeRtt[RttKey]
 	 * For this table, saddr and daddr are swapped as necessary such that
 	 * saddr < daddr */
 	GHashTable* exchangeRtt;
 } AnalysisStatsEval;
 
+
+#define BIN_NB 1001
+struct Bins
+{
+	// index of min and max bins that are != 0
+	uint32_t min, max;
+	// sum of all bins
+	uint32_t total;
+	/* bin[0]: underflow ]-INFINITY..0[
+	 * bin[1]: [0..1e-6[
+	 * rest defined exponentially, see binStart()
+	 * bin[BIN_NB - 1]: overflow [1..INFINITY[ */
+	uint32_t bin[BIN_NB];
+};
+
+
 typedef struct
 {
-	/* FILE* ttPoints[row][col] where
-	 *   row= outE->traceNum
-	 *   col= inE->traceNum
-	 *
-	 * This array contains file pointers to files where "trip times" (message
-	 * latency) histogram values are outputted. Each trace-pair has two files,
-	 * one for each message direction. The elements on the diagonal are not
-	 * initialized.
-	 */
-	FILE*** ttPoints;
+	 /* File pointers to files where "trip times" (message latency) histogram
+	  * values are outputted. Each host-pair has two files, one for each
+	  * message direction. As for traces, the host with the smallest address
+	  * is considered to be the reference for the direction of messages (ie.
+	  * messages from the host with the lowest address to the host with the
+	  * largest address are "sent"). */
+	FILE* ttSendPoints;
+	FILE* ttRecvPoints;
 
-	// uint32_t ttBinsArray[row][col][binNum];
-	// Row and col have the same structure as ttPoints
-	uint32_t*** ttBinsArray;
-	// uint32_t ttBinsTotal[row][col];
-	// Row and col have the same structure as ttPoints
-	uint32_t** ttBinsTotal;
+	struct Bins ttSendBins;
+	struct Bins ttRecvBins;
 
-	/* FILE* hrttPoints[traceNum][traceNum] where
-	 *   row > col, other elements are not initialized
-	 *
-	 * This array contains file pointers to files where half round trip times
-	 * (evaluated from exchanges) histogram values are outputted.
-	 */
-	FILE*** hrttPoints;
+	/* File pointers to files where half round trip times (evaluated from
+	 * exchanges) histogram values are outputted. */
+	FILE* hrttPoints;
 
-	// uint32_t hrttBinsArray[row][col][binNum];
-	// Row and col have the same structure as hrttPoints
-	uint32_t*** hrttBinsArray;
-	// uint32_t hrttBinsTotal[row][col];
-	// Row and col have the same structure as hrttPoints
-	uint32_t** hrttBinsTotal;
-} AnalysisGraphsEval;
+	struct Bins hrttBins;
+} AnalysisGraphEval;
 
 typedef struct
 {
@@ -91,7 +94,10 @@ typedef struct
 	GHashTable* rttInfo;
 
 	AnalysisStatsEval* stats;
-	AnalysisGraphsEval* graphs;
+	/* AnalysisGraphsEval* graphs[RttKey];
+	 * For this table, saddr and daddr are swapped as necessary such that
+	 * saddr < daddr */
+	GHashTable* graphs;
 } AnalysisDataEval;
 
 #endif

@@ -40,6 +40,13 @@
 #include "event_analysis_eval.h"
 
 
+struct WriteGraphInfo
+{
+	GHashTable* rttInfo;
+	FILE* graphsStream;
+};
+
+
 // Functions common to all analysis modules
 static void initAnalysisEval(SyncState* const syncState);
 static void destroyAnalysisEval(SyncState* const syncState);
@@ -52,10 +59,6 @@ static void analyzeBroadcastEval(SyncState* const syncState, Broadcast* const
 	broadcast);
 static GArray* finalizeAnalysisEval(SyncState* const syncState);
 static void printAnalysisStatsEval(SyncState* const syncState);
-static void writeAnalysisGraphsPlotsEval(SyncState* const syncState, const
-	unsigned int i, const unsigned int j);
-static void writeAnalysisGraphsOptionsEval(SyncState* const syncState, const
-	unsigned int i, const unsigned int j);
 
 // Functions specific to this module
 static void registerAnalysisEval() __attribute__((constructor (102)));
@@ -70,17 +73,21 @@ static void gfSum(gpointer data, gpointer userData);
 static void gfSumSquares(gpointer data, gpointer userData);
 static void ghfPrintExchangeRtt(gpointer key, gpointer value, gpointer user_data);
 
-static void initGraphs(SyncState* const syncState);
-static void writeGraphFiles(SyncState* const syncState);
-static void dumpBinToFile(const uint32_t* const bin, const uint32_t total,
-	FILE* const file);
-static void destroyGraphs(SyncState* const syncState);
+static void hitBin(struct Bins* const bins, const double value);
 static unsigned int binNum(const double value) __attribute__((pure));
 static double binStart(const unsigned int binNum) __attribute__((pure));
 static double binEnd(const unsigned int binNum) __attribute__((pure));
 
+static AnalysisGraphEval* constructAnalysisGraphEval(const char* const
+	graphsDir, const struct RttKey* const rttKey);
+static void destroyAnalysisGraphEval(AnalysisGraphEval* const graph);
+static void gdnDestroyAnalysisGraphEval(gpointer data);
+static void ghfWriteGraph(gpointer key, gpointer value, gpointer user_data);
+static void dumpBinToFile(const struct Bins* const bins, FILE* const file);
+static void writeHistogram(FILE* graphsStream, const struct RttKey* rttKey,
+	double* minRtt);
 
-const unsigned int binNb= 10000;
+
 double binBase;
 
 static AnalysisModule analysisModuleEval= {
@@ -92,8 +99,8 @@ static AnalysisModule analysisModuleEval= {
 	.analyzeBroadcast= &analyzeBroadcastEval,
 	.finalizeAnalysis= &finalizeAnalysisEval,
 	.printAnalysisStats= &printAnalysisStatsEval,
-	.writeAnalysisGraphsPlots= &writeAnalysisGraphsPlotsEval,
-	.writeAnalysisGraphsOptions= &writeAnalysisGraphsOptionsEval,
+	.writeAnalysisGraphsPlots= NULL,
+	.writeAnalysisGraphsOptions= NULL,
 };
 
 static ModuleOption optionEvalRttFile= {
@@ -174,95 +181,63 @@ static void initAnalysisEval(SyncState* const syncState)
 
 	if (syncState->graphsStream)
 	{
-		binBase= exp10(6. / (binNb - 2));
-		analysisData->graphs= malloc(sizeof(AnalysisGraphsEval));
-		initGraphs(syncState);
+		binBase= exp10(6. / (BIN_NB - 3));
+		analysisData->graphs= g_hash_table_new_full(&ghfRttKeyHash,
+			&gefRttKeyEqual, &gdnDestroyRttKey, &gdnDestroyAnalysisGraphEval);
 	}
 }
 
 
 /*
- * Create and open files used to store histogram points to genereate
- * graphs. Allocate and populate array to store file pointers.
- *
- * Also create data structures to store histogram points during analysis.
+ * Create and open files used to store histogram points to generate graphs.
+ * Create data structures to store histogram points during analysis.
  *
  * Args:
- *   syncState:    container for synchronization data
+ *   graphsDir:    folder where to write files
+ *   rttKey:       host pair, make sure saddr < daddr
  */
-static void initGraphs(SyncState* const syncState)
+static AnalysisGraphEval* constructAnalysisGraphEval(const char* const
+	graphsDir, const struct RttKey* const rttKey)
 {
-	unsigned int i, j;
 	int retval;
+	unsigned int i;
 	char* cwd;
-	char name[36];
-	AnalysisDataEval* analysisData= syncState->analysisData;
+	char name[60], saddr[16], daddr[16];
+	AnalysisGraphEval* graph= calloc(1, sizeof(*graph));
+	const struct {
+		size_t pointsOffset;
+		const char* fileName;
+		const char* host1, *host2;
+	} loopValues[]= {
+		{offsetof(AnalysisGraphEval, ttSendPoints), "analysis_eval_tt-%s_to_%s.data",
+			saddr, daddr},
+		{offsetof(AnalysisGraphEval, ttRecvPoints), "analysis_eval_tt-%s_to_%s.data",
+			daddr, saddr},
+		{offsetof(AnalysisGraphEval, hrttPoints), "analysis_eval_hrtt-%s_and_%s.data",
+			saddr, daddr},
+	};
 
-	cwd= changeToGraphDir(syncState->graphsDir);
+	graph->ttSendBins.max= BIN_NB - 1;
+	graph->ttRecvBins.max= BIN_NB - 1;
+	graph->hrttBins.max= BIN_NB - 1;
 
-	analysisData->graphs->ttPoints= malloc(syncState->traceNb *
-		sizeof(FILE**));
-	analysisData->graphs->ttBinsArray= malloc(syncState->traceNb *
-		sizeof(uint32_t**));
-	analysisData->graphs->ttBinsTotal= malloc(syncState->traceNb *
-		sizeof(uint32_t*));
-	for (i= 0; i < syncState->traceNb; i++)
+	convertIP(saddr, rttKey->saddr);
+	convertIP(daddr, rttKey->daddr);
+
+	cwd= changeToGraphDir(graphsDir);
+
+	for (i= 0; i < sizeof(loopValues) / sizeof(*loopValues); i++)
 	{
-		analysisData->graphs->ttPoints[i]= malloc(syncState->traceNb *
-			sizeof(FILE*));
-		analysisData->graphs->ttBinsArray[i]= malloc(syncState->traceNb *
-			sizeof(uint32_t*));
-		analysisData->graphs->ttBinsTotal[i]= calloc(syncState->traceNb,
-			sizeof(uint32_t));
-		for (j= 0; j < syncState->traceNb; j++)
+		retval= snprintf(name, sizeof(name), loopValues[i].fileName,
+			loopValues[i].host1, loopValues[i].host2);
+		if (retval > sizeof(name) - 1)
 		{
-			if (i != j)
-			{
-				retval= snprintf(name, sizeof(name),
-					"analysis_eval_tt-%03u_to_%03u.data", i, j);
-				if (retval > sizeof(name) - 1)
-				{
-					name[sizeof(name) - 1]= '\0';
-				}
-				if ((analysisData->graphs->ttPoints[i][j]= fopen(name, "w")) ==
-					NULL)
-				{
-					g_error(strerror(errno));
-				}
-
-				analysisData->graphs->ttBinsArray[i][j]= calloc(binNb,
-					sizeof(uint32_t));
-			}
+			name[sizeof(name) - 1]= '\0';
 		}
-	}
-
-	analysisData->graphs->hrttPoints= malloc(syncState->traceNb *
-		sizeof(FILE**));
-	analysisData->graphs->hrttBinsArray= malloc(syncState->traceNb *
-		sizeof(uint32_t**));
-	analysisData->graphs->hrttBinsTotal= malloc(syncState->traceNb *
-		sizeof(uint32_t*));
-	for (i= 0; i < syncState->traceNb; i++)
-	{
-		analysisData->graphs->hrttPoints[i]= malloc(i * sizeof(FILE*));
-		analysisData->graphs->hrttBinsArray[i]= malloc(i * sizeof(uint32_t*));
-		analysisData->graphs->hrttBinsTotal[i]= calloc(i, sizeof(uint32_t));
-		for (j= 0; j < i; j++)
+		if ((*(FILE**)((void*) graph + loopValues[i].pointsOffset)=
+				fopen(name, "w")) == NULL)
 		{
-			retval= snprintf(name, sizeof(name),
-				"analysis_eval_hrtt-%03u_and_%03u.data", i, j);
-			if (retval > sizeof(name) - 1)
-			{
-				name[sizeof(name) - 1]= '\0';
-			}
-			if ((analysisData->graphs->hrttPoints[i][j]= fopen(name, "w")) ==
-				NULL)
-			{
-				g_error(strerror(errno));
-			}
-
-			analysisData->graphs->hrttBinsArray[i][j]= calloc(binNb,
-				sizeof(uint32_t));
+			g_error(strerror(errno));
 		}
 	}
 
@@ -272,41 +247,86 @@ static void initGraphs(SyncState* const syncState)
 		g_error(strerror(errno));
 	}
 	free(cwd);
+
+	return graph;
 }
 
 
 /*
- * Write histogram points to all files to generate graphs.
+ * Close files used to store histogram points to generate graphs.
  *
  * Args:
- *   syncState:    container for synchronization data
+ *   graphsDir:    folder where to write files
+ *   rttKey:       host pair, make sure saddr < daddr
  */
-static void writeGraphFiles(SyncState* const syncState)
+static void destroyAnalysisGraphEval(AnalysisGraphEval* const graph)
 {
-	unsigned int i, j;
-	AnalysisDataEval* analysisData= syncState->analysisData;
+	unsigned int i;
+	int retval;
+	const struct {
+		size_t pointsOffset;
+	} loopValues[]= {
+		{offsetof(AnalysisGraphEval, ttSendPoints)},
+		{offsetof(AnalysisGraphEval, ttRecvPoints)},
+		{offsetof(AnalysisGraphEval, hrttPoints)},
+	};
 
-	for (i= 0; i < syncState->traceNb; i++)
+	for (i= 0; i < sizeof(loopValues) / sizeof(*loopValues); i++)
 	{
-		for (j= 0; j < syncState->traceNb; j++)
+		retval= fclose(*(FILE**)((void*) graph + loopValues[i].pointsOffset));
+		if (retval != 0)
 		{
-			if (i != j)
-			{
-				dumpBinToFile(analysisData->graphs->ttBinsArray[i][j],
-					analysisData->graphs->ttBinsTotal[i][j] -
-					analysisData->graphs->ttBinsArray[i][j][binNb - 1],
-					analysisData->graphs->ttPoints[i][j]);
-			}
-
-			if (i > j)
-			{
-				dumpBinToFile(analysisData->graphs->hrttBinsArray[i][j],
-					analysisData->graphs->hrttBinsTotal[i][j] -
-					analysisData->graphs->hrttBinsArray[i][j][binNb - 1],
-					analysisData->graphs->hrttPoints[i][j]);
-			}
+			g_error(strerror(errno));
 		}
 	}
+}
+
+
+/*
+ * A GDestroyNotify function for g_hash_table_new_full()
+ *
+ * Args:
+ *   data:         AnalysisGraphEval*
+ */
+static void gdnDestroyAnalysisGraphEval(gpointer data)
+{
+	destroyAnalysisGraphEval(data);
+}
+
+
+/*
+ * A GHFunc for g_hash_table_foreach()
+ *
+ * Args:
+ *   key:          RttKey* where saddr < daddr
+ *   value:        AnalysisGraphEval*
+ *   user_data     struct WriteGraphInfo*
+ */
+static void ghfWriteGraph(gpointer key, gpointer value, gpointer user_data)
+{
+	double* rtt1, * rtt2;
+	struct RttKey* rttKey= key;
+	struct RttKey oppositeRttKey= {.saddr= rttKey->daddr, .daddr=
+		rttKey->saddr};
+	AnalysisGraphEval* graph= value;
+	struct WriteGraphInfo* info= user_data;
+
+	rtt1= g_hash_table_lookup(info->rttInfo, rttKey);
+	rtt2= g_hash_table_lookup(info->rttInfo, &oppositeRttKey);
+
+	if (rtt1 == NULL)
+	{
+		rtt1= rtt2;
+	}
+	else if (rtt2 != NULL)
+	{
+		rtt1= MIN(rtt1, rtt2);
+	}
+
+	dumpBinToFile(&graph->ttSendBins, graph->ttSendPoints);
+	dumpBinToFile(&graph->ttRecvBins, graph->ttRecvPoints);
+	dumpBinToFile(&graph->hrttBins, graph->hrttPoints);
+	writeHistogram(info->graphsStream, rttKey, rtt1);
 }
 
 
@@ -315,90 +335,66 @@ static void writeGraphFiles(SyncState* const syncState)
  *
  * Args:
  *   bin:          array of values that make up a histogram
- *   total:        total number of messages in bins 0 to binNb - 2
- *   file:         FILE*
+ *   file:         FILE*, write to this file
  */
-static void dumpBinToFile(const uint32_t* const bin, const uint32_t total,
-	FILE* const file)
+static void dumpBinToFile(const struct Bins* const bins, FILE* const file)
 {
 	unsigned int i;
 
-	// Last bin is skipped because is continues till infinity
-	for (i= 0; i < binNb - 1; i++)
+	// The first and last bins are skipped, see struct Bins
+	for (i= 1; i < BIN_NB - 1; i++)
 	{
-		if (bin[i] > 0)
+		if (bins->bin[i] > 0)
 		{
-			fprintf(file, "%20.9f %20.9f %20.9f\n", (binStart(i) + binEnd(i)) / 2, (double) bin[i]
-				/ ((binEnd(i) - binStart(i)) * total), binEnd(i) - binStart(i));
+			fprintf(file, "%20.9f %20.9f %20.9f\n", (binStart(i) + binEnd(i))
+				/ 2., (double) bins->bin[i] / ((binEnd(i) - binStart(i)) *
+					bins->total), binEnd(i) - binStart(i));
 		}
 	}
 }
 
 
 /*
- * Close files used to store histogram points to generate graphs. Deallocate
- * arrays of file pointers and arrays used to store histogram points during
- * analysis.
+ * Write the analysis-specific plot in the gnuplot script.
  *
  * Args:
- *   syncState:    container for synchronization data
+ *   graphsStream: write to this file
+ *   rttKey:       must be sorted such that saddr < daddr
+ *   minRtt:       if available, else NULL
  */
-static void destroyGraphs(SyncState* const syncState)
+static void writeHistogram(FILE* graphsStream, const struct RttKey* rttKey,
+	double* minRtt)
 {
-	unsigned int i, j;
-	AnalysisDataEval* analysisData= syncState->analysisData;
-	int retval;
+	char saddr[16], daddr[16];
 
-	if (analysisData->graphs == NULL || analysisData->graphs->ttPoints ==
-		NULL)
+	convertIP(saddr, rttKey->saddr);
+	convertIP(daddr, rttKey->daddr);
+
+	fprintf(graphsStream,
+		"reset\n"
+		"set output \"histogram-%s-%s.eps\"\n"
+		"set title \"\"\n"
+		"set xlabel \"Message Latency (s)\"\n"
+		"set ylabel \"Proportion of messages per second\"\n", saddr, daddr);
+
+	if (minRtt != NULL)
 	{
-		return;
+		fprintf(graphsStream,
+			"set arrow from %.9f, 0 rto 0, graph 1 "
+			"nohead linetype 3 linewidth 3 linecolor rgb \"black\"\n", *minRtt / 2);
 	}
 
-	for (i= 0; i < syncState->traceNb; i++)
-	{
-		for (j= 0; j < syncState->traceNb; j++)
-		{
-			if (i != j)
-			{
-				retval= fclose(analysisData->graphs->ttPoints[i][j]);
-				if (retval != 0)
-				{
-					g_error(strerror(errno));
-				}
-
-				free(analysisData->graphs->ttBinsArray[i][j]);
-			}
-		}
-		free(analysisData->graphs->ttPoints[i]);
-		free(analysisData->graphs->ttBinsArray[i]);
-		free(analysisData->graphs->ttBinsTotal[i]);
-	}
-	free(analysisData->graphs->ttPoints);
-	free(analysisData->graphs->ttBinsArray);
-	free(analysisData->graphs->ttBinsTotal);
-
-	for (i= 0; i < syncState->traceNb; i++)
-	{
-		for (j= 0; j < i; j++)
-		{
-			retval= fclose(analysisData->graphs->hrttPoints[i][j]);
-			if (retval != 0)
-			{
-				g_error(strerror(errno));
-			}
-
-			free(analysisData->graphs->hrttBinsArray[i][j]);
-		}
-		free(analysisData->graphs->hrttPoints[i]);
-		free(analysisData->graphs->hrttBinsArray[i]);
-		free(analysisData->graphs->hrttBinsTotal[i]);
-	}
-	free(analysisData->graphs->hrttPoints);
-	free(analysisData->graphs->hrttBinsArray);
-	free(analysisData->graphs->hrttBinsTotal);
-
-	analysisData->graphs->ttPoints= NULL;
+	fprintf(graphsStream,
+		"plot \\\n"
+		"\t\"analysis_eval_hrtt-%1$s_and_%2$s.data\" "
+			"title \"RTT/2\" with linespoints linetype 1 linewidth 2 "
+			"linecolor rgb \"black\" pointtype 6 pointsize 1,\\\n"
+		"\t\"analysis_eval_tt-%1$s_to_%2$s.data\" "
+			"title \"%1$s to %2$s\" with linespoints linetype 4 linewidth 2 "
+			"linecolor rgb \"gray60\" pointtype 6 pointsize 1,\\\n"
+		"\t\"analysis_eval_tt-%2$s_to_%1$s.data\" "
+			"title \"%2$s to %1$s\" with linespoints linetype 4 linewidth 2 "
+			"linecolor rgb \"gray30\" pointtype 6 pointsize 1\n", saddr, daddr);
 }
 
 
@@ -440,8 +436,7 @@ static void destroyAnalysisEval(SyncState* const syncState)
 
 	if (syncState->graphsStream && analysisData->graphs)
 	{
-		destroyGraphs(syncState);
-		free(analysisData->graphs);
+		g_hash_table_destroy(analysisData->graphs);
 	}
 
 	free(syncState->analysisData);
@@ -460,8 +455,9 @@ static void destroyAnalysisEval(SyncState* const syncState)
  */
 static void analyzeMessageEval(SyncState* const syncState, Message* const message)
 {
-	AnalysisDataEval* analysisData;
-	MessageStats* messageStats;
+	AnalysisDataEval* analysisData= syncState->analysisData;
+	MessageStats* messageStats=
+		&analysisData->stats->messageStats[message->outE->traceNum][message->inE->traceNum];;
 	double* rtt;
 	double tt;
 	struct RttKey rttKey;
@@ -471,9 +467,7 @@ static void analyzeMessageEval(SyncState* const syncState, Message* const messag
 		return;
 	}
 
-	analysisData= (AnalysisDataEval*) syncState->analysisData;
-	messageStats=
-		&analysisData->stats->messageStats[message->outE->traceNum][message->inE->traceNum];
+	g_assert(message->inE->type == TCP);
 
 	messageStats->total++;
 
@@ -484,11 +478,35 @@ static void analyzeMessageEval(SyncState* const syncState, Message* const messag
 	}
 	else if (syncState->graphsStream)
 	{
-		analysisData->graphs->ttBinsArray[message->outE->traceNum][message->inE->traceNum][binNum(tt)]++;
-		analysisData->graphs->ttBinsTotal[message->outE->traceNum][message->inE->traceNum]++;
+		struct RttKey rttKey= {
+			.saddr=MIN(message->inE->event.tcpEvent->segmentKey->connectionKey.saddr,
+				message->inE->event.tcpEvent->segmentKey->connectionKey.daddr),
+			.daddr=MAX(message->inE->event.tcpEvent->segmentKey->connectionKey.saddr,
+				message->inE->event.tcpEvent->segmentKey->connectionKey.daddr),
+		};
+		AnalysisGraphEval* graph= g_hash_table_lookup(analysisData->graphs,
+			&rttKey);
+
+		if (graph == NULL)
+		{
+			struct RttKey* tableKey= malloc(sizeof(*tableKey));
+
+			graph= constructAnalysisGraphEval(syncState->graphsDir, &rttKey);
+			memcpy(tableKey, &rttKey, sizeof(*tableKey));
+			g_hash_table_insert(analysisData->graphs, tableKey, graph);
+		}
+
+		if (message->inE->event.udpEvent->datagramKey->saddr <
+			message->inE->event.udpEvent->datagramKey->daddr)
+		{
+			hitBin(&graph->ttSendBins, tt);
+		}
+		else
+		{
+			hitBin(&graph->ttRecvBins, tt);
+		}
 	}
 
-	g_assert(message->inE->type == TCP);
 	rttKey.saddr=
 		message->inE->event.tcpEvent->segmentKey->connectionKey.saddr;
 	rttKey.daddr=
@@ -534,21 +552,13 @@ static void analyzeExchangeEval(SyncState* const syncState, Exchange* const exch
 		return;
 	}
 
+	g_assert(m1->inE->type == TCP);
+
 	// (T2 - T1) - (T3 - T4)
 	rtt= malloc(sizeof(double));
 	*rtt= wallTimeSub(&m1->inE->wallTime, &m1->outE->wallTime) -
 		wallTimeSub(&m2->outE->wallTime, &m2->inE->wallTime);
 
-	if (syncState->graphsStream)
-	{
-		unsigned int row= MAX(m1->inE->traceNum, m1->outE->traceNum);
-		unsigned int col= MIN(m1->inE->traceNum, m1->outE->traceNum);
-
-		analysisData->graphs->hrttBinsArray[row][col][binNum(*rtt / 2.)]++;
-		analysisData->graphs->hrttBinsTotal[row][col]++;
-	}
-
-	g_assert(m1->inE->type == TCP);
 	rttKey= malloc(sizeof(struct RttKey));
 	rttKey->saddr=
 		MIN(m1->inE->event.tcpEvent->segmentKey->connectionKey.saddr,
@@ -556,6 +566,24 @@ static void analyzeExchangeEval(SyncState* const syncState, Exchange* const exch
 	rttKey->daddr=
 		MAX(m1->inE->event.tcpEvent->segmentKey->connectionKey.saddr,
 			m1->inE->event.tcpEvent->segmentKey->connectionKey.daddr);
+
+	if (syncState->graphsStream)
+	{
+		AnalysisGraphEval* graph= g_hash_table_lookup(analysisData->graphs,
+			rttKey);
+
+		if (graph == NULL)
+		{
+			struct RttKey* tableKey= malloc(sizeof(*tableKey));
+
+			graph= constructAnalysisGraphEval(syncState->graphsDir, rttKey);
+			memcpy(tableKey, rttKey, sizeof(*tableKey));
+			g_hash_table_insert(analysisData->graphs, tableKey, graph);
+		}
+
+		hitBin(&graph->hrttBins, *rtt / 2);
+	}
+
 	exchangeRtt= g_hash_table_lookup(analysisData->stats->exchangeRtt,
 		rttKey);
 
@@ -629,8 +657,10 @@ static GArray* finalizeAnalysisEval(SyncState* const syncState)
 
 	if (syncState->graphsStream && analysisData->graphs)
 	{
-		writeGraphFiles(syncState);
-		destroyGraphs(syncState);
+		g_hash_table_foreach(analysisData->graphs, &ghfWriteGraph, &(struct
+				WriteGraphInfo) {.rttInfo= analysisData->rttInfo,
+			.graphsStream= syncState->graphsStream});
+		g_hash_table_destroy(analysisData->graphs);
 		analysisData->graphs= NULL;
 	}
 
@@ -1006,133 +1036,121 @@ static void gfSumSquares(gpointer data, gpointer userData)
 
 
 /*
+ * Update a struct Bins according to a new value
+ *
+ * Args:
+ *   bins:         the structure containing bins to build a histrogram
+ *   value:        the new value
+ */
+static void hitBin(struct Bins* const bins, const double value)
+{
+	unsigned int binN= binNum(value);
+
+	if (binN < bins->min)
+	{
+		bins->min= binN;
+	}
+	else if (binN > bins->max)
+	{
+		bins->max= binN;
+	}
+
+	bins->total++;
+
+	bins->bin[binN]++;
+}
+
+
+/*
  * Figure out the bin in a histogram to which a value belongs.
  *
  * This uses exponentially sized bins that go from 0 to infinity.
  *
  * Args:
- *   value:        the value, must be >=0, or else expect the unexpected
- *                 (floating point exception)
+ *   value:        in the range -INFINITY to INFINITY
+ *
+ * Returns:
+ *   The number of the bin in a struct Bins.bin
  */
 static unsigned int binNum(const double value)
 {
-	if (value == 0)
+	if (value <= 0)
 	{
 		return 0;
 	}
+	else if (value < binEnd(1))
+	{
+		return 1;
+	}
+	else if (value >= binStart(BIN_NB - 1))
+	{
+		return BIN_NB - 1;
+	}
 	else
 	{
-		double result= floor(log(value) / log(binBase)) + (binNb - 1);
-
-		if (result < 0.)
-		{
-			return 0.;
-		}
-		else
-		{
-			return result;
-		}
+		return floor(log(value) / log(binBase)) + BIN_NB + 1;
 	}
 }
 
 
 /*
- * Figure out the start of the interval of a bin in a histogram. The starting
- * value is included in the interval.
+ * Figure out the start of the interval of a bin in a histogram. See struct
+ * Bins.
  *
  * This uses exponentially sized bins that go from 0 to infinity.
  *
  * Args:
  *   binNum:       bin number
+ *
+ * Return:
+ *   The start of the interval, this value is included in the interval (except
+ *   for -INFINITY, naturally)
  */
 static double binStart(const unsigned int binNum)
 {
-	g_assert(binNum < binNb);
+	g_assert_cmpuint(binNum, <, BIN_NB);
 
 	if (binNum == 0)
 	{
-		return 0;
+		return -INFINITY;
+	}
+	else if (binNum == 1)
+	{
+		return 0.;
 	}
 	else
 	{
-		return pow(binBase, (double) binNum - (binNb - 1));
+		return pow(binBase, (double) binNum - BIN_NB + 1);
 	}
 }
 
 
 /*
- * Figure out the end of the interval of a bin in a histogram. The end value
- * is not included in the interval.
+ * Figure out the end of the interval of a bin in a histogram. See struct
+ * Bins.
  *
  * This uses exponentially sized bins that go from 0 to infinity.
  *
  * Args:
  *   binNum:       bin number
+ *
+ * Return:
+ *   The end of the interval, this value is not included in the interval
  */
 static double binEnd(const unsigned int binNum)
 {
-	g_assert(binNum < binNb);
+	g_assert_cmpuint(binNum, <, BIN_NB);
 
-	if (binNum < binNb)
+	if (binNum == 0)
 	{
-		return pow(binBase, (double) binNum - (binNb - 2));
+		return 0.;
+	}
+	else if (binNum < BIN_NB - 1)
+	{
+		return pow(binBase, (double) binNum - BIN_NB + 2);
 	}
 	else
 	{
 		return INFINITY;
 	}
-}
-
-
-/*
- * Write the analysis-specific graph lines in the gnuplot script.
- *
- * Args:
- *   syncState:    container for synchronization data
- *   i:            first trace number
- *   j:            second trace number, garanteed to be larger than i
- */
-static void writeAnalysisGraphsPlotsEval(SyncState* const syncState, const
-	unsigned int i, const unsigned int j)
-{
-	fprintf(syncState->graphsStream,
-		"\t\"analysis_eval_hrtt-%2$03d_and_%1$03d.data\" "
-			"title \"RTT/2\" with boxes linetype 1 linewidth 3 "
-			"linecolor rgb \"black\" fill transparent solid 0.75, \\\n"
-		/*"\t\"analysis_eval_tt-%1$03d_to_%2$03d.data\" "
-			"title \"%1$u to %2$u\" with boxes linetype 1 linewidth 3 "
-			"linecolor rgb \"black\" fill transparent solid 0.5, \\\n"
-		"\t\"analysis_eval_tt-%2$03d_to_%1$03d.data\" "
-			"title \"%2$u to %1$u\" with boxes linetype 1 linewidth 3 "
-			"linecolor rgb \"black\" fill transparent solid 0.25, \\\n"*/
-			, i, j);
-	/*
-	fprintf(syncState->graphsStream,
-		"\t\"analysis_eval_hrtt-%2$03d_and_%1$03d.data\" "
-			"title \"RTT/2\" with linespoints linetype 1 linewidth 3 "
-			"linecolor rgb \"black\", \\\n"
-		"\t\"analysis_eval_tt-%1$03d_to_%2$03d.data\" "
-			"title \"%1$u to %2$u\" with linespoints linetype 1 linewidth 3 "
-			"linecolor rgb \"gray70\", \\\n"
-		"\t\"analysis_eval_tt-%2$03d_to_%1$03d.data\" "
-			"title \"%2$u to %1$u\" with linespoints linetype 1 linewidth 3 "
-			"linecolor rgb \"gray40\", \\\n", i, j);
-*/
-}
-
-
-/*
- * Write the analysis-specific options in the gnuplot script.
- *
- * Args:
- *   syncState:    container for synchronization data
- *   i:            first trace number
- *   j:            second trace number, garanteed to be larger than i
- */
-static void writeAnalysisGraphsOptionsEval(SyncState* const syncState, const
-	unsigned int i, const unsigned int j)
-{
-	fprintf(syncState->graphsStream,
-		"set xlabel \"Message Latency (s)\"\n"
-		"set ylabel \"Proportion of messages per second\"\n");
 }

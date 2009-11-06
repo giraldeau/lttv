@@ -356,8 +356,10 @@ void gfGraphFunctionCall(gpointer data, gpointer user_data)
 {
 	SyncState* parallelSS= data;
 	struct GraphAggregate* aggregate= user_data;
-	void (*graphFunction)(struct _SyncState*, const unsigned int, const
-		unsigned int)= (void*) data + (size_t) aggregate->offset;
+	typedef void (*GraphFunction)(struct _SyncState*, const unsigned int,
+		const unsigned int);
+	GraphFunction graphFunction= *(GraphFunction*)((void*)
+		parallelSS->matchingModule + (size_t) aggregate->offset);
 
 	if (graphFunction != NULL)
 	{

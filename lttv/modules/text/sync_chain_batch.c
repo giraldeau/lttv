@@ -314,6 +314,10 @@ void setupSyncChain(LttvTracesetContext* const traceSetContext)
 			g_error(strerror(errno));
 		}
 
+		fprintf(syncState->graphsStream,
+			"#!/usr/bin/gnuplot\n\n"
+			"set terminal postscript eps color size 8in,6in\n");
+
 		retval= chdir(cwd);
 		if (retval == -1)
 		{
@@ -370,10 +374,6 @@ void teardownSyncChain(LttvTracesetContext* const traceSetContext)
 	// Write graphs file
 	if (optionEvalGraphs)
 	{
-		fprintf(syncState->graphsStream,
-			"#!/usr/bin/gnuplot\n\n"
-			"set terminal postscript eps color size 8in,6in\n");
-
 		// Cover the upper triangular matrix, i is the reference node.
 		for (i= 0; i < syncState->traceNb; i++)
 		{
@@ -382,10 +382,21 @@ void teardownSyncChain(LttvTracesetContext* const traceSetContext)
 				long pos1, pos2, trunc;
 
 				fprintf(syncState->graphsStream,
-					"\nset output \"%03d-%03d.eps\"\n"
+					"\nreset\n"
+					"set output \"%03d-%03d.eps\"\n"
 					"plot \\\n", i, j);
 				pos1= ftell(syncState->graphsStream);
 
+				if (syncState->processingModule->writeProcessingGraphsPlots)
+				{
+					syncState->processingModule->writeProcessingGraphsPlots(syncState,
+						i, j);
+				}
+				if (syncState->matchingModule->writeMatchingGraphsPlots)
+				{
+					syncState->matchingModule->writeMatchingGraphsPlots(syncState,
+						i, j);
+				}
 				if (syncState->analysisModule->writeAnalysisGraphsPlots)
 				{
 					syncState->analysisModule->writeAnalysisGraphsPlots(syncState,
@@ -419,6 +430,16 @@ void teardownSyncChain(LttvTracesetContext* const traceSetContext)
 					"\nset output \"%1$03d-%2$03d.eps\"\n"
 					"set title \"\"\n", i, j);
 
+				if (syncState->processingModule->writeProcessingGraphsOptions)
+				{
+					syncState->processingModule->writeProcessingGraphsOptions(syncState,
+						i, j);
+				}
+				if (syncState->matchingModule->writeMatchingGraphsOptions)
+				{
+					syncState->matchingModule->writeMatchingGraphsOptions(syncState,
+						i, j);
+				}
 				if (syncState->analysisModule->writeAnalysisGraphsOptions)
 				{
 					syncState->analysisModule->writeAnalysisGraphsOptions(syncState,
