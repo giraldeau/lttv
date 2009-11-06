@@ -690,7 +690,9 @@ static GArray* finalizeAnalysisEval(SyncState* const syncState)
 static void printAnalysisStatsEval(SyncState* const syncState)
 {
 	AnalysisDataEval* analysisData;
-	unsigned int i, j;
+	unsigned int i, j, k;
+	unsigned int totInversion= 0, totTooFast= 0, totNoInfo= 0, totTotal= 0;
+	int charNb;
 
 	if (!syncState->stats)
 	{
@@ -707,26 +709,52 @@ static void printAnalysisStatsEval(SyncState* const syncState)
 		analysisData->stats->broadcastNb);
 
 	printf("\tIndividual evaluation:\n"
-		"\t\tTrace pair  Inversions Too fast   (No RTT info) Total\n");
+		"\t\tTrace pair  Inversions        Too fast          No RTT info  Total\n");
 
 	for (i= 0; i < syncState->traceNb; i++)
 	{
 		for (j= i + 1; j < syncState->traceNb; j++)
 		{
 			MessageStats* messageStats;
-			const char* format= "\t\t%3d - %-3d   %-10u %-10u %-10u    %u\n";
+			struct {
+				unsigned int t1, t2;
+			} loopValues[]= {
+				{i, j},
+				{j, i}
+			};
 
-			messageStats= &analysisData->stats->messageStats[i][j];
+			for (k= 0; k < sizeof(loopValues) / sizeof(*loopValues); k++)
+			{
+				messageStats=
+					&analysisData->stats->messageStats[loopValues[k].t1][loopValues[k].t2];
 
-			printf(format, i, j, messageStats->inversionNb, messageStats->tooFastNb,
-				messageStats->noRTTInfoNb, messageStats->total);
+				printf("\t\t%3d - %-3d   ", loopValues[k].t1, loopValues[k].t2);
+				printf("%u (%u%%)%n", messageStats->inversionNb, (unsigned
+						int) ceil((double) messageStats->inversionNb /
+						messageStats->total * 100), &charNb);
+				printf("%*s", 17 - charNb > 0 ? 17 - charNb + 1: 1, " ");
+				printf("%u (%u%%)%n", messageStats->tooFastNb, (unsigned int)
+					ceil((double) messageStats->tooFastNb /
+						messageStats->total * 100), &charNb);
+				printf("%*s%-10u   %u\n", 17 - charNb > 0 ? 17 - charNb + 1:
+					1, " ", messageStats->noRTTInfoNb, messageStats->total);
 
-			messageStats= &analysisData->stats->messageStats[j][i];
-
-			printf(format, j, i, messageStats->inversionNb, messageStats->tooFastNb,
-				messageStats->noRTTInfoNb, messageStats->total);
+				totInversion+= messageStats->inversionNb;
+				totTooFast+= messageStats->tooFastNb;
+				totNoInfo+= messageStats->noRTTInfoNb;
+				totTotal+= messageStats->total;
+			}
 		}
 	}
+
+	printf("\t\t  total     ");
+	printf("%u (%u%%)%n", totInversion, (unsigned int) ceil((double)
+			totInversion / totTotal * 100), &charNb);
+	printf("%*s", 17 - charNb > 0 ? 17 - charNb + 1: 1, " ");
+	printf("%u (%u%%)%n", totTooFast, (unsigned int) ceil((double) totTooFast
+			/ totTotal * 100), &charNb);
+	printf("%*s%-10u   %u\n", 17 - charNb > 0 ? 17 - charNb + 1: 1, " ",
+		totNoInfo, totTotal);
 
 	printf("\tRound-trip times:\n"
 		"\t\tHost pair                          RTT from exchanges  RTTs from file (ms)\n");
