@@ -28,11 +28,11 @@ usage () {
 	echo "Usage: $0 [OPTION]... [TRACE]..." >/dev/stderr
 	echo "" >/dev/stderr
 	echo "Options:" >/dev/stderr
-	printf "\t-m MODE      Output mode (modes: text, gui)" >/dev/stderr
-	printf "\t-H HELPER    Invoke LTTV through a helper program" >/dev/stderr
-	printf "\t             (helpers: gdb, valgrind, massif, strace)" >/dev/stderr
-	printf "\t-b OPTIONS   LTTV options to specify before the module list" >/dev/stderr
-	printf "\t-a OPTIONS   LTTV options to specify after the module list" >/dev/stderr
+	printf "\t-m MODE      Output mode (modes: text, gui)\n" >/dev/stderr
+	printf "\t-H HELPER    Invoke LTTV through a helper program\n" >/dev/stderr
+	printf "\t             (helpers: gdb, valgrind, massif, strace)\n" >/dev/stderr
+	printf "\t-b OPTIONS   LTTV options to specify before the module list\n" >/dev/stderr
+	printf "\t-a OPTIONS   LTTV options to specify after the module list\n" >/dev/stderr
 	echo "" >/dev/stderr
 }
 
