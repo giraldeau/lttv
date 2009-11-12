@@ -232,7 +232,7 @@ static void bdevstate_free_cb(gpointer key, gpointer value, gpointer user_data);
 static LttvBdevState *bdevstate_copy(LttvBdevState *bds);
 
 
-#if (__SIZEOF_LONG__ == 4)
+#if (__WORDSIZE == 32)
 guint guint64_hash(gconstpointer key)
 {
 	guint64 ukey = *(const guint64 *)key;
@@ -355,7 +355,7 @@ static void expand_syscall_table(LttvTraceState *ts, int id)
 static void expand_kprobe_table(LttvTraceState *ts, guint64 ip, char *symbol)
 {
   LttvNameTables *nt = ts->name_tables;
-#if (__SIZEOF_LONG__ == 4)
+#if (__WORDSIZE == 32)
   guint64 *ip_ptr = g_new(guint64, 1);
   g_hash_table_insert(nt->kprobe_hash, ip_ptr,
     (gpointer)(glong)g_quark_from_string(symbol));
@@ -2085,7 +2085,7 @@ create_name_tables(LttvTraceState *tcs)
 
   g_string_free(fe_name, TRUE);
 
-#if (__SIZEOF_LONG__ == 4)
+#if (__WORDSIZE == 32)
   name_tables->kprobe_hash = g_hash_table_new_full(guint64_hash, guint64_equal,
     g_free, NULL);
 #else
