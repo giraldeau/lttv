@@ -3462,6 +3462,8 @@ powerpc64, s390, sparc, sparc64.<br>
 0.164<br>
 0.165<br>
 0.166<br>
+0.167<br>
+0.168<br>
 </td>
 <td style="vertical-align: top;">
 0.65<br>
@@ -3610,6 +3612,12 @@ flush timer interval).<br>
 LTTV 0.12.20 fixes a dependency on non-standard __SIZEOF_LONG__. Uses __WORDSIZE
 instead. Should fix some 32-bit builds.<br>
 ltt-control 0.74 fixes a missing return value from liblttctl.<br>
+LTTng 0.168 makes periodic flush energy-efficient, adds cpu idle notifiers for
+x86_32, x86_64 to deal with periodic flush vs idle interaction (other
+architectures are todo). Also fix a ltt-relay-vfs file close bug, increase
+default vm_state channel subbuffer size, fix ltt-ascii so it compiles after
+cleanup (ltt-ascii is still experimental, will need to be adapted to new
+periodic flush scheme).<br>
 </td>
 <td style="vertical-align: top;">
 </td>
