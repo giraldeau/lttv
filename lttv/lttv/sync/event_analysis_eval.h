@@ -70,9 +70,9 @@ struct Bins
 typedef struct
 {
 	 /* File pointers to files where "trip times" (message latency) histogram
-	  * values are outputted. Each host-pair has two files, one for each
-	  * message direction. As for traces, the host with the smallest address
-	  * is considered to be the reference for the direction of messages (ie.
+	  * values are output. Each host-pair has two files, one for each message
+	  * direction. As for traces, the host with the smallest address is
+	  * considered to be the reference for the direction of messages (ie.
 	  * messages from the host with the lowest address to the host with the
 	  * largest address are "sent"). */
 	FILE* ttSendPoints;
@@ -82,7 +82,7 @@ typedef struct
 	struct Bins ttRecvBins;
 
 	/* File pointers to files where half round trip times (evaluated from
-	 * exchanges) histogram values are outputted. */
+	 * exchanges) histogram values are output. */
 	FILE* hrttPoints;
 
 	struct Bins hrttBins;

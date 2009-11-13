@@ -634,7 +634,7 @@ static void openGraphDataFiles(SyncState* const syncState)
  */
 static void writeMessagePoint(FILE* stream, const Message* const message)
 {
-	LttCycleCount x, y;
+	uint64_t x, y;
 
 	if (message->inE->traceNum < message->outE->traceNum)
 	{

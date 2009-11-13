@@ -23,8 +23,6 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include <ltt/ltt.h>
-
 
 enum Direction
 {

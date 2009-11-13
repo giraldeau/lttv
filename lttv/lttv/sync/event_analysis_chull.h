@@ -26,7 +26,7 @@
 
 typedef struct
 {
-	LttCycleCount x, y;
+	uint64_t x, y;
 } Point;
 
 
