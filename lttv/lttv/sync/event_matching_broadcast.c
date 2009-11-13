@@ -43,11 +43,20 @@ static void destroyMatchingBroadcast(SyncState* const syncState);
 static void matchEventBroadcast(SyncState* const syncState, Event* const event);
 static GArray* finalizeMatchingBroadcast(SyncState* const syncState);
 static void printMatchingStatsBroadcast(SyncState* const syncState);
+static void writeMatchingGraphsPlotsBroadcast(SyncState* const syncState, const
+	unsigned int i, const unsigned int j);
 
 // Functions specific to this module
 static void registerMatchingBroadcast() __attribute__((constructor (101)));
 
 static void partialDestroyMatchingBroadcast(SyncState* const syncState);
+
+static void openGraphDataFiles(SyncState* const syncState);
+static void writeAccuracyPoints(MatchingGraphsBroadcast* graphs, const
+	Broadcast* const broadcast);
+void gfAddToArray(gpointer data, gpointer user_data);
+static void closeGraphDataFiles(SyncState* const syncState);
+
 
 static MatchingModule matchingModuleBroadcast = {
 	.name= "broadcast",
@@ -58,7 +67,7 @@ static MatchingModule matchingModuleBroadcast = {
 	.matchEvent= &matchEventBroadcast,
 	.finalizeMatching= &finalizeMatchingBroadcast,
 	.printMatchingStats= &printMatchingStatsBroadcast,
-	.writeMatchingGraphsPlots= NULL,
+	.writeMatchingGraphsPlots= &writeMatchingGraphsPlotsBroadcast,
 	.writeMatchingGraphsOptions= NULL,
 };
 
@@ -104,6 +113,16 @@ static void initMatchingBroadcast(SyncState* const syncState)
 	{
 		matchingData->stats= NULL;
 	}
+
+	if (syncState->graphsStream)
+	{
+		matchingData->graphs= malloc(sizeof(MatchingGraphsBroadcast));
+		openGraphDataFiles(syncState);
+	}
+	else
+	{
+		matchingData->graphs= NULL;
+	}
 }
 
 
@@ -119,9 +138,8 @@ static void initMatchingBroadcast(SyncState* const syncState)
  */
 static void destroyMatchingBroadcast(SyncState* const syncState)
 {
-	MatchingDataBroadcast* matchingData;
-
-	matchingData= (MatchingDataBroadcast*) syncState->matchingData;
+	MatchingDataBroadcast* matchingData= syncState->matchingData;
+	unsigned int i;
 
 	if (matchingData == NULL)
 	{
@@ -133,6 +151,16 @@ static void destroyMatchingBroadcast(SyncState* const syncState)
 	if (syncState->stats)
 	{
 		free(matchingData->stats);
+	}
+
+	if (syncState->graphsStream)
+	{
+		for (i= 0; i < syncState->traceNb; i++)
+		{
+			free(matchingData->graphs->pointsNb[i]);
+		}
+		free(matchingData->graphs->pointsNb);
+		free(matchingData->graphs);
 	}
 
 	free(syncState->matchingData);
@@ -164,14 +192,18 @@ static void partialDestroyMatchingBroadcast(SyncState* const syncState)
 
 	g_hash_table_destroy(matchingData->pendingBroadcasts);
 	matchingData->pendingBroadcasts= NULL;
+
+	if (syncState->graphsStream && matchingData->graphs->accuracyPoints)
+	{
+		closeGraphDataFiles(syncState);
+	}
 }
 
 
 /*
  * Try to match one broadcast with previously received broadcasts (based on
  * the addresses and the fist bytes of data they contain). Deliver them to the
- * analysis module once a traceNb events have been accumulated for a
- * broadcast.
+ * analysis module once traceNb events have been accumulated for a broadcast.
  *
  * Args:
  *   syncState     container for synchronization data.
@@ -224,6 +256,11 @@ static void matchEventBroadcast(SyncState* const syncState, Event* const event)
 					g_hash_table_steal(matchingData->pendingBroadcasts, datagramKey);
 					free(datagramKey);
 					syncState->analysisModule->analyzeBroadcast(syncState, broadcast);
+
+					if (syncState->graphsStream)
+					{
+						writeAccuracyPoints(matchingData->graphs, broadcast);
+					}
 					destroyBroadcast(broadcast);
 				}
 			}
@@ -317,5 +354,159 @@ static void printMatchingStatsBroadcast(SyncState* const syncState)
 			(double) (matchingData->stats->totReceive -
 				matchingData->stats->totComplete * syncState->traceNb) /
 			matchingData->stats->totIncomplete);
+	}
+}
+
+
+/*
+ * Create and open files used to store accuracy points to genereate graphs.
+ * Allocate and populate array to store file pointers and counters.
+ *
+ * Args:
+ *   syncState:    container for synchronization data
+ */
+static void openGraphDataFiles(SyncState* const syncState)
+{
+	unsigned int i, j;
+	int retval;
+	char* cwd;
+	char name[36];
+	MatchingGraphsBroadcast* graphs= ((MatchingDataBroadcast*)
+		syncState->matchingData)->graphs;
+
+	cwd= changeToGraphDir(syncState->graphsDir);
+
+	graphs->accuracyPoints= malloc(syncState->traceNb * sizeof(FILE**));
+	graphs->pointsNb= malloc(syncState->traceNb * sizeof(unsigned int*));
+	for (i= 0; i < syncState->traceNb; i++)
+	{
+		graphs->accuracyPoints[i]= malloc(i * sizeof(FILE*));
+		graphs->pointsNb[i]= calloc(i, sizeof(unsigned int));
+		for (j= 0; j < i; j++)
+		{
+			retval= snprintf(name, sizeof(name),
+				"matching_broadcast-%03u_and_%03u.data", j, i);
+			g_assert_cmpint(retval, <=, sizeof(name) - 1);
+			if ((graphs->accuracyPoints[i][j]= fopen(name, "w")) == NULL)
+			{
+				g_error(strerror(errno));
+			}
+		}
+	}
+
+	retval= chdir(cwd);
+	if (retval == -1)
+	{
+		g_error(strerror(errno));
+	}
+	free(cwd);
+}
+
+
+/*
+ * Calculate and write points used to generate graphs
+ *
+ * Args:
+ *   graphs:       structure containing array of file pointers and counters
+ *   broadcast:    broadcast for which to write the points
+ */
+static void writeAccuracyPoints(MatchingGraphsBroadcast* graphs, const
+	Broadcast* const broadcast)
+{
+	unsigned int i, j;
+	GArray* events;
+	unsigned int eventNb= broadcast->events->length;
+
+	events= g_array_sized_new(FALSE, FALSE, sizeof(Event*), eventNb);
+	g_queue_foreach(broadcast->events, &gfAddToArray, events);
+
+	for (i= 0; i < eventNb; i++)
+	{
+		for (j= 0; j < eventNb; j++)
+		{
+			Event* eventI= g_array_index(events, Event*, i), * eventJ=
+				g_array_index(events, Event*, j);
+
+			if (eventI->traceNum < eventJ->traceNum)
+			{
+				fprintf(graphs->accuracyPoints[eventJ->traceNum][eventI->traceNum],
+					"%20llu %20lld\n", eventI->cpuTime, (int64_t) eventJ->cpuTime -
+					eventI->cpuTime);
+				graphs->pointsNb[eventJ->traceNum][eventI->traceNum]++;
+			}
+		}
+	}
+}
+
+
+/*
+ * A GFunc for g_queue_foreach()
+ *
+ * Args:
+ *   data          Event*, event to add
+ *   user_data     GArray*, array to add to
+ */
+void gfAddToArray(gpointer data, gpointer user_data)
+{
+	g_array_append_val((GArray*) user_data, data);
+}
+
+
+/*
+ * Close files used to store accuracy points to genereate graphs. Deallocate
+ * array to store file pointers (but not array for counters).
+ *
+ * Args:
+ *   syncState:    container for synchronization data
+ */
+static void closeGraphDataFiles(SyncState* const syncState)
+{
+	unsigned int i, j;
+	MatchingGraphsBroadcast* graphs= ((MatchingDataBroadcast*)
+		syncState->matchingData)->graphs;
+	int retval;
+
+	if (graphs->accuracyPoints == NULL)
+	{
+		return;
+	}
+
+	for (i= 0; i < syncState->traceNb; i++)
+	{
+		for (j= 0; j < i; j++)
+		{
+			retval= fclose(graphs->accuracyPoints[i][j]);
+			if (retval != 0)
+			{
+				g_error(strerror(errno));
+			}
+		}
+		free(graphs->accuracyPoints[i]);
+	}
+	free(graphs->accuracyPoints);
+
+	graphs->accuracyPoints= NULL;
+}
+
+
+/*
+ * Write the matching-specific graph lines in the gnuplot script.
+ *
+ * Args:
+ *   syncState:    container for synchronization data
+ *   i:            first trace number
+ *   j:            second trace number, garanteed to be larger than i
+ */
+static void writeMatchingGraphsPlotsBroadcast(SyncState* const syncState, const
+	unsigned int i, const unsigned int j)
+{
+	if (((MatchingDataBroadcast*)
+			syncState->matchingData)->graphs->pointsNb[j][i])
+	{
+		fprintf(syncState->graphsStream,
+			"\t\"matching_broadcast-%03d_and_%03d.data\" "
+				"title \"Broadcast delays\" with points "
+				"linecolor rgb \"black\" pointtype 6 pointsize 2, \\\n", i,
+				j);
 	}
 }

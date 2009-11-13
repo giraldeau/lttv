@@ -702,11 +702,14 @@ static void printAnalysisStatsEval(SyncState* const syncState)
 	analysisData= (AnalysisDataEval*) syncState->analysisData;
 
 	printf("Synchronization evaluation analysis stats:\n");
-	printf("\tsum of broadcast differential delays: %g\n",
-		analysisData->stats->broadcastDiffSum);
-	printf("\taverage broadcast differential delays: %g\n",
-		analysisData->stats->broadcastDiffSum /
-		analysisData->stats->broadcastNb);
+	if (analysisData->stats->broadcastNb)
+	{
+		printf("\tsum of broadcast differential delays: %g\n",
+			analysisData->stats->broadcastDiffSum);
+		printf("\taverage broadcast differential delays: %g\n",
+			analysisData->stats->broadcastDiffSum /
+			analysisData->stats->broadcastNb);
+	}
 
 	printf("\tIndividual evaluation:\n"
 		"\t\tTrace pair  Inversions        Too fast          No RTT info  Total\n");

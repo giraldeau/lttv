@@ -34,10 +34,35 @@ typedef struct
 
 typedef struct
 {
+	/* This array is used for graphs. It contains file pointers to files where
+	 * broadcast differential delay points are output.
+	 *
+	 * accuracyPoints is divided into three parts depending on the position of an
+     * element accuracyPoints[i][j]:
+     *   Lower triangular part of the matrix
+     *     i > j
+     *     This contains the difference t[i] - t[j] between the times when
+	 *     a broadcast was received in trace i and trace j.
+     *   Diagonal part of the matrix
+     *     i = j
+     *     This area is not allocated.
+     *   Upper triangular part of the matrix
+     *     i < j
+     *     This area is not allocated.
+	 */
+	FILE*** accuracyPoints;
+
+	// pointsNb[traceNum][traceNum] has the same structure as accuracyPoints
+	unsigned int** pointsNb;
+} MatchingGraphsBroadcast;
+
+typedef struct
+{
 	// Broadcast* pendingBroadcasts[dataStart]
 	GHashTable* pendingBroadcasts;
 
 	MatchingStatsBroadcast* stats;
+	MatchingGraphsBroadcast* graphs;
 } MatchingDataBroadcast;
 
 #endif

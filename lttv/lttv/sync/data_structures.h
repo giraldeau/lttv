@@ -113,11 +113,13 @@ typedef struct _Message
 typedef struct
 {
 	Message* message;
+	// Event* acks[]
 	GQueue* acks;
 } Exchange;
 
 typedef struct
 {
+	// Event* events[]
 	GQueue* events;
 } Broadcast;
 
