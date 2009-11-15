@@ -3465,6 +3465,7 @@ powerpc64, s390, sparc, sparc64.<br>
 0.167<br>
 0.168<br>
 0.169<br>
+0.170<br>
 </td>
 <td style="vertical-align: top;">
 0.65<br>
@@ -3477,6 +3478,7 @@ powerpc64, s390, sparc, sparc64.<br>
 0.72<br>
 0.73<br>
 0.74<br>
+0.75<br>
 </td>
 <td style="vertical-align: top;">
 obsolete<br>
@@ -3620,6 +3622,9 @@ default vm_state channel subbuffer size, fix ltt-ascii so it compiles after
 cleanup (ltt-ascii is still experimental, will need to be adapted to new
 periodic flush scheme).<br>
 LTTng 0.169 fixes trace teardown.<br>
+LTTng 0.170 fixes kref issues (since refactoring) and cpu hotplug vs trace
+teardown issues (caused by race in DebugFS). Simplification of trace
+creation/remove locking scheme.<br>
 </td>
 <td style="vertical-align: top;">
 </td>
