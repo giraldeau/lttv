@@ -148,9 +148,9 @@ static int parse_trace_header(ltt_subbuffer_header_t *header,
     break;
   case 2:
     switch(header->minor_version) {
-    case 3:
+    case 4:
       {
-        struct ltt_subbuffer_header_2_3 *vheader = header;
+        struct ltt_subbuffer_header_2_4 *vheader = header;
         tf->buffer_header_size = ltt_subbuffer_header_size();
         tf->tscbits = 27;
         tf->eventbits = 5;

@@ -69,7 +69,7 @@ static inline void print_enum_events(LttEvent *e, struct marker_field *f,
       GQuark symbol = (GQuark)g_hash_table_lookup(nt->kprobe_hash,
                                           (gconstpointer)&value);
 #else
-      GQuark symbol = (GQuark)g_hash_table_lookup(nt->kprobe_hash,
+      GQuark symbol = (GQuark)(unsigned long)g_hash_table_lookup(nt->kprobe_hash,
                                           (gconstpointer)value);
 #endif
       if (symbol)
