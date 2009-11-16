@@ -36,6 +36,12 @@ typedef struct
 
 typedef struct
 {
+	uint32_t freqScale;
+	uint64_t startFreq;
+} ProcessingGraphsLTTVStandard;
+
+typedef struct
+{
 	LttvTracesetContext* traceSetContext;
 
 	// unsigned int traceNumTable[trace*]
@@ -47,10 +53,12 @@ typedef struct
 	// LttvTraceHook hookListList[traceNum][hookNum]
 	GArray* hookListList;
 
-	// inE* pendingRecv[traceNb]
+	// inE* pendingRecv[traceNum]
 	GHashTable** pendingRecv;
 
 	ProcessingStatsLTTVStandard* stats;
+	// ProcessingGraphsLTTVStandard graphs[traceNum]
+	ProcessingGraphsLTTVStandard* graphs;
 } ProcessingDataLTTVStandard;
 
 #endif

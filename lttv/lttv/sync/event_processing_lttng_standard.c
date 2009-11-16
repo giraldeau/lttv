@@ -123,6 +123,24 @@ static void initProcessingLTTVStandard(SyncState* const syncState, LttvTracesetC
 			processingData->traceSetContext->traces[i]->t, (gpointer) i);
 	}
 
+	if (syncState->graphsStream)
+	{
+		processingData->graphs= malloc(syncState->traceNb *
+			sizeof(ProcessingGraphsLTTVStandard));
+
+		for(i= 0; i < syncState->traceNb; i++)
+		{
+			LttTrace* traceI= traceSetContext->traces[i]->t;
+
+			processingData->graphs[i].startFreq= traceI->start_freq;
+			processingData->graphs[i].freqScale= traceI->freq_scale;
+		}
+	}
+	else
+	{
+		processingData->graphs= NULL;
+	}
+
 	for(i= 0; i < syncState->traceNb; i++)
 	{
 		processingData->pendingRecv[i]= g_hash_table_new_full(&g_direct_hash,
@@ -285,6 +303,11 @@ static void destroyProcessingLTTVStandard(SyncState* const syncState)
 	if (syncState->stats)
 	{
 		free(processingData->stats);
+	}
+
+	if (syncState->graphsStream)
+	{
+		free(processingData->graphs);
 	}
 
 	free(syncState->processingData);
@@ -660,12 +683,12 @@ static void writeProcessingGraphsOptionsLTTVStandard(SyncState* const
 	syncState, const unsigned int i, const unsigned int j)
 {
 	ProcessingDataLTTVStandard* processingData;
-	LttTrace* traceI, * traceJ;
+	ProcessingGraphsLTTVStandard* traceI, * traceJ;
 
 	processingData= (ProcessingDataLTTVStandard*) syncState->processingData;
 
-	traceI= processingData->traceSetContext->traces[i]->t;
-	traceJ= processingData->traceSetContext->traces[j]->t;
+	traceI= &processingData->graphs[i];
+	traceJ= &processingData->graphs[j];
 
 	fprintf(syncState->graphsStream,
         "set key inside right bottom\n"
@@ -678,6 +701,6 @@ static void writeProcessingGraphsOptionsLTTVStandard(SyncState* const
 		"set x2tics\n"
 		"set y2label \"Clock %3$d (s)\"\n"
 		"set y2range [GPVAL_Y_MIN / %4$.1f : GPVAL_Y_MAX / %4$.1f]\n"
-		"set y2tics\n", i, (double) traceI->start_freq / traceI->freq_scale,
-		j, (double) traceJ->start_freq / traceJ->freq_scale);
+		"set y2tics\n", i, (double) traceI->startFreq / traceI->freqScale, j,
+		(double) traceJ->startFreq / traceJ->freqScale);
 }
