@@ -108,12 +108,11 @@ static AnalysisModule analysisModuleCHull= {
 	.initAnalysis= &initAnalysisCHull,
 	.destroyAnalysis= &destroyAnalysisCHull,
 	.analyzeMessage= &analyzeMessageCHull,
-	.analyzeExchange= NULL,
-	.analyzeBroadcast= NULL,
 	.finalizeAnalysis= &finalizeAnalysisCHull,
 	.printAnalysisStats= &printAnalysisStatsCHull,
-	.writeAnalysisGraphsPlots= &writeAnalysisGraphsPlotsCHull,
-	.writeAnalysisGraphsOptions= NULL,
+	.graphFunctions= {
+		.writeTraceTracePlots= &writeAnalysisGraphsPlotsCHull,
+	}
 };
 
 

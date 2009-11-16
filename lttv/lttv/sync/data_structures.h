@@ -86,6 +86,8 @@ typedef struct
 typedef struct _Event
 {
 	unsigned long traceNum;
+	// wallTime is corrected according to factors in trace struct, cpuTime
+	// is not
 	uint64_t cpuTime;
 	WallTime wallTime;
 

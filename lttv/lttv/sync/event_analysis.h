@@ -23,6 +23,7 @@
 #include <stdio.h>
 
 #include "data_structures.h"
+#include "graph_functions.h"
 
 
 struct _SyncState;
@@ -41,11 +42,9 @@ typedef struct
 	void (*analyzeBroadcast)(struct _SyncState* const syncState, Broadcast* const
 		broadcast);
 	GArray* (*finalizeAnalysis)(struct _SyncState* const syncState);
+
 	void (*printAnalysisStats)(struct _SyncState* const syncState);
-	void (*writeAnalysisGraphsPlots)(struct _SyncState* const syncState, const
-		unsigned int i, const unsigned int j);
-	void (*writeAnalysisGraphsOptions)(struct _SyncState* const syncState,
-		const unsigned int i, const unsigned int j);
+	GraphFunctions graphFunctions;
 } AnalysisModule;
 
 #endif

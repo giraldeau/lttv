@@ -50,9 +50,6 @@ static ProcessingModule processingModuleLTTVNull = {
 	.initProcessing= &initProcessingLTTVNull,
 	.destroyProcessing= &destroyProcessingLTTVNull,
 	.finalizeProcessing= &finalizeProcessingLTTVNull,
-	.printProcessingStats= NULL,
-	.writeProcessingGraphsPlots= NULL,
-	.writeProcessingGraphsOptions= NULL,
 };
 
 

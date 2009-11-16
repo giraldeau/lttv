@@ -16,30 +16,27 @@
  * MA 02111-1307, USA.
  */
 
-#ifndef EVENT_MATCHING_H
-#define EVENT_MATCHING_H
-
-#include <glib.h>
-
-#include "data_structures.h"
-#include "graph_functions.h"
+#ifndef GRAPH_FUNCTIONS_H
+#define GRAPH_FUNCTIONS_H
 
 struct _SyncState;
 
+typedef void (GraphFunction)(struct _SyncState* const syncState, const
+	unsigned int i, const unsigned int j);
+
 typedef struct
 {
-	char* name;
-	bool canMatch[TYPE_COUNT];
+	/* This is for graphs where the data on both axis is in the range of
+	 * timestamps */
+	GraphFunction* writeTraceTracePlots;
+	GraphFunction* writeTraceTraceOptions;
+	/* This is for graphs where the data on the abscissa is in the range of
+	 * timestamps and the ordinates is in the range of timestamp deltas */
+	GraphFunction* writeTraceTimePlots;
+	GraphFunction* writeTraceTimeOptions;
+} GraphFunctions;
 
-	void (*initMatching)(struct _SyncState* const syncState);
-	void (*destroyMatching)(struct _SyncState* const syncState);
 
-	void (*matchEvent)(struct _SyncState* const syncState, Event* const
-		event);
-	GArray* (*finalizeMatching)(struct _SyncState* const syncState);
-
-	void (*printMatchingStats)(struct _SyncState* const syncState);
-	GraphFunctions graphFunctions;
-} MatchingModule;
+void writeGraphsScript(struct _SyncState* const syncState);
 
 #endif

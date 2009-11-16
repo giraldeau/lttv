@@ -67,8 +67,9 @@ static MatchingModule matchingModuleBroadcast = {
 	.matchEvent= &matchEventBroadcast,
 	.finalizeMatching= &finalizeMatchingBroadcast,
 	.printMatchingStats= &printMatchingStatsBroadcast,
-	.writeMatchingGraphsPlots= &writeMatchingGraphsPlotsBroadcast,
-	.writeMatchingGraphsOptions= NULL,
+	.graphFunctions= {
+		.writeTraceTimePlots= &writeMatchingGraphsPlotsBroadcast,
+	}
 };
 
 
@@ -430,8 +431,8 @@ static void writeAccuracyPoints(MatchingGraphsBroadcast* graphs, const
 			if (eventI->traceNum < eventJ->traceNum)
 			{
 				fprintf(graphs->accuracyPoints[eventJ->traceNum][eventI->traceNum],
-					"%20llu %20lld\n", eventI->cpuTime, (int64_t) eventJ->cpuTime -
-					eventI->cpuTime);
+					"%20llu %20.9f\n", eventI->cpuTime,
+					wallTimeSub(&eventJ->wallTime, &eventI->wallTime));
 				graphs->pointsNb[eventJ->traceNum][eventI->traceNum]++;
 			}
 		}

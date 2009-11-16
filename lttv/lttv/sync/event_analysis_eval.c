@@ -77,6 +77,7 @@ static void hitBin(struct Bins* const bins, const double value);
 static unsigned int binNum(const double value) __attribute__((pure));
 static double binStart(const unsigned int binNum) __attribute__((pure));
 static double binEnd(const unsigned int binNum) __attribute__((pure));
+static uint32_t normalTotal(struct Bins* const bins) __attribute__((const));
 
 static AnalysisGraphEval* constructAnalysisGraphEval(const char* const
 	graphsDir, const struct RttKey* const rttKey);
@@ -85,7 +86,7 @@ static void gdnDestroyAnalysisGraphEval(gpointer data);
 static void ghfWriteGraph(gpointer key, gpointer value, gpointer user_data);
 static void dumpBinToFile(const struct Bins* const bins, FILE* const file);
 static void writeHistogram(FILE* graphsStream, const struct RttKey* rttKey,
-	double* minRtt);
+	double* minRtt, AnalysisGraphEval* const graph);
 
 
 double binBase;
@@ -99,8 +100,6 @@ static AnalysisModule analysisModuleEval= {
 	.analyzeBroadcast= &analyzeBroadcastEval,
 	.finalizeAnalysis= &finalizeAnalysisEval,
 	.printAnalysisStats= &printAnalysisStatsEval,
-	.writeAnalysisGraphsPlots= NULL,
-	.writeAnalysisGraphsOptions= NULL,
 };
 
 static ModuleOption optionEvalRttFile= {
@@ -326,7 +325,7 @@ static void ghfWriteGraph(gpointer key, gpointer value, gpointer user_data)
 	dumpBinToFile(&graph->ttSendBins, graph->ttSendPoints);
 	dumpBinToFile(&graph->ttRecvBins, graph->ttRecvPoints);
 	dumpBinToFile(&graph->hrttBins, graph->hrttPoints);
-	writeHistogram(info->graphsStream, rttKey, rtt1);
+	writeHistogram(info->graphsStream, rttKey, rtt1, graph);
 }
 
 
@@ -361,9 +360,11 @@ static void dumpBinToFile(const struct Bins* const bins, FILE* const file)
  *   graphsStream: write to this file
  *   rttKey:       must be sorted such that saddr < daddr
  *   minRtt:       if available, else NULL
+ *   graph:        struct that contains the bins for the pair of traces
+ *                 identified by rttKey
  */
 static void writeHistogram(FILE* graphsStream, const struct RttKey* rttKey,
-	double* minRtt)
+	double* minRtt, AnalysisGraphEval* const graph)
 {
 	char saddr[16], daddr[16];
 
@@ -381,20 +382,53 @@ static void writeHistogram(FILE* graphsStream, const struct RttKey* rttKey,
 	{
 		fprintf(graphsStream,
 			"set arrow from %.9f, 0 rto 0, graph 1 "
-			"nohead linetype 3 linewidth 3 linecolor rgb \"black\"\n", *minRtt / 2);
+			"nohead linetype 3 linewidth 3 linecolor rgb \"black\"\n", *minRtt
+			/ 2);
 	}
 
-	fprintf(graphsStream,
-		"plot \\\n"
-		"\t\"analysis_eval_hrtt-%1$s_and_%2$s.data\" "
-			"title \"RTT/2\" with linespoints linetype 1 linewidth 2 "
-			"linecolor rgb \"black\" pointtype 6 pointsize 1,\\\n"
-		"\t\"analysis_eval_tt-%1$s_to_%2$s.data\" "
-			"title \"%1$s to %2$s\" with linespoints linetype 4 linewidth 2 "
-			"linecolor rgb \"gray60\" pointtype 6 pointsize 1,\\\n"
-		"\t\"analysis_eval_tt-%2$s_to_%1$s.data\" "
-			"title \"%2$s to %1$s\" with linespoints linetype 4 linewidth 2 "
-			"linecolor rgb \"gray30\" pointtype 6 pointsize 1\n", saddr, daddr);
+	if (normalTotal(&graph->ttSendBins) || normalTotal(&graph->ttRecvBins) ||
+		normalTotal(&graph->hrttBins))
+	{
+		fprintf(graphsStream, "plot \\\n");
+
+		if (normalTotal(&graph->hrttBins))
+		{
+			fprintf(graphsStream,
+				"\t\"analysis_eval_hrtt-%s_and_%s.data\" "
+					"title \"RTT/2\" with linespoints linetype 1 linewidth 2 "
+					"linecolor rgb \"black\" pointtype 6 pointsize 1,\\\n",
+					saddr, daddr);
+		}
+
+		if (normalTotal(&graph->ttSendBins))
+		{
+			fprintf(graphsStream,
+				"\t\"analysis_eval_tt-%1$s_to_%2$s.data\" "
+					"title \"%1$s to %2$s\" with linespoints linetype 4 linewidth 2 "
+					"linecolor rgb \"gray60\" pointtype 6 pointsize 1,\\\n",
+					saddr, daddr);
+		}
+
+		if (normalTotal(&graph->ttRecvBins))
+		{
+			fprintf(graphsStream,
+				"\t\"analysis_eval_tt-%1$s_to_%2$s.data\" "
+					"title \"%1$s to %2$s\" with linespoints linetype 4 linewidth 2 "
+					"linecolor rgb \"gray30\" pointtype 6 pointsize 1,\\\n",
+					daddr, saddr);
+		}
+
+		// Remove the ",\\\n" from the last graph plot line
+		if (ftruncate(fileno(graphsStream), ftell(graphsStream) - 3) == -1)
+		{
+			g_error(strerror(errno));
+		}
+		if (fseek(graphsStream, 0, SEEK_END) == -1)
+		{
+			g_error(strerror(errno));
+		}
+		fprintf(graphsStream, "\n");
+	}
 }
 
 
@@ -706,7 +740,7 @@ static void printAnalysisStatsEval(SyncState* const syncState)
 	{
 		printf("\tsum of broadcast differential delays: %g\n",
 			analysisData->stats->broadcastDiffSum);
-		printf("\taverage broadcast differential delays: %g\n",
+		printf("\taverage broadcast differential delay: %g\n",
 			analysisData->stats->broadcastDiffSum /
 			analysisData->stats->broadcastNb);
 	}
@@ -1184,4 +1218,17 @@ static double binEnd(const unsigned int binNum)
 	{
 		return INFINITY;
 	}
+}
+
+
+/*
+ * Return the total number of elements in the "normal" bins (not underflow or
+ * overflow)
+ *
+ * Args:
+ *   bins:         the structure containing bins to build a histrogram
+ */
+static uint32_t normalTotal(struct Bins* const bins)
+{
+	return bins->total - bins->bin[0] - bins->bin[BIN_NB - 1];
 }

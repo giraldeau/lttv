@@ -71,13 +71,12 @@ static AnalysisModule analysisModuleLinReg= {
 	.name= "linreg",
 	.initAnalysis= &initAnalysisLinReg,
 	.destroyAnalysis= &destroyAnalysisLinReg,
-	.analyzeMessage= NULL,
 	.analyzeExchange= &analyzeExchangeLinReg,
-	.analyzeBroadcast= NULL,
 	.finalizeAnalysis= &finalizeAnalysisLinReg,
 	.printAnalysisStats= &printAnalysisStatsLinReg,
-	.writeAnalysisGraphsPlots= &writeAnalysisGraphsPlotsLinReg,
-	.writeAnalysisGraphsOptions= NULL,
+	.graphFunctions= {
+		.writeTraceTracePlots= &writeAnalysisGraphsPlotsLinReg,
+	}
 };
 
 

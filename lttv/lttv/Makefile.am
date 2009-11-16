@@ -56,6 +56,7 @@ lttv_real_SOURCES = \
 	filter.c\
 	print.c\
 	sync/sync_chain_lttv.c\
+	sync/graph_functions.c\
 	sync/data_structures.c\
 	sync/event_processing_lttng_common.c\
 	sync/event_processing_lttng_standard.c\

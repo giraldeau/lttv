@@ -47,7 +47,9 @@ static void destroyProcessingLTTVStandard(SyncState* const syncState);
 
 static void finalizeProcessingLTTVStandard(SyncState* const syncState);
 static void printProcessingStatsLTTVStandard(SyncState* const syncState);
-static void writeProcessingGraphsOptionsLTTVStandard(SyncState* const
+static void writeProcessingTraceTraceOptionsLTTVStandard(SyncState* const
+	syncState, const unsigned int i, const unsigned int j);
+static void writeProcessingTraceTimeOptionsLTTVStandard(SyncState* const
 	syncState, const unsigned int i, const unsigned int j);
 
 // Functions specific to this module
@@ -62,10 +64,11 @@ static ProcessingModule processingModuleLTTVStandard = {
 	.destroyProcessing= &destroyProcessingLTTVStandard,
 	.finalizeProcessing= &finalizeProcessingLTTVStandard,
 	.printProcessingStats= &printProcessingStatsLTTVStandard,
-	.writeProcessingGraphsPlots= NULL,
-	.writeProcessingGraphsOptions= &writeProcessingGraphsOptionsLTTVStandard,
+	.graphFunctions= {
+		.writeTraceTraceOptions= &writeProcessingTraceTraceOptionsLTTVStandard,
+		.writeTraceTimeOptions= &writeProcessingTraceTimeOptionsLTTVStandard,
+	},
 };
-
 
 
 /*
@@ -679,7 +682,7 @@ static gboolean processEventLTTVStandard(void* hookData, void* callData)
  *   i:            first trace number
  *   j:            second trace number, garanteed to be larger than i
  */
-static void writeProcessingGraphsOptionsLTTVStandard(SyncState* const
+static void writeProcessingTraceTraceOptionsLTTVStandard(SyncState* const
 	syncState, const unsigned int i, const unsigned int j)
 {
 	ProcessingDataLTTVStandard* processingData;
@@ -703,4 +706,35 @@ static void writeProcessingGraphsOptionsLTTVStandard(SyncState* const
 		"set y2range [GPVAL_Y_MIN / %4$.1f : GPVAL_Y_MAX / %4$.1f]\n"
 		"set y2tics\n", i, (double) traceI->startFreq / traceI->freqScale, j,
 		(double) traceJ->startFreq / traceJ->freqScale);
+}
+
+
+/*
+ * Write the processing-specific options in the gnuplot script.
+ *
+ * Args:
+ *   syncState:    container for synchronization data
+ *   i:            first trace number
+ *   j:            second trace number, garanteed to be larger than i
+ */
+static void writeProcessingTraceTimeOptionsLTTVStandard(SyncState* const
+	syncState, const unsigned int i, const unsigned int j)
+{
+	ProcessingDataLTTVStandard* processingData;
+	ProcessingGraphsLTTVStandard* traceI, * traceJ;
+
+	processingData= (ProcessingDataLTTVStandard*) syncState->processingData;
+
+	traceI= &processingData->graphs[i];
+	traceJ= &processingData->graphs[j];
+
+	fprintf(syncState->graphsStream,
+        "set key inside right bottom\n"
+        "set xlabel \"Clock %1$u\"\n"
+        "set xtics nomirror\n"
+        "set ylabel \"time (s)\"\n"
+        "set ytics nomirror\n"
+		"set x2label \"Clock %1$d (s)\"\n"
+		"set x2range [GPVAL_X_MIN / %2$.1f : GPVAL_X_MAX / %2$.1f]\n"
+		"set x2tics\n", i, (double) traceI->startFreq / traceI->freqScale);
 }

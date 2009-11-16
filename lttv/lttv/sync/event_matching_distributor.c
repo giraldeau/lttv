@@ -54,10 +54,14 @@ static void matchEventDistributor(SyncState* const syncState, Event* const
 	event);
 static GArray* finalizeMatchingDistributor(SyncState* const syncState);
 static void printMatchingStatsDistributor(SyncState* const syncState);
-static void writeMatchingGraphsPlotsDistributor(SyncState* const syncState,
-	const unsigned int i, const unsigned int j);
-static void writeMatchingGraphsOptionsDistributor(SyncState* const syncState,
-	const unsigned int i, const unsigned int j);
+static void writeMatchingTraceTracePlotsDistributor(SyncState* const
+	syncState, const unsigned int i, const unsigned int j);
+static void writeMatchingTraceTraceOptionsDistributor(SyncState* const
+	syncState, const unsigned int i, const unsigned int j);
+static void writeMatchingTraceTimePlotsDistributor(SyncState* const
+	syncState, const unsigned int i, const unsigned int j);
+static void writeMatchingTraceTimeOptionsDistributor(SyncState* const
+	syncState, const unsigned int i, const unsigned int j);
 
 // Functions specific to this module
 static void registerMatchingDistributor() __attribute__((constructor (101)));
@@ -79,8 +83,12 @@ static MatchingModule matchingModuleDistributor = {
 	.matchEvent= &matchEventDistributor,
 	.finalizeMatching= &finalizeMatchingDistributor,
 	.printMatchingStats= &printMatchingStatsDistributor,
-	.writeMatchingGraphsPlots= &writeMatchingGraphsPlotsDistributor,
-	.writeMatchingGraphsOptions= &writeMatchingGraphsOptionsDistributor,
+	.graphFunctions= {
+		.writeTraceTracePlots= &writeMatchingTraceTracePlotsDistributor,
+		.writeTraceTraceOptions= &writeMatchingTraceTraceOptionsDistributor,
+		.writeTraceTimePlots= &writeMatchingTraceTimePlotsDistributor,
+		.writeTraceTimeOptions= &writeMatchingTraceTimeOptionsDistributor,
+	},
 };
 
 
@@ -210,14 +218,33 @@ static void printMatchingStatsDistributor(SyncState* const syncState)
  *   i:            first trace number
  *   j:            second trace number, garanteed to be larger than i
  */
-static void writeMatchingGraphsPlotsDistributor(SyncState* const syncState,
-	const unsigned int i, const unsigned int j)
+static void writeMatchingTraceTracePlotsDistributor(SyncState* const
+	syncState, const unsigned int i, const unsigned int j)
 {
 	MatchingDataDistributor* matchingData= syncState->matchingData;
 
 	g_queue_foreach(matchingData->distributedModules, &gfGraphFunctionCall,
 		&(struct GraphAggregate) {offsetof(MatchingModule,
-			writeMatchingGraphsPlots), i, j});
+			graphFunctions.writeTraceTracePlots), i, j});
+}
+
+
+/*
+ * Call the distributed graph lines functions (when they exist).
+ *
+ * Args:
+ *   syncState:    container for synchronization data
+ *   i:            first trace number
+ *   j:            second trace number, garanteed to be larger than i
+ */
+static void writeMatchingTraceTimePlotsDistributor(SyncState* const
+	syncState, const unsigned int i, const unsigned int j)
+{
+	MatchingDataDistributor* matchingData= syncState->matchingData;
+
+	g_queue_foreach(matchingData->distributedModules, &gfGraphFunctionCall,
+		&(struct GraphAggregate) {offsetof(MatchingModule,
+			graphFunctions.writeTraceTimePlots), i, j});
 }
 
 
@@ -229,14 +256,33 @@ static void writeMatchingGraphsPlotsDistributor(SyncState* const syncState,
  *   i:            first trace number
  *   j:            second trace number, garanteed to be larger than i
  */
-static void writeMatchingGraphsOptionsDistributor(SyncState* const syncState,
+static void writeMatchingTraceTraceOptionsDistributor(SyncState* const syncState,
 	const unsigned int i, const unsigned int j)
 {
 	MatchingDataDistributor* matchingData= syncState->matchingData;
 
 	g_queue_foreach(matchingData->distributedModules, &gfGraphFunctionCall,
 		&(struct GraphAggregate) {offsetof(MatchingModule,
-			writeMatchingGraphsOptions), i, j});
+			graphFunctions.writeTraceTraceOptions), i, j});
+}
+
+
+/*
+ * Call the distributed graph options functions (when they exist).
+ *
+ * Args:
+ *   syncState:    container for synchronization data
+ *   i:            first trace number
+ *   j:            second trace number, garanteed to be larger than i
+ */
+static void writeMatchingTraceTimeOptionsDistributor(SyncState* const syncState,
+	const unsigned int i, const unsigned int j)
+{
+	MatchingDataDistributor* matchingData= syncState->matchingData;
+
+	g_queue_foreach(matchingData->distributedModules, &gfGraphFunctionCall,
+		&(struct GraphAggregate) {offsetof(MatchingModule,
+			graphFunctions.writeTraceTimeOptions), i, j});
 }
 
 

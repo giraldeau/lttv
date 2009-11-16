@@ -74,8 +74,9 @@ static MatchingModule matchingModuleTCP = {
 	.matchEvent= &matchEventTCP,
 	.finalizeMatching= &finalizeMatchingTCP,
 	.printMatchingStats= &printMatchingStatsTCP,
-	.writeMatchingGraphsPlots= &writeMatchingGraphsPlotsTCP,
-	.writeMatchingGraphsOptions= NULL,
+	.graphFunctions= {
+		.writeTraceTracePlots= &writeMatchingGraphsPlotsTCP,
+	}
 };
 
 
