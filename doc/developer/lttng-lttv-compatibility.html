@@ -3623,8 +3623,9 @@ cleanup (ltt-ascii is still experimental, will need to be adapted to new
 periodic flush scheme).<br>
 LTTng 0.169 fixes trace teardown.<br>
 LTTng 0.170 fixes kref issues (since refactoring) and cpu hotplug vs trace
-teardown issues (caused by race in DebugFS). Simplification of trace
-creation/remove locking scheme.<br>
+teardown issues. Simplification of trace creation/remove locking scheme.
+Passes test of  concurrent CPU hotplug, markers arm/disarm and trace
+create/delete in loops for minutes.<br>
 </td>
 <td style="vertical-align: top;">
 </td>
