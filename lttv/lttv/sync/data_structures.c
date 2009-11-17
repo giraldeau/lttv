@@ -640,3 +640,16 @@ void copyUDPEvent(const Event* const event, Event** const newEvent)
 	memcpy((*newEvent)->event.udpEvent->datagramKey,
 		event->event.udpEvent->datagramKey, sizeof(DatagramKey));
 }
+
+
+/*
+ * A GFunc for g_queue_foreach()
+ *
+ * Args:
+ *   data          Event*, event to add
+ *   user_data     GArray*, array to add to
+ */
+void gfAddEventToArray(gpointer data, gpointer user_data)
+{
+	g_array_append_val((GArray*) user_data, data);
+}

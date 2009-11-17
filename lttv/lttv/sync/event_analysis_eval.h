@@ -19,7 +19,14 @@
 #ifndef EVENT_ANALYSIS_EVAL_H
 #define EVENT_ANALYSIS_EVAL_H
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #include <glib.h>
+#ifdef HAVE_LIBGLPK
+#include <glpk.h>
+#endif
 
 #include "data_structures.h"
 
@@ -49,8 +56,17 @@ typedef struct
 	 * For this table, saddr and daddr are swapped as necessary such that
 	 * saddr < daddr */
 	GHashTable* exchangeRtt;
-} AnalysisStatsEval;
 
+#ifdef HAVE_LIBGLPK
+	/* FactorsCHull** chFactorsArray[traceNum][traceNum]
+	 * FactorsCHull** lpFactorsArray[traceNum][traceNum]
+	 *
+	 * As usual, only the lower triangular part of theses matrixes is
+	 * allocated */
+	FactorsCHull** chFactorsArray;
+	FactorsCHull** lpFactorsArray;
+#endif
+} AnalysisStatsEval;
 
 #define BIN_NB 1001
 struct Bins
@@ -65,7 +81,6 @@ struct Bins
 	 * bin[BIN_NB - 1]: overflow [1..INFINITY[ */
 	uint32_t bin[BIN_NB];
 };
-
 
 typedef struct
 {
@@ -86,18 +101,56 @@ typedef struct
 	FILE* hrttPoints;
 
 	struct Bins hrttBins;
-} AnalysisGraphEval;
+} AnalysisHistogramEval;
+
+typedef struct
+{
+	// These are the cpu times of the first and last interactions (message or
+	// broadcast) between two traces. The times are from the trace with the
+	// lowest traceNum.
+	uint64_t min, max;
+} Bounds;
+
+typedef struct
+{
+	/* AnalysisHistogramEval* graphs[RttKey];
+	 * For this table, saddr and daddr are swapped as necessary such that
+	 * saddr < daddr */
+	GHashTable* histograms;
+
+	/* Bounds bounds[traceNum][traceNum]
+	 *
+	 * Only the lower triangular part of the matrix is allocated, that is
+	 * bounds[i][j] where i > j */
+	Bounds** bounds;
+
+#ifdef HAVE_LIBGLPK
+	/* glp_prob* lps[traceNum][traceNum]
+	 *
+	 * Only the lower triangular part of the matrix is allocated, that is
+	 * lps[i][j] where i > j */
+	glp_prob*** lps;
+
+	/* Factors lpFactors[traceNum][traceNum]
+	 *
+	 * Only the lower triangular part of the matrix is allocated, that is
+	 * lpFactorsArray[i][j] where i > j */
+	FactorsCHull** lpFactorsArray;
+#endif
+} AnalysisGraphsEval;
 
 typedef struct
 {
 	// double* rttInfo[RttKey]
 	GHashTable* rttInfo;
 
+	/* The convex hull analysis is encapsulated and messages are passed to it
+	 * so that it builds the convex hulls. These are reused in the linear
+	 * program. */
+	struct _SyncState* chullSS;
+
 	AnalysisStatsEval* stats;
-	/* AnalysisGraphsEval* graphs[RttKey];
-	 * For this table, saddr and daddr are swapped as necessary such that
-	 * saddr < daddr */
-	GHashTable* graphs;
+	AnalysisGraphsEval* graphs;
 } AnalysisDataEval;
 
 #endif

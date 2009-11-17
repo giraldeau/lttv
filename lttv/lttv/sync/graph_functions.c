@@ -31,6 +31,12 @@
 void writeGraphsScript(SyncState* const syncState)
 {
 	unsigned int i, j, k, l;
+	long pos1, pos2;
+	const GraphFunctions* moduleGraphFunctions[]= {
+		&syncState->processingModule->graphFunctions,
+		&syncState->matchingModule->graphFunctions,
+		&syncState->analysisModule->graphFunctions,
+	};
 	const struct {
 		size_t plotsOffset,
 			   optionsOffset;
@@ -42,6 +48,30 @@ void writeGraphsScript(SyncState* const syncState)
 			offsetof(GraphFunctions, writeTraceTimeOptions), "TraceTime"},
 	};
 
+	fprintf(syncState->graphsStream, "\n");
+	pos1= ftell(syncState->graphsStream);
+	for (i= 0; i < syncState->traceNb; i++)
+	{
+		for (k= 0; k < sizeof(moduleGraphFunctions) /
+			sizeof(*moduleGraphFunctions); k++)
+		{
+			GraphVariableFunction** writeVariables= (void*)
+				moduleGraphFunctions[k] + offsetof(GraphFunctions,
+					writeVariables);
+
+			if (*writeVariables)
+			{
+				(*writeVariables)(syncState, i);
+			}
+		}
+	}
+	fflush(syncState->graphsStream);
+	pos2= ftell(syncState->graphsStream);
+	if (pos1 != pos2)
+	{
+		fprintf(syncState->graphsStream, "\n");
+	}
+
 	for (l= 0; l < sizeof(funcTypes) / sizeof(*funcTypes); l++)
 	{
 		// Cover the upper triangular matrix, i is the reference node.
@@ -49,12 +79,7 @@ void writeGraphsScript(SyncState* const syncState)
 		{
 			for (j= i + 1; j < syncState->traceNb; j++)
 			{
-				long pos1, pos2, trunc;
-				const GraphFunctions* moduleGraphFunctions[]= {
-					&syncState->processingModule->graphFunctions,
-					&syncState->matchingModule->graphFunctions,
-					&syncState->analysisModule->graphFunctions,
-				};
+				long trunc;
 
 				fprintf(syncState->graphsStream,
 					"reset\n"

@@ -77,10 +77,8 @@ static int jointCmp(const Point* const p1, const Point* const p2, const Point*
 	const p3) __attribute__((pure));
 static double crossProductK(const Point const* p1, const Point const* p2,
 	const Point const* p3, const Point const* p4) __attribute__((pure));
-static FactorsCHull** calculateAllFactors(SyncState* const syncState);
 static Factors* calculateFactorsExact(GQueue* const cu, GQueue* const cl, const
 	LineType lineType) __attribute__((pure));
-static void calculateFactorsMiddle(FactorsCHull* factors);
 static void calculateFactorsFallback(GQueue* const cr, GQueue* const cs,
 	FactorsCHull* const result);
 static double slope(const Point* const p1, const Point* const p2)
@@ -89,8 +87,6 @@ static double intercept(const Point* const p1, const Point* const p2)
 	__attribute__((pure));
 static GArray* reduceFactors(SyncState* const syncState, FactorsCHull**
 	allFactors);
-static void freeAllFactors(const SyncState* const syncState, FactorsCHull**
-	const allFactors);
 static double verticalDistance(Point* p1, Point* p2, Point* const point)
 	__attribute__((pure));
 static void floydWarshall(SyncState* const syncState, FactorsCHull** const
@@ -115,6 +111,14 @@ static AnalysisModule analysisModuleCHull= {
 	}
 };
 
+const char* const approxNames[]= {
+	[EXACT]= "Exact",
+	[MIDDLE]= "Middle",
+	[FALLBACK]= "Fallback",
+	[INCOMPLETE]= "Incomplete",
+	[ABSENT]= "Absent",
+	[SCREWED]= "Screwed",
+};
 
 /*
  * Analysis module registering function
@@ -350,7 +354,7 @@ static void destroyAnalysisCHull(SyncState* const syncState)
 	{
 		if (analysisData->stats->allFactors != NULL)
 		{
-			freeAllFactors(syncState, analysisData->stats->allFactors);
+			freeAllFactors(syncState->traceNb, analysisData->stats->allFactors);
 		}
 
 		free(analysisData->stats);
@@ -365,7 +369,7 @@ static void destroyAnalysisCHull(SyncState* const syncState)
 
 		if (!syncState->stats && analysisData->graphsData->allFactors != NULL)
 		{
-			freeAllFactors(syncState, analysisData->graphsData->allFactors);
+			freeAllFactors(syncState->traceNb, analysisData->graphsData->allFactors);
 		}
 
 		free(analysisData->graphsData);
@@ -533,7 +537,7 @@ static GArray* finalizeAnalysisCHull(SyncState* const syncState)
 	}
 	else
 	{
-		freeAllFactors(syncState, allFactors);
+		freeAllFactors(syncState->traceNb, allFactors);
 	}
 
 	return factors;
@@ -741,48 +745,57 @@ static double crossProductK(const Point const* p1, const Point const* p2,
  * Free a container of FactorsCHull
  *
  * Args:
- *   syncState:     container for synchronization data.
- *   allFactors:   container of Factors
+ *   traceNb:      number of traces
+ *   allFactors:   container of FactorsCHull
  */
-static void freeAllFactors(const SyncState* const syncState, FactorsCHull**
-	const allFactors)
+void freeAllFactors(const unsigned int traceNb, FactorsCHull** const
+	allFactors)
 {
 	unsigned int i, j;
 
-	for (i= 0; i < syncState->traceNb; i++)
+	for (i= 0; i < traceNb; i++)
 	{
 		for (j= 0; j <= i; j++)
 		{
-			FactorsCHull* factorsCHull;
-
-			factorsCHull= &allFactors[i][j];
-			if (factorsCHull->type == MIDDLE || factorsCHull->type ==
-				INCOMPLETE || factorsCHull->type == ABSENT)
-			{
-				free(factorsCHull->min);
-				free(factorsCHull->max);
-			}
-			else if (factorsCHull->type == SCREWED)
-			{
-				if (factorsCHull->min != NULL)
-				{
-					free(factorsCHull->min);
-				}
-				if (factorsCHull->max != NULL)
-				{
-					free(factorsCHull->max);
-				}
-			}
-
-			if (factorsCHull->type == EXACT || factorsCHull->type == MIDDLE ||
-				factorsCHull->type == FALLBACK)
-			{
-				free(factorsCHull->approx);
-			}
+			destroyFactorsCHull(&allFactors[i][j]);
 		}
 		free(allFactors[i]);
 	}
 	free(allFactors);
+}
+
+
+/*
+ * Free a FactorsCHull
+ *
+ * Args:
+ *   factorsCHull: container of Factors
+ */
+void destroyFactorsCHull(FactorsCHull* factorsCHull)
+{
+	if (factorsCHull->type == MIDDLE || factorsCHull->type ==
+		INCOMPLETE || factorsCHull->type == ABSENT)
+	{
+		free(factorsCHull->min);
+		free(factorsCHull->max);
+	}
+	else if (factorsCHull->type == SCREWED)
+	{
+		if (factorsCHull->min != NULL)
+		{
+			free(factorsCHull->min);
+		}
+		if (factorsCHull->max != NULL)
+		{
+			free(factorsCHull->max);
+		}
+	}
+
+	if (factorsCHull->type == EXACT || factorsCHull->type == MIDDLE ||
+		factorsCHull->type == FALLBACK)
+	{
+		free(factorsCHull->approx);
+	}
 }
 
 
@@ -797,7 +810,7 @@ static void freeAllFactors(const SyncState* const syncState, FactorsCHull**
  *   FactorsCHull*[TraceNum][TraceNum] array. See the documentation for the
  *   member allFactors of AnalysisStatsCHull.
  */
-static FactorsCHull** calculateAllFactors(SyncState* const syncState)
+FactorsCHull** calculateAllFactors(SyncState* const syncState)
 {
 	unsigned int traceNumA, traceNumB;
 	FactorsCHull** allFactors;
@@ -907,7 +920,7 @@ static FactorsCHull** calculateAllFactors(SyncState* const syncState)
  * Args:
  *   factors:      contains the min and max limits, used to store the result
  */
-static void calculateFactorsMiddle(FactorsCHull* factors)
+void calculateFactorsMiddle(FactorsCHull* const factors)
 {
 	double amin, amax, bmin, bmax, bhat;
 
@@ -1566,7 +1579,7 @@ void writeAnalysisGraphsPlotsCHull(SyncState* const syncState, const unsigned
 		fprintf(syncState->graphsStream,
 			"\t%.2f + %.10f * x "
 				"title \"Middle conversion\" with lines "
-				"linecolor rgb \"gray60\" linetype 1, \\\n",
+				"linecolor rgb \"black\" linetype 1, \\\n",
 				factorsCHull->approx->offset, factorsCHull->approx->drift);
 	}
 	else if (factorsCHull->type == FALLBACK)

@@ -32,36 +32,44 @@ typedef struct
 
 typedef enum
 {
+	EXACT,
 	/* Used for identity factors (a0= 0, a1= 1) that map a trace to itself. In
 	 * this case, min, max and accuracy are not initialized.
 	 */
-	EXACT,
+
+	MIDDLE,
 	/* The approximation is the middle of the min and max limits, all fields
 	 * are initialized.
 	 */
-	MIDDLE,
+
+	FALLBACK,
 	/* min and max are not available because the hulls do not respect
 	 * assumptions (hulls should not intersect and the upper half-hull should
 	 * be below the lower half-hull). The approximation is a "best effort".
 	 * All fields are initialized but min and max are NULL.
 	 */
-	FALLBACK,
+
+	INCOMPLETE,
 	/* min or max is available but not both. The hulls respected assumptions
 	 * but all receives took place after all sends or vice versa. approx and
 	 * accuracy are not initialized.
 	 */
-	INCOMPLETE,
+
+	ABSENT,
 	/* The pair of trace did not have communications in both directions (maybe
 	 * even no communication at all). approx and accuracy are not initialized.
 	 */
-	ABSENT,
+
+	SCREWED,
 	/* min and max are not available because the algorithms are screwed. One
 	 * of min or max (but not both) is NULL. The other is initialized. Approx
 	 * is not initialized.
 	 */
-	SCREWED,
+
+	APPROX_NB, // This must be the last member
 } ApproxType;
 
+extern const char* const approxNames[APPROX_NB];
 
 typedef struct
 {
@@ -116,7 +124,7 @@ typedef struct
 
 typedef struct
 {
-	/* Point hullArray[traceNb][traceNb][]
+	/* Point* hullArray[traceNb][traceNb][]
 	 *
 	 * A message comes from two traces. The lowest numbered trace is
 	 * considered to be the reference clock, CA. The other is CB. The
@@ -160,5 +168,13 @@ typedef struct
 	AnalysisStatsCHull* stats;
 	AnalysisGraphsDataCHull* graphsData;
 } AnalysisDataCHull;
+
+
+FactorsCHull** calculateAllFactors(struct _SyncState* const syncState);
+void freeAllFactors(const unsigned int traceNb, FactorsCHull** const
+	allFactors);
+
+void calculateFactorsMiddle(FactorsCHull* const factors);
+void destroyFactorsCHull(FactorsCHull* factorsCHull);
 
 #endif

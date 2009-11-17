@@ -54,7 +54,6 @@ static void partialDestroyMatchingBroadcast(SyncState* const syncState);
 static void openGraphDataFiles(SyncState* const syncState);
 static void writeAccuracyPoints(MatchingGraphsBroadcast* graphs, const
 	Broadcast* const broadcast);
-void gfAddToArray(gpointer data, gpointer user_data);
 static void closeGraphDataFiles(SyncState* const syncState);
 
 
@@ -419,7 +418,7 @@ static void writeAccuracyPoints(MatchingGraphsBroadcast* graphs, const
 	unsigned int eventNb= broadcast->events->length;
 
 	events= g_array_sized_new(FALSE, FALSE, sizeof(Event*), eventNb);
-	g_queue_foreach(broadcast->events, &gfAddToArray, events);
+	g_queue_foreach(broadcast->events, &gfAddEventToArray, events);
 
 	for (i= 0; i < eventNb; i++)
 	{
@@ -437,19 +436,8 @@ static void writeAccuracyPoints(MatchingGraphsBroadcast* graphs, const
 			}
 		}
 	}
-}
 
-
-/*
- * A GFunc for g_queue_foreach()
- *
- * Args:
- *   data          Event*, event to add
- *   user_data     GArray*, array to add to
- */
-void gfAddToArray(gpointer data, gpointer user_data)
-{
-	g_array_append_val((GArray*) user_data, data);
+	g_array_free(events, TRUE);
 }
 
 

@@ -47,6 +47,8 @@ static void destroyProcessingLTTVStandard(SyncState* const syncState);
 
 static void finalizeProcessingLTTVStandard(SyncState* const syncState);
 static void printProcessingStatsLTTVStandard(SyncState* const syncState);
+static void writeProcessingGraphVariablesLTTVStandard(SyncState* const
+	syncState, const unsigned int i);
 static void writeProcessingTraceTraceOptionsLTTVStandard(SyncState* const
 	syncState, const unsigned int i, const unsigned int j);
 static void writeProcessingTraceTimeOptionsLTTVStandard(SyncState* const
@@ -65,6 +67,7 @@ static ProcessingModule processingModuleLTTVStandard = {
 	.finalizeProcessing= &finalizeProcessingLTTVStandard,
 	.printProcessingStats= &printProcessingStatsLTTVStandard,
 	.graphFunctions= {
+		.writeVariables= &writeProcessingGraphVariablesLTTVStandard,
 		.writeTraceTraceOptions= &writeProcessingTraceTraceOptionsLTTVStandard,
 		.writeTraceTimeOptions= &writeProcessingTraceTimeOptionsLTTVStandard,
 	},
@@ -675,6 +678,24 @@ static gboolean processEventLTTVStandard(void* hookData, void* callData)
 
 
 /*
+ * Write the processing-specific variables in the gnuplot script.
+ *
+ * Args:
+ *   syncState:    container for synchronization data
+ *   i:            trace number
+ */
+static void writeProcessingGraphVariablesLTTVStandard(SyncState* const
+	syncState, const unsigned int i)
+{
+	ProcessingDataLTTVStandard* processingData= syncState->processingData;
+	ProcessingGraphsLTTVStandard* traceI= &processingData->graphs[i];
+
+	fprintf(syncState->graphsStream, "clock_freq_%u= %.3f\n", i, (double)
+		traceI->startFreq / traceI->freqScale);
+}
+
+
+/*
  * Write the processing-specific options in the gnuplot script.
  *
  * Args:
@@ -697,15 +718,14 @@ static void writeProcessingTraceTraceOptionsLTTVStandard(SyncState* const
         "set key inside right bottom\n"
         "set xlabel \"Clock %1$u\"\n"
         "set xtics nomirror\n"
-        "set ylabel \"Clock %3$u\"\n"
+        "set ylabel \"Clock %2$u\"\n"
         "set ytics nomirror\n"
 		"set x2label \"Clock %1$d (s)\"\n"
-		"set x2range [GPVAL_X_MIN / %2$.1f : GPVAL_X_MAX / %2$.1f]\n"
+		"set x2range [GPVAL_X_MIN / clock_freq_%1$u : GPVAL_X_MAX / clock_freq_%1$u]\n"
 		"set x2tics\n"
-		"set y2label \"Clock %3$d (s)\"\n"
-		"set y2range [GPVAL_Y_MIN / %4$.1f : GPVAL_Y_MAX / %4$.1f]\n"
-		"set y2tics\n", i, (double) traceI->startFreq / traceI->freqScale, j,
-		(double) traceJ->startFreq / traceJ->freqScale);
+		"set y2label \"Clock %2$d (s)\"\n"
+		"set y2range [GPVAL_Y_MIN / clock_freq_%2$u : GPVAL_Y_MAX / clock_freq_%2$u]\n"
+		"set y2tics\n", i, j);
 }
 
 
@@ -735,6 +755,6 @@ static void writeProcessingTraceTimeOptionsLTTVStandard(SyncState* const
         "set ylabel \"time (s)\"\n"
         "set ytics nomirror\n"
 		"set x2label \"Clock %1$d (s)\"\n"
-		"set x2range [GPVAL_X_MIN / %2$.1f : GPVAL_X_MAX / %2$.1f]\n"
-		"set x2tics\n", i, (double) traceI->startFreq / traceI->freqScale);
+		"set x2range [GPVAL_X_MIN / clock_freq_%1$u : GPVAL_X_MAX / clock_freq_%1$u]\n"
+		"set x2tics\n", i);
 }

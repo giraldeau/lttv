@@ -21,11 +21,14 @@
 
 struct _SyncState;
 
+typedef void (GraphVariableFunction)(struct _SyncState* const syncState, const
+	unsigned int i);
 typedef void (GraphFunction)(struct _SyncState* const syncState, const
 	unsigned int i, const unsigned int j);
 
 typedef struct
 {
+	GraphVariableFunction* writeVariables;
 	/* This is for graphs where the data on both axis is in the range of
 	 * timestamps */
 	GraphFunction* writeTraceTracePlots;

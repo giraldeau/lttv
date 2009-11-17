@@ -220,7 +220,7 @@ void syncTraceset(LttvTracesetContext* const traceSetContext)
 
 		fprintf(syncState->graphsStream,
 			"#!/usr/bin/gnuplot\n\n"
-			"set terminal postscript eps color size 8in,6in\n\n");
+			"set terminal postscript eps color size 8in,6in\n");
 
 		retval= chdir(cwd);
 		if (retval == -1)

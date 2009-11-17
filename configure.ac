@@ -64,12 +64,33 @@ AC_SYS_LARGEFILE
 AC_PROG_CC
 
 # Checks for libraries.
-AC_CHECK_LIB([popt], [poptGetNextOpt], POPT_LIBS="-lpopt",AC_MSG_ERROR([libpopt is required in order to compile LinuxTraceToolkit])  )
-AC_CHECK_LIB([m], [round], M_LIBS="-lm",AC_MSG_ERROR([Mathematical libraries are missing.])  )
+AC_CHECK_LIB([popt], [poptGetNextOpt], POPT_LIBS="-lpopt",
+	AC_MSG_ERROR([libpopt is required in order to compile LinuxTraceToolkit]))
+AC_CHECK_LIB([m], [round], M_LIBS="-lm",
+	AC_MSG_ERROR([Mathematical libraries are missing.]))
+AC_CHECK_LIB([util], [forkpty], UTIL_LIBS="-lutil",
+	AC_MSG_ERROR([libutil is required in order to compile LinuxTraceToolkit]))
 
-AC_CHECK_LIB([util], [forkpty], UTIL_LIBS="-lutil", AC_MSG_ERROR([
-libutil is required in order to compile LinuxTraceToolkit]))
+AC_ARG_WITH([glpk],
+	[AS_HELP_STRING([--with-glpk@<:@=DIR@:>@],
+		[support trace synchronization accuracy calculation (needs glpk)
+			@<:@default=check@:>@])],
+	[],
+	[with_glpk=check])
 
+GLPK_LIBS=
+	AS_IF([test "x$with_glpk" != xno],
+		[if test "x$with_glpk" != xyes -a -d "$with_glpk"; then
+			LDFLAGS="$LDFLAGS -L$with_glpk"
+		fi
+		AC_CHECK_LIB([glpk], [glp_create_prob],
+			[AC_SUBST([GLPK_LIBS], ["-lglpk"])
+			AC_DEFINE([HAVE_LIBGLPK], [1], [Define if you have libglpk])],
+			[if test "x$with_glpk" != xcheck; then
+				AC_MSG_FAILURE(
+					[--with-glpk was given, but test for glpk failed])
+			fi],
+		-lm)])
 
 # pthread for gdb with dlopen().
 AC_CHECK_LIB(pthread, pthread_join, [], AC_MSG_ERROR([LinuxThreads is required in order to make sure gdb works fine with lttv-gui]))

@@ -160,6 +160,7 @@ void destroyTCPEvent(Event* const event);
 void destroyUDPEvent(Event* const event);
 void gfDestroyEvent(gpointer data, gpointer user_data);
 double wallTimeSub(const WallTime const* tA, const WallTime const* tB);
+void gfAddEventToArray(gpointer data, gpointer user_data);
 
 // Message-related functions
 void printTCPSegment(const Message* const segment);

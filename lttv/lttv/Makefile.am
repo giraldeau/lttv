@@ -1,7 +1,7 @@
 SUBDIRS= sync
 
 AM_CFLAGS= $(PACKAGE_CFLAGS)
-LDADD = $(POPT_LIBS) $(M_LIBS) ${top_builddir}/ltt/liblttvtraceread.la
+LDADD = $(POPT_LIBS) $(M_LIBS) $(GLPK_LIBS) ${top_builddir}/ltt/liblttvtraceread.la
 
 bin_PROGRAMS = lttv.real
 
