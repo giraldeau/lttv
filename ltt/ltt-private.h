@@ -208,13 +208,11 @@ static inline unsigned int ltt_align(size_t align_drift,
           size_t size_of_type,
           size_t alignment)
 {
-  size_t align_offset = min(alignment, size_of_type);
-  
   if(!alignment)
     return 0;
   
   g_assert(size_of_type != 0);
-  return ((align_offset - align_drift) & (align_offset-1));
+  return ((size_of_type - align_drift) & (size_of_type - 1));
 }
 
 
