@@ -240,7 +240,7 @@ int ltt_trace_create_block_index(LttTracefile *tf)
 
     /* map block header */
     header = mmap(0, header_map_size, PROT_READ, 
-                  MAP_PRIVATE, tf->fd, 0);
+                  MAP_PRIVATE, tf->fd, (off_t)offset);
     if(header == MAP_FAILED) {
       perror("Error in allocating memory for buffer of tracefile");
       return -1;
@@ -1441,6 +1441,9 @@ static gint map_block(LttTracefile * tf, guint block_num)
   ret = get_block_offset_size(tf, block_num, &offset, &size);
   g_assert(!ret);
 
+  g_debug("Map block %u, offset %llu, size %u\n", block_num,
+          (unsigned long long)offset, (unsigned int)size);
+
   /* Multiple of pages aligned head */
   tf->buffer.head = mmap(0, (size_t)size, PROT_READ, MAP_PRIVATE,
                          tf->fd, (off_t)offset);
@@ -1463,13 +1466,13 @@ static gint map_block(LttTracefile * tf, guint block_num)
   tf->buffer.offset = offset;
   tf->buffer.size = ltt_get_uint32(LTT_GET_BO(tf),
                                    &header->sb_size);
-  g_assert(size == tf->buffer.size);
   tf->buffer.data_size = ltt_get_uint32(LTT_GET_BO(tf),
                                         &header->data_size);
   tf->buffer.tsc =  tf->buffer.begin.cycle_count;
   tf->event.tsc = tf->buffer.tsc;
   tf->buffer.freq = tf->buffer.begin.freq;
 
+  g_assert(size == tf->buffer.size);
   g_assert(tf->buffer.data_size <= tf->buffer.size);
 
   if (tf->trace->start_freq)
