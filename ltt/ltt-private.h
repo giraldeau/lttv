@@ -66,7 +66,7 @@ typedef guint32 uint32_t;
 typedef guint64 uint64_t;
 
 /* Subbuffer header */
-struct ltt_subbuffer_header_2_4 {
+struct ltt_subbuffer_header_2_5 {
 	uint64_t cycle_count_begin;	/* Cycle count at subbuffer start */
 	uint64_t cycle_count_end;	/* Cycle count at subbuffer end */
 	uint32_t magic_number;		/*
@@ -84,8 +84,8 @@ struct ltt_subbuffer_header_2_4 {
 					 * used all along the trace.
 					 */
 	uint32_t freq_scale;		/* Frequency scaling (divide freq) */
-	uint32_t lost_size;		/* Size unused at end of subbuffer */
-	uint32_t buf_size;		/* Size of this subbuffer */
+	uint32_t data_size;		/* Size of data in subbuffer */
+	uint32_t sb_size;		/* Subbuffer size (page aligned) */
 	uint32_t events_lost;		/*
 					 * Events lost in this subbuffer since
 					 * the beginning of the trace.
@@ -99,7 +99,7 @@ struct ltt_subbuffer_header_2_4 {
 	char header_end[0];		/* End of header */
 };
 
-typedef struct ltt_subbuffer_header_2_4 ltt_subbuffer_header_t;
+typedef struct ltt_subbuffer_header_2_5 ltt_subbuffer_header_t;
 
 /*
  * Return header size without padding after the structure. Don't use packed
@@ -115,7 +115,10 @@ enum field_status { FIELD_UNKNOWN, FIELD_VARIABLE, FIELD_FIXED };
 
 typedef struct _LttBuffer {
   void * head;
+  guint64 offset;                /* Offset of the current subbuffer */
+  guint32 size;                  /* The size of the current subbuffer */
   unsigned int index;
+  uint32_t data_size;            /* Size of data in the subbuffer */
 
   struct {
     LttTime                 timestamp;
@@ -127,7 +130,6 @@ typedef struct _LttBuffer {
     uint64_t                cycle_count;
     uint64_t                freq; /* Frequency in khz */
   } end;
-  uint32_t                lost_size; /* Size unused at the end of the buffer */
 
   /* Timekeeping */
   uint64_t                tsc;       /* Current timestamp counter */
@@ -162,12 +164,13 @@ struct LttTracefile {
   uint32_t  events_lost;
   uint32_t  subbuf_corrupt;
 
+  GArray *buf_index;                 /* index mapping buffer index to offset */
+
   /* Current event */
   LttEvent event;                    //Event currently accessible in the trace
 
   /* Current block */
   LttBuffer buffer;                  //current buffer
-  guint32 buf_size;                  /* The size of blocks */
 };
 
 /* The characteristics of the system on which the trace was obtained

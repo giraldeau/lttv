@@ -435,11 +435,11 @@ JNIEXPORT jlong JNICALL Java_org_eclipse_linuxtools_lttng_jni_JniTracefile_ltt_1
         return CONVERT_PTR_TO_JLONG(&newPtr->buffer);
 }
 
-// Get of buf_size
+// Get of buffer size
 JNIEXPORT jlong JNICALL Java_org_eclipse_linuxtools_lttng_jni_JniTracefile_ltt_1getBufferSize(JNIEnv* env, jobject jobj, jlong tracefile_ptr) {
         LttTracefile* newPtr = (LttTracefile*)CONVERT_JLONG_TO_PTR(tracefile_ptr);
         
-        return (jlong)newPtr->buf_size;
+        return (jlong)newPtr->buffer.size;
 }
 
 
