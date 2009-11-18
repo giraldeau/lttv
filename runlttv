@@ -11,17 +11,18 @@
 # while in the same directory as this script.
 
 PROGNAME=$0
+BUILDPATH=$(dirname $0)
 RCFILE="$(dirname $0)/.runlttvrc"
-TEXTLIBS="-L lttv/modules/text/.libs -m textDump"
-GRAPHLIBS="-L lttv/modules/gui/lttvwindow/lttvwindow/.libs -m lttvwindow "\
-"-L lttv/modules/gui/controlflow/.libs -m guicontrolflow "\
-"-L lttv/modules/gui/detailedevents/.libs -m guievents "\
-"-L lttv/modules/gui/tracecontrol/.libs -m guitracecontrol "\
-"-L lttv/modules/gui/statistics/.libs -m guistatistics "\
-"-L lttv/modules/gui/resourceview/.libs -m resourceview "\
-"-L lttv/modules/gui/filter/.libs -m guifilter "\
-"-L lttv/modules/gui/interrupts/.libs -m interrupts "\
-"-L lttv/modules/gui/histogram/.libs -m guihistogram"
+TEXTLIBS="-L ${BUILDPATH}/lttv/modules/text/.libs -m textDump"
+GRAPHLIBS="-L ${BUILDPATH}/lttv/modules/gui/lttvwindow/lttvwindow/.libs -m lttvwindow "\
+"-L ${BUILDPATH}/lttv/modules/gui/controlflow/.libs -m guicontrolflow "\
+"-L ${BUILDPATH}/lttv/modules/gui/detailedevents/.libs -m guievents "\
+"-L ${BUILDPATH}/lttv/modules/gui/tracecontrol/.libs -m guitracecontrol "\
+"-L ${BUILDPATH}/lttv/modules/gui/statistics/.libs -m guistatistics "\
+"-L ${BUILDPATH}/lttv/modules/gui/resourceview/.libs -m resourceview "\
+"-L ${BUILDPATH}/lttv/modules/gui/filter/.libs -m guifilter "\
+"-L ${BUILDPATH}/lttv/modules/gui/interrupts/.libs -m interrupts "\
+"-L ${BUILDPATH}/lttv/modules/gui/histogram/.libs -m guihistogram"
 DEFAULTMODE="gui"
 
 usage () {
@@ -36,10 +37,10 @@ usage () {
 	echo "" >/dev/stderr
 }
 
-if [ -e "lttv/lttv/.libs/lttv.real" ]; then
-	LTTV_EXEC="lttv/lttv/.libs/lttv.real"
-elif [ -e "lttv/lttv/lttv.real" ]; then
-	LTTV_EXEC="lttv/lttv/lttv.real"
+if [ -e "${BUILDPATH}/lttv/lttv/.libs/lttv.real" ]; then
+	LTTV_EXEC="${BUILDPATH}/lttv/lttv/.libs/lttv.real"
+elif [ -e "${BUILDPATH}/lttv/lttv/lttv.real" ]; then
+	LTTV_EXEC="${BUILDPATH}/lttv/lttv/lttv.real"
 else
 	echo "error: LTTV should be compiled before running this script." >/dev/stderr
 	exit 1
@@ -83,13 +84,13 @@ fi
 
 LTTV_ARGS="$BOPTIONS $LIBS $TRACEFILES $AOPTIONS"
 if [ "$HELPER" = "gdb" ]; then
-	LD_LIBRARY_PATH=ltt/.libs gdb --args $LTTV_EXEC $LTTV_ARGS
+	LD_LIBRARY_PATH=${BUILDPATH}/ltt/.libs gdb --args $LTTV_EXEC $LTTV_ARGS
 elif [ "$HELPER" = "valgrind" ]; then
-	LD_LIBRARY_PATH=ltt/.libs valgrind --track-origins=yes --show-reachable=yes --leak-check=full --error-limit=no $LTTV_EXEC $LTTV_ARGS
+	LD_LIBRARY_PATH=${BUILDPATH}/ltt/.libs valgrind --track-origins=yes --show-reachable=yes --leak-check=full --error-limit=no $LTTV_EXEC $LTTV_ARGS
 elif [ "$HELPER" = "massif" ]; then
-	LD_LIBRARY_PATH=ltt/.libs valgrind --tool=massif $LTTV_EXEC $LTTV_ARGS
+	LD_LIBRARY_PATH=${BUILDPATH}/ltt/.libs valgrind --tool=massif $LTTV_EXEC $LTTV_ARGS
 elif [ "$HELPER" = "strace" ]; then
-	LD_LIBRARY_PATH=ltt/.libs strace $LTTV_EXEC $LTTV_ARGS
+	LD_LIBRARY_PATH=${BUILDPATH}/ltt/.libs strace $LTTV_EXEC $LTTV_ARGS
 else
-	LD_LIBRARY_PATH=ltt/.libs $LTTV_EXEC $LTTV_ARGS
+	LD_LIBRARY_PATH=${BUILDPATH}/ltt/.libs $LTTV_EXEC $LTTV_ARGS
 fi
