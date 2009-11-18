@@ -513,56 +513,61 @@ static int execute_command(const gchar *command, const gchar *username,
       /* Timeout : Stop waiting for chars */
       if(num_rdy == 0) goto wait_child;
 
-      switch(pollfd.revents) {
-        case POLLERR:
+      /* Check for fatal errors */
+      if(pollfd.revents & POLLERR) {
           g_warning("Error returned in polling fd\n");
           num_hup++;
-          break;
-        case POLLHUP:
-          g_info("Polling FD : hung up.");
-          num_hup++;
-          break;
-        case POLLNVAL:
-          g_warning("Polling fd tells it is not open");
-          num_hup++;
-          break;
-        case POLLPRI:
-        case POLLIN:
-          count = read (fdpty, buf, 256);
-          if(count > 0) {
-						unsigned int i;
-            buf[count] = '\0';
-            g_printf("%s", buf);
-						for(i=0; i<count; i++) {
-							switch(read_state) {
-								case GET_LINE:
-									if(buf[i] == '\n') {
-										read_state = GET_SEMI;
-										g_debug("Tracecontrol input line skip\n");
-									}
-									break;
-								case GET_SEMI:
-									if(buf[i] == ':') {
-										g_debug("Tracecontrol input  : marker found\n");
-										read_state = GET_SPACE;
-									}
-									break;
-								case GET_SPACE:
-									if(buf[i] == ' ') {
-										g_debug("Tracecontrol input space marker found\n");
-										goto write_password;
-									}
-									break;
-							}
-						}
-          } else if(count == -1) {
-            perror("Error in read");
-            goto wait_child;
-          }
-          break;
       }
+      if(pollfd.revents & POLLNVAL) {
+	g_warning("Polling fd tells it is not open");
+	num_hup++;
+      }
+
+      if(pollfd.revents & POLLHUP) {
+
+	g_info("Polling FD : hung up.");
+	num_hup++;
+
+      }
+
+      if(pollfd.revents & (POLLIN | POLLPRI)) {
+	int count;
+	count = read (fdpty, buf, 256);
+	if(count > 0) {
+	  unsigned int i;
+	  buf[count] = '\0';
+	  g_printf("%s", buf);
+	  for(i=0; i<count; i++) {
+	    switch(read_state) {
+	    case GET_LINE:
+	      if(buf[i] == '\n') {
+		read_state = GET_SEMI;
+		g_debug("Tracecontrol input line skip\n");
+	      }
+	      break;
+	    case GET_SEMI:
+	      if(buf[i] == ':') {
+		g_debug("Tracecontrol input  : marker found\n");
+		read_state = GET_SPACE;
+	      }
+	      break;
+	    case GET_SPACE:
+	      if(buf[i] == ' ') {
+		g_debug("Tracecontrol input space marker found\n");
+		goto write_password;
+	      }
+	      break;
+	    }
+	  }
+	} else if(count == -1) {
+	  perror("Error in read");
+	  goto wait_child;
+	}
+
+      }
+
       if(num_hup > 0) {
-        g_warning("Child hung up too fast");
+        g_warning("Child hung up without returning a full reply");
         goto wait_child;
       }
     }
