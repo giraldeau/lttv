@@ -494,7 +494,7 @@ static void writeMatchingGraphsPlotsBroadcast(SyncState* const syncState, const
 	{
 		fprintf(syncState->graphsStream,
 			"\t\"matching_broadcast-%03d_and_%03d.data\" "
-				"title \"Broadcast delays\" with points "
+				"title \"Broadcast differential delays\" with points "
 				"linecolor rgb \"black\" pointtype 6 pointsize 2, \\\n", i,
 				j);
 	}

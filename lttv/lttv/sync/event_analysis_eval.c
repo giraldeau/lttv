@@ -68,8 +68,10 @@ static void analyzeBroadcastEval(SyncState* const syncState, Broadcast* const
 	broadcast);
 static GArray* finalizeAnalysisEval(SyncState* const syncState);
 static void printAnalysisStatsEval(SyncState* const syncState);
-static void writeAnalysisTraceTimePlotsEval(SyncState* const syncState, const
-	unsigned int i, const unsigned int j);
+static void writeAnalysisTraceTimeBackPlotsEval(SyncState* const syncState,
+	const unsigned int i, const unsigned int j);
+static void writeAnalysisTraceTimeForePlotsEval(SyncState* const syncState,
+	const unsigned int i, const unsigned int j);
 static void writeAnalysisTraceTraceBackPlotsEval(SyncState* const syncState,
 	const unsigned int i, const unsigned int j);
 static void writeAnalysisTraceTraceForePlotsEval(SyncState* const syncState,
@@ -138,7 +140,8 @@ static AnalysisModule analysisModuleEval= {
 	.finalizeAnalysis= &finalizeAnalysisEval,
 	.printAnalysisStats= &printAnalysisStatsEval,
 	.graphFunctions= {
-		.writeTraceTimeBackPlots= &writeAnalysisTraceTimePlotsEval,
+		.writeTraceTimeBackPlots= &writeAnalysisTraceTimeBackPlotsEval,
+		.writeTraceTimeForePlots= &writeAnalysisTraceTimeForePlotsEval,
 		.writeTraceTraceBackPlots= &writeAnalysisTraceTraceBackPlotsEval,
 		.writeTraceTraceForePlots= &writeAnalysisTraceTraceForePlotsEval,
 	}
@@ -1807,24 +1810,18 @@ static void finalizeAnalysisEvalLP(SyncState* const syncState)
  * approach. Write the neccessary data files and plot lines in the gnuplot
  * script.
  *
- * There are two definitions of this function. The empty one is used when the
- * solver library, glpk, is not available at build time. In that case, nothing
- * is actually produced.
+ * When the solver library, glpk, is not available at build time nothing is
+ * actually produced.
  *
  * Args:
  *   syncState:    container for synchronization data
  *   i:            first trace number
  *   j:            second trace number, garanteed to be larger than i
  */
-#ifndef HAVE_LIBGLPK
-static inline void writeAccuracyGraphs(SyncState* const syncState, const
-	unsigned int i, const unsigned int j)
+static void writeAnalysisTraceTimeBackPlotsEval(SyncState* const syncState,
+	const unsigned int i, const unsigned int j)
 {
-}
-#else
-static void writeAccuracyGraphs(SyncState* const syncState, const unsigned int
-	i, const unsigned int j)
-{
+#ifdef HAVE_LIBGLPK
 	unsigned int it;
 	AnalysisDataEval* analysisData= syncState->analysisData;
 	AnalysisGraphsEval* graphs= analysisData->graphs;
@@ -1934,34 +1931,40 @@ static void writeAccuracyGraphs(SyncState* const syncState, const unsigned int
 				"linecolor rgb \"black\" fill solid 0.25 noborder, \\\n", i,
 				j);
 	}
-}
 #endif
+}
 
 
 /*
  * Write the analysis-specific graph lines in the gnuplot script.
+ *
+ * When the solver library, glpk, is not available at build time nothing is
+ * actually produced.
  *
  * Args:
  *   syncState:    container for synchronization data
  *   i:            first trace number
  *   j:            second trace number, garanteed to be larger than i
  */
-static void writeAnalysisTraceTimePlotsEval(SyncState* const syncState, const
-	unsigned int i, const unsigned int j)
+static void writeAnalysisTraceTimeForePlotsEval(SyncState* const syncState,
+	const unsigned int i, const unsigned int j)
 {
-	AnalysisDataEval* analysisData= syncState->analysisData;
-	AnalysisGraphsEval* graphs= analysisData->graphs;
-	GQueue*** hullArray= ((AnalysisDataCHull*)
-		analysisData->chullSS->analysisData)->hullArray;
-
-	printf("Between %u and %u:\n", i, j);
-	printf("\tbounds min %llu max %llu\n", graphs->bounds[j][i].min,
-		graphs->bounds[j][i].max);
-	printf("\tnumber of points in lower half-hull %u upper half-hull %u\n",
-		g_queue_get_length(hullArray[j][i]),
-		g_queue_get_length(hullArray[i][j]));
-
-	writeAccuracyGraphs(syncState, i, j);
+#ifdef HAVE_LIBGLPK
+	if (((AnalysisDataEval*)
+			syncState->analysisData)->graphs->lpFactorsArray[j][i].type ==
+		MIDDLE)
+	{
+		fprintf(syncState->graphsStream,
+			"\t\"analysis_eval_accuracy-%1$03u_and_%2$03u.data\" "
+				"using 1:(($3 - $2) / clock_freq_%2$u) notitle "
+				"with lines linewidth 2 linetype 1 "
+				"linecolor rgb \"gray60\", \\\n"
+			"\t\"analysis_eval_accuracy-%1$03u_and_%2$03u.data\" "
+				"using 1:(($4 - $2) / clock_freq_%2$u) notitle "
+				"with lines linewidth 2 linetype 1 "
+				"linecolor rgb \"gray60\", \\\n", i, j);
+	}
+#endif
 }
 
 
