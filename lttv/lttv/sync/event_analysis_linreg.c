@@ -75,7 +75,7 @@ static AnalysisModule analysisModuleLinReg= {
 	.finalizeAnalysis= &finalizeAnalysisLinReg,
 	.printAnalysisStats= &printAnalysisStatsLinReg,
 	.graphFunctions= {
-		.writeTraceTracePlots= &writeAnalysisGraphsPlotsLinReg,
+		.writeTraceTraceForePlots= &writeAnalysisGraphsPlotsLinReg,
 	}
 };
 

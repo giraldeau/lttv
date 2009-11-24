@@ -43,8 +43,8 @@ static void destroyMatchingTCP(SyncState* const syncState);
 static void matchEventTCP(SyncState* const syncState, Event* const event);
 static GArray* finalizeMatchingTCP(SyncState* const syncState);
 static void printMatchingStatsTCP(SyncState* const syncState);
-static void writeMatchingGraphsPlotsTCP(SyncState* const syncState, const
-	unsigned int i, const unsigned int j);
+static void writeMatchingGraphsPlotsTCPMessages(SyncState* const syncState,
+	const unsigned int i, const unsigned int j);
 
 // Functions specific to this module
 static void registerMatchingTCP() __attribute__((constructor (101)));
@@ -75,7 +75,7 @@ static MatchingModule matchingModuleTCP = {
 	.finalizeMatching= &finalizeMatchingTCP,
 	.printMatchingStats= &printMatchingStatsTCP,
 	.graphFunctions= {
-		.writeTraceTracePlots= &writeMatchingGraphsPlotsTCP,
+		.writeTraceTraceForePlots= &writeMatchingGraphsPlotsTCPMessages,
 	}
 };
 
@@ -703,8 +703,8 @@ static void closeGraphDataFiles(SyncState* const syncState)
  *   i:            first trace number
  *   j:            second trace number, garanteed to be larger than i
  */
-static void writeMatchingGraphsPlotsTCP(SyncState* const syncState, const
-	unsigned int i, const unsigned int j)
+static void writeMatchingGraphsPlotsTCPMessages(SyncState* const syncState,
+	const unsigned int i, const unsigned int j)
 {
 	fprintf(syncState->graphsStream,
 		"\t\"matching_tcp-%1$03d_to_%2$03d.data\" "

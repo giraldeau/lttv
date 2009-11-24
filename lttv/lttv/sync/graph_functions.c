@@ -30,7 +30,7 @@
 
 void writeGraphsScript(SyncState* const syncState)
 {
-	unsigned int i, j, k, l;
+	unsigned int i, j, k, l, m;
 	long pos1, pos2;
 	const GraphFunctions* moduleGraphFunctions[]= {
 		&syncState->processingModule->graphFunctions,
@@ -38,17 +38,31 @@ void writeGraphsScript(SyncState* const syncState)
 		&syncState->analysisModule->graphFunctions,
 	};
 	const struct {
-		size_t plotsOffset,
-			   optionsOffset;
 		char* name;
-	} funcTypes[]= {
-		{offsetof(GraphFunctions, writeTraceTracePlots),
-			offsetof(GraphFunctions, writeTraceTraceOptions), "TraceTrace"},
-		{offsetof(GraphFunctions, writeTraceTimePlots),
-			offsetof(GraphFunctions, writeTraceTimeOptions), "TraceTime"},
+		size_t plotsOffsets[2];
+		size_t optionsOffset;
+	} graphTypes[]= {
+		{
+			"TraceTrace",
+			{
+				offsetof(GraphFunctions, writeTraceTraceBackPlots),
+				offsetof(GraphFunctions, writeTraceTraceForePlots),
+			},
+			offsetof(GraphFunctions, writeTraceTraceOptions),
+		},
+		{
+			"TraceTime",
+			{
+				offsetof(GraphFunctions, writeTraceTimeBackPlots),
+				offsetof(GraphFunctions, writeTraceTimeForePlots),
+			},
+			offsetof(GraphFunctions, writeTraceTimeOptions),
+		},
 	};
 
 	fprintf(syncState->graphsStream, "\n");
+
+	// Write variables
 	pos1= ftell(syncState->graphsStream);
 	for (i= 0; i < syncState->traceNb; i++)
 	{
@@ -72,7 +86,8 @@ void writeGraphsScript(SyncState* const syncState)
 		fprintf(syncState->graphsStream, "\n");
 	}
 
-	for (l= 0; l < sizeof(funcTypes) / sizeof(*funcTypes); l++)
+	// Write plots and options
+	for (l= 0; l < sizeof(graphTypes) / sizeof(*graphTypes); l++)
 	{
 		// Cover the upper triangular matrix, i is the reference node.
 		for (i= 0; i < syncState->traceNb; i++)
@@ -84,19 +99,24 @@ void writeGraphsScript(SyncState* const syncState)
 				fprintf(syncState->graphsStream,
 					"reset\n"
 					"set output \"%03d-%03d-%s.eps\"\n"
-					"plot \\\n", i, j, funcTypes[l].name);
+					"plot \\\n", i, j, graphTypes[l].name);
 
 				pos1= ftell(syncState->graphsStream);
 
-				for (k= 0; k < sizeof(moduleGraphFunctions) /
-					sizeof(*moduleGraphFunctions); k++)
+				for (m= 0; m < sizeof(graphTypes[l].plotsOffsets) /
+					sizeof(*graphTypes[l].plotsOffsets); m++)
 				{
-					GraphFunction** writePlots= (void*)
-						moduleGraphFunctions[k] + funcTypes[l].plotsOffset;
-
-					if (*writePlots)
+					for (k= 0; k < sizeof(moduleGraphFunctions) /
+						sizeof(*moduleGraphFunctions); k++)
 					{
-						(*writePlots)(syncState, i, j);
+						GraphFunction** writePlots= (void*)
+							moduleGraphFunctions[k] +
+							graphTypes[l].plotsOffsets[m];
+
+						if (*writePlots)
+						{
+							(*writePlots)(syncState, i, j);
+						}
 					}
 				}
 
@@ -125,13 +145,13 @@ void writeGraphsScript(SyncState* const syncState)
 
 				fprintf(syncState->graphsStream,
 					"\nset output \"%03d-%03d-%s.eps\"\n"
-					"set title \"\"\n", i, j, funcTypes[l].name);
+					"set title \"\"\n", i, j, graphTypes[l].name);
 
 				for (k= 0; k < sizeof(moduleGraphFunctions) /
 					sizeof(*moduleGraphFunctions); k++)
 				{
 					GraphFunction** writeOptions= (void*)
-						moduleGraphFunctions[k] + funcTypes[l].optionsOffset;
+						moduleGraphFunctions[k] + graphTypes[l].optionsOffset;
 
 					if (*writeOptions)
 					{

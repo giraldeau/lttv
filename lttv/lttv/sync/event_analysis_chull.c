@@ -107,7 +107,7 @@ static AnalysisModule analysisModuleCHull= {
 	.finalizeAnalysis= &finalizeAnalysisCHull,
 	.printAnalysisStats= &printAnalysisStatsCHull,
 	.graphFunctions= {
-		.writeTraceTracePlots= &writeAnalysisGraphsPlotsCHull,
+		.writeTraceTraceForePlots= &writeAnalysisGraphsPlotsCHull,
 	}
 };
 
@@ -119,6 +119,7 @@ const char* const approxNames[]= {
 	[ABSENT]= "Absent",
 	[SCREWED]= "Screwed",
 };
+
 
 /*
  * Analysis module registering function

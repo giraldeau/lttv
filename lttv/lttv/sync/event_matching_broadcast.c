@@ -67,7 +67,7 @@ static MatchingModule matchingModuleBroadcast = {
 	.finalizeMatching= &finalizeMatchingBroadcast,
 	.printMatchingStats= &printMatchingStatsBroadcast,
 	.graphFunctions= {
-		.writeTraceTimePlots= &writeMatchingGraphsPlotsBroadcast,
+		.writeTraceTimeForePlots= &writeMatchingGraphsPlotsBroadcast,
 	}
 };
 

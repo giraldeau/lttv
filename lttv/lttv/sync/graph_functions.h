@@ -31,11 +31,13 @@ typedef struct
 	GraphVariableFunction* writeVariables;
 	/* This is for graphs where the data on both axis is in the range of
 	 * timestamps */
-	GraphFunction* writeTraceTracePlots;
+	GraphFunction* writeTraceTraceForePlots;
+	GraphFunction* writeTraceTraceBackPlots;
 	GraphFunction* writeTraceTraceOptions;
 	/* This is for graphs where the data on the abscissa is in the range of
 	 * timestamps and the ordinates is in the range of timestamp deltas */
-	GraphFunction* writeTraceTimePlots;
+	GraphFunction* writeTraceTimeForePlots;
+	GraphFunction* writeTraceTimeBackPlots;
 	GraphFunction* writeTraceTimeOptions;
 } GraphFunctions;
 

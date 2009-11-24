@@ -70,8 +70,10 @@ static GArray* finalizeAnalysisEval(SyncState* const syncState);
 static void printAnalysisStatsEval(SyncState* const syncState);
 static void writeAnalysisTraceTimePlotsEval(SyncState* const syncState, const
 	unsigned int i, const unsigned int j);
-static void writeAnalysisTraceTracePlotsEval(SyncState* const syncState, const
-	unsigned int i, const unsigned int j);
+static void writeAnalysisTraceTraceBackPlotsEval(SyncState* const syncState,
+	const unsigned int i, const unsigned int j);
+static void writeAnalysisTraceTraceForePlotsEval(SyncState* const syncState,
+	const unsigned int i, const unsigned int j);
 
 // Functions specific to this module
 static void registerAnalysisEval() __attribute__((constructor (102)));
@@ -104,15 +106,18 @@ static void dumpBinToFile(const struct Bins* const bins, FILE* const file);
 static void writeHistogram(FILE* graphsStream, const struct RttKey* rttKey,
 	double* minRtt, AnalysisHistogramEval* const histogram);
 
-static void updateBounds(Bounds** const bounds, Event* const e1, Event* const e2);
+static void updateBounds(Bounds** const bounds, Event* const e1, Event* const
+	e2);
 
 // The next group of functions is only needed when computing synchronization
 // accuracy.
 #ifdef HAVE_LIBGLPK
-static glp_prob* lpCreateProblem(GQueue* const lowerHull, GQueue* const upperHull);
+static glp_prob* lpCreateProblem(GQueue* const lowerHull, GQueue* const
+	upperHull);
 static void gfLPAddRow(gpointer data, gpointer user_data);
 static Factors* calculateFactors(glp_prob* const lp, const int direction);
-static void calculateCompleteFactors(glp_prob* const lp, FactorsCHull* factors);
+static void calculateCompleteFactors(glp_prob* const lp, FactorsCHull*
+	factors);
 static FactorsCHull** createAllFactors(const unsigned int traceNb);
 static inline void finalizeAnalysisEvalLP(SyncState* const syncState);
 #else
@@ -133,8 +138,9 @@ static AnalysisModule analysisModuleEval= {
 	.finalizeAnalysis= &finalizeAnalysisEval,
 	.printAnalysisStats= &printAnalysisStatsEval,
 	.graphFunctions= {
-		.writeTraceTimePlots= &writeAnalysisTraceTimePlotsEval,
-		.writeTraceTracePlots= &writeAnalysisTraceTracePlotsEval,
+		.writeTraceTimeBackPlots= &writeAnalysisTraceTimePlotsEval,
+		.writeTraceTraceBackPlots= &writeAnalysisTraceTraceBackPlotsEval,
+		.writeTraceTraceForePlots= &writeAnalysisTraceTraceForePlotsEval,
 	}
 };
 
@@ -1456,7 +1462,8 @@ static uint32_t normalTotal(struct Bins* const bins)
  *   bounds:       the array containing all the trace-pair bounds
  *   e1, e2:       the two related events
  */
-static void updateBounds(Bounds** const bounds, Event* const e1, Event* const e2)
+static void updateBounds(Bounds** const bounds, Event* const e1, Event* const
+	e2)
 {
 	unsigned int traceI, traceJ;
 	uint64_t messageTime;
@@ -1501,7 +1508,8 @@ static void updateBounds(Bounds** const bounds, Event* const e1, Event* const e2
  *   A new glp_prob*, this problem must be freed by the caller with
  *   glp_delete_prob()
  */
-static glp_prob* lpCreateProblem(GQueue* const lowerHull, GQueue* const upperHull)
+static glp_prob* lpCreateProblem(GQueue* const lowerHull, GQueue* const
+	upperHull)
 {
 	unsigned int it;
 	const int zero= 0;
@@ -1809,8 +1817,8 @@ static void finalizeAnalysisEvalLP(SyncState* const syncState)
  *   j:            second trace number, garanteed to be larger than i
  */
 #ifndef HAVE_LIBGLPK
-static inline void writeAccuracyGraphs(SyncState* const syncState, const unsigned int
-	i, const unsigned int j)
+static inline void writeAccuracyGraphs(SyncState* const syncState, const
+	unsigned int i, const unsigned int j)
 {
 }
 #else
@@ -1957,11 +1965,17 @@ static void writeAnalysisTraceTimePlotsEval(SyncState* const syncState, const
 }
 
 
-static void writeAnalysisTraceTracePlotsEval(SyncState* const syncState, const
-	unsigned int i, const unsigned int j)
+/*
+ * Write the analysis-specific graph lines in the gnuplot script.
+ *
+ * Args:
+ *   syncState:    container for synchronization data
+ *   i:            first trace number
+ *   j:            second trace number, garanteed to be larger than i
+ */
+static void writeAnalysisTraceTraceBackPlotsEval(SyncState* const syncState,
+	const unsigned int i, const unsigned int j)
 {
-	AnalysisDataEval* analysisData= syncState->analysisData;
-
 #ifdef HAVE_LIBGLPK
 	fprintf(syncState->graphsStream,
 		"\t\"analysis_eval_accuracy-%1$03u_and_%2$03u.data\" "
@@ -1970,7 +1984,22 @@ static void writeAnalysisTraceTracePlotsEval(SyncState* const syncState, const
 		"with filledcurves linewidth 2 linetype 1 "
 		"linecolor rgb \"black\" fill solid 0.25 noborder, \\\n", i, j);
 #endif
+}
 
-	analysisData->chullSS->analysisModule->graphFunctions.writeTraceTracePlots(analysisData->chullSS,
+
+/*
+ * Write the analysis-specific graph lines in the gnuplot script.
+ *
+ * Args:
+ *   syncState:    container for synchronization data
+ *   i:            first trace number
+ *   j:            second trace number, garanteed to be larger than i
+ */
+static void writeAnalysisTraceTraceForePlotsEval(SyncState* const syncState,
+	const unsigned int i, const unsigned int j)
+{
+	AnalysisDataEval* analysisData= syncState->analysisData;
+
+	analysisData->chullSS->analysisModule->graphFunctions.writeTraceTraceForePlots(analysisData->chullSS,
 		i, j);
 }
