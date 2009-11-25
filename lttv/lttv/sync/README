@@ -34,7 +34,7 @@ to make sure the following markers are enabled:
 * dev_xmit_extended
 * tcpv4_rcv_extended
 * udpv4_rcv_extended
-You can use the 'ltt-armall' and 'ltt-armnetsync' scripts for this.
+You can use 'ltt-armall -n' for this.
 
 You also have to make sure there is some TCP traffic between the traced nodes.
 
@@ -48,11 +48,13 @@ as seen with "-h":
                      synchronize the time between the traces
 --sync-stats
                      print statistics about the time synchronization
+					 See the section "Statistics" for more information.
 --sync-null
 					 read the events but do not perform any processing, this
 					 is mostly for performance evaluation
---sync-analysis  -  argument: chull, linreg
-                     specify the algorithm to use for event analysis
+--sync-analysis  -  argument: chull, linreg, eval
+					 specify the algorithm to use for event analysis. See the
+					 section "Alogrithms".
 --sync-graphs
                      output gnuplot graph showing synchronization points
 --sync-graphs-dir  -  argument: DIRECTORY
@@ -69,9 +71,9 @@ Example:
 lttv-gui -t traces/node1 -t traces/node2 --sync
 
 ++ Statistics
-The --sync-stats option is useful to make sure the synchronization algorithms
-worked. Here is an example output (with added comments) from a successful
-chull (one of the synchronization algorithms) run of two traces:
+The --sync-stats option is useful to know how well the synchronization
+algorithms worked. Here is an example output (with added comments) from a
+successful chull (one of the synchronization algorithms) run of two traces:
 	LTTV processing stats:
 		received frames: 452
 		received frames that are IP: 452
@@ -91,6 +93,8 @@ chull (one of the synchronization algorithms) run of two traces:
 			  0 - 1  : Middle     a0= -1.33641e+08 a1= 1 - 4.5276e-08 accuracy 1.35355e-05
 								  a0: -1.34095e+08 to -1.33187e+08 (delta=  907388)
 								  a1: 1 -6.81298e-06 to +6.72248e-06 (delta= 1.35355e-05)
+# "Middle" is the best type of synchronization for chull. See the section
+# "Convex Hull" below.
 	Resulting synchronization factors:
 		trace 0 drift= 1 offset= 0 (0.000000) start time= 18.799023588
 		trace 1 drift= 1 offset= 1.33641e+08 (0.066818) start time= 19.090688494
@@ -104,12 +108,78 @@ The synchronization framework is extensible and already includes two
 algorithms: chull and linreg. You can choose which analysis algorithm to use
 with the --sync-analysis option.
 
++++ Convex Hull
+chull, the default analysis module, can provide a garantee that there are no
+message inversions after synchronization. When printing the statistics, it
+will print, for each trace, the type of factors found:
+* "Middle", all went according to assumptions and there will be no message
+  inversions
+* "Fallback", it was not possible to garantee no message inversion so
+  approximate factors were given instead. This may happen during long running
+  traces where the non-linearity of the clocks was notable. If you can, try to
+  reduce the duration of the trace. (Sometimes this may happen during a trace
+  as short as 120s. but sometimes traces 30 mins. or longer are ok, your
+  milleage may vary). It would also be to improve the algorithms to avoid
+  this, see the "Todo" section. In any case, you may get better results (but
+  still no garantee) by choosing the linreg algorithm instead.
+* "Absent", the trace pair does not contain common communication events. Are
+  you sure the nodes exchanged TCP traffic during the trace?
+
+There are also other, less common, types. See the enum ApproxType in
+event_analysis_chull.h.
+
++++ Linear Regression
+linreg sometimes gives more accurate results than chull but it provides no
+garantee
+
++++ Synchronization evaluation
+eval is a special module, it doesn't really perform synchronization, instead
+it calculates and prints different metrics about how well traces are
+synchronized. Although it can be run like other analysis modules, it is most
+useful when run in a postprocessing step, after another synchronization module
+has been run. Eval is most common run in text mode. To do this, run
+lttv -m eval [usual options, ex: -t traces/node1 -t traces/node2 --sync ...]
+
+eval provides a few more options:
+--eval-rtt-file  -  argument: FILE
+                     specify the file containing RTT information
+--eval-graphs  -  argument: none
+                     output gnuplot graph showing synchronization points
+--eval-graphs-dir  -  argument: eval-graphs-<lttv pid>
+                     specify the directory where to store the graphs
+
+The RTT file should contain information on the minimum round-trip time between
+nodes involved in the trace. This information is used (optionally) in the
+evaluation displayed and in the histogram graphs produced. The file should
+contain a series of lines of the form:
+192.168.112.56 192.168.112.57 0.100
+The first two fields are the IP addresses of the source and destination hosts.
+(hostnames are not supported). The last field is the minimum rtt in ms. The
+fields are separated by whitespace. '#' comments a line.
+
+Many commands can be used to measure the RTT, for example:
+ping -s 8 -A -c 8000 -w 10 192.168.112.57
+
+Note that this must be repeated in both directions in the file.
+
+++++ Linear Programming and GLPK
+The synchronization evaluation can optionally perform an analysis similar to
+chull but by using a linear program in one of the steps. This can be used to
+validate a part of the chull algorithm but it can also be used to provide a
+measure of the accuracy of the synchronization in any point (this is seen in
+the graph output).
+
+This is enabled by default at configure time (--with-glpk) if the GNU Linear
+Programming Kit is available (libglpk).
+
 + Design
 This part describes the design of the synchronization framework. This is to
 help programmers interested in:
 * adding new synchronization algorithms (analysis part)
 	There are already two analysis algorithms available: chull and linreg
 * using new types of events (processing and matching parts)
+	There are already two types of events supported: tcp messages and udp
+	broadcasts
 * using time synchronization with another data source/tracer (processing part)
 	There are already two data sources available: lttng and unittest
 
@@ -123,7 +193,8 @@ function. The "sync chain" is the set of event-* modules. At the moment there
 is only one module at each stage. However, as more module are added, it will
 become relevant to have many modules at the same stage simultaneously. This
 will require some modifications. I've kept this possibility at the back of my
-mind while designing.
+mind while designing. It is already partly supported at the matching stage
+through encapsulation of other matching modules.
 
 ++ Stage 1: Event processing
 Specific to the tracing data source.
@@ -169,7 +240,7 @@ what can already be figured out by analyzing packets.
 
 An exchange can also consist of more than two packets, in case one packet
 single handedly acknowledges many data packets. In this case, it is best to
-use the last acknowledged packet. Assuming a linear clock, an acknowledged
+use the last data packet. Assuming a linear clock, an acknowledged
 packet is as good as any other. However, since the linear clock assumption is
 further from reality as the interval grows longer, it is best to keep the
 interval between the two packets as short as possible.
@@ -182,8 +253,7 @@ eg. convex hull, linear regression, broadcast Maximum Likelihood Estimator
 Instead of having one analyzeEvents() function that can receive any sort of
 grouping of events, there are three prototypes: analyzeMessage(),
 analyzeExchange() and analyzeBroadcast(). A module implements only the
-relevant one(s) and sets the other function pointers to NULL in its
-AnalysisModule struct.
+relevant one(s) and the other function pointers are NULL.
 
 The approach is different from matchEvent() where there is one point of entry
 no mather the type of event. The analyze*() approach has the advantage that
