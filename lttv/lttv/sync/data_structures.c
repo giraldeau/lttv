@@ -34,10 +34,6 @@
 #include "data_structures.h"
 
 
-#ifndef g_info
-#define g_info(format...) g_log (G_LOG_DOMAIN, G_LOG_LEVEL_INFO, format)
-#endif
-
 // TCP sequence numbers use clock arithmetic, these comparison functions take
 // that into account
 #define SEQ_LT(a,b)     ((int32_t)((a)-(b)) < 0)

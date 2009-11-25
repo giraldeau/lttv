@@ -36,11 +36,6 @@
 #include "sync_chain.h"
 
 
-#ifndef g_info
-#define g_info(format...) g_log (G_LOG_DOMAIN, G_LOG_LEVEL_INFO, format)
-#endif
-
-
 static void init();
 static void destroy();
 

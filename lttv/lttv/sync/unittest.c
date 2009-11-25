@@ -37,11 +37,6 @@
 #include "sync_chain.h"
 
 
-#ifndef g_info
-#define g_info(format...) g_log (G_LOG_DOMAIN, G_LOG_LEVEL_INFO, format)
-#endif
-
-
 static void timeDiff(struct timeval* const end, const struct timeval* const start);
 static void usage(const char* const programName);
 static gint gcfCompareAnalysis(gconstpointer a, gconstpointer b);

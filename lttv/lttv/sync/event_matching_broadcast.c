@@ -31,11 +31,6 @@
 #include "event_matching_broadcast.h"
 
 
-#ifndef g_info
-#define g_info(format...) g_log (G_LOG_DOMAIN, G_LOG_LEVEL_INFO, format)
-#endif
-
-
 // Functions common to all matching modules
 static void initMatchingBroadcast(SyncState* const syncState);
 static void destroyMatchingBroadcast(SyncState* const syncState);

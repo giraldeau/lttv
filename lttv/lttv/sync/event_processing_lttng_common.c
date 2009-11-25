@@ -24,11 +24,6 @@
 #include "event_processing_lttng_common.h"
 
 
-#ifndef g_info
-#define g_info(format...) g_log (G_LOG_DOMAIN, G_LOG_LEVEL_INFO, format)
-#endif
-
-
 /*
  * Initialize the GQuarks needed to register the event hooks for
  * synchronization
