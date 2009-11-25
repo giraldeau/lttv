@@ -55,6 +55,7 @@ lttv_real_SOURCES = \
 	traceset.c\
 	filter.c\
 	print.c\
+	sync/sync_chain.c\
 	sync/sync_chain_lttv.c\
 	sync/graph_functions.c\
 	sync/data_structures.c\

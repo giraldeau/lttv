@@ -68,7 +68,6 @@ extern GQueue moduleOptions;
 
 void syncTraceset(LttvTracesetContext* const traceSetContext);
 
-char* changeToGraphDir(const char* const graphs);
 void timeDiff(struct timeval* const end, const struct timeval* const start);
 
 gint gcfCompareProcessing(gconstpointer a, gconstpointer b);

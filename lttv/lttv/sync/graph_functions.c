@@ -21,6 +21,9 @@
 #endif
 
 #include <errno.h>
+#include <fcntl.h>
+#include <stdlib.h>
+#include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
 
@@ -28,6 +31,100 @@
 #include "graph_functions.h"
 
 
+/*
+ * Create the directory used to hold graphs and the header of the gnuplot
+ * script.
+ *
+ * Args:
+ *   graphsDir:    name of directory
+ *
+ * Returns:
+ *   The current working directory before the execution of the function. The
+ *   string must be free'd by the caller.
+ */
+FILE* createGraphsDir(const char* const graphsDir)
+{
+	char* cwd;
+	int graphsFp;
+	FILE* result;
+	int retval;
+
+	cwd= changeToGraphsDir(graphsDir);
+
+	if ((graphsFp= open("graphs.gnu", O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR |
+				S_IWUSR | S_IXUSR | S_IRGRP | S_IWGRP | S_IXGRP | S_IROTH
+				| S_IWOTH | S_IXOTH)) == -1)
+	{
+		g_error(strerror(errno));
+	}
+	if ((result= fdopen(graphsFp, "w")) == NULL)
+	{
+		g_error(strerror(errno));
+	}
+
+	fprintf(result,
+		"#!/usr/bin/gnuplot\n\n"
+		"set terminal postscript eps color size 8in,6in\n");
+
+	retval= chdir(cwd);
+	if (retval == -1)
+	{
+		g_error(strerror(errno));
+	}
+	free(cwd);
+
+	return result;
+}
+
+
+/*
+ * Change to the directory used to hold graphs. Create it if necessary.
+ *
+ * Args:
+ *   graphsDir:    name of directory
+ *
+ * Returns:
+ *   The current working directory before the execution of the function. The
+ *   string must be free'd by the caller.
+ */
+char* changeToGraphsDir(const char* const graphsDir)
+{
+	int retval;
+	char* cwd;
+
+	cwd= getcwd(NULL, 0);
+	if (cwd == NULL)
+	{
+		g_error(strerror(errno));
+	}
+	while ((retval= chdir(graphsDir)) != 0)
+	{
+		if (errno == ENOENT)
+		{
+			retval= mkdir(graphsDir, S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP |
+				S_IWGRP | S_IXGRP | S_IROTH | S_IWOTH | S_IXOTH);
+			if (retval != 0)
+			{
+				g_error(strerror(errno));
+			}
+		}
+		else
+		{
+			g_error(strerror(errno));
+		}
+	}
+
+	return cwd;
+}
+
+
+/*
+ * Call each graph variable, option and plot line function of each module to
+ * produce a gnuplot script.
+ *
+ * Args:
+ *   syncState:    container for synchronization data
+ */
 void writeGraphsScript(SyncState* const syncState)
 {
 	unsigned int i, j, k, l, m;

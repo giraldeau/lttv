@@ -309,7 +309,7 @@ static AnalysisHistogramEval* constructAnalysisHistogramEval(const char* const
 	convertIP(saddr, rttKey->saddr);
 	convertIP(daddr, rttKey->daddr);
 
-	cwd= changeToGraphDir(graphsDir);
+	cwd= changeToGraphsDir(graphsDir);
 
 	for (i= 0; i < sizeof(loopValues) / sizeof(*loopValues); i++)
 	{
@@ -1846,7 +1846,7 @@ static void writeAnalysisTraceTimeBackPlotsEval(SyncState* const syncState,
 		snprintf(fileName, 40, "analysis_eval_accuracy-%03u_and_%03u.data", i, j);
 		fileName[sizeof(fileName) - 1]= '\0';
 
-		cwd= changeToGraphDir(syncState->graphsDir);
+		cwd= changeToGraphsDir(syncState->graphsDir);
 
 		if ((fp= fopen(fileName, "w")) == NULL)
 		{

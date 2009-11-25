@@ -369,7 +369,7 @@ static void openGraphDataFiles(SyncState* const syncState)
 	MatchingGraphsBroadcast* graphs= ((MatchingDataBroadcast*)
 		syncState->matchingData)->graphs;
 
-	cwd= changeToGraphDir(syncState->graphsDir);
+	cwd= changeToGraphsDir(syncState->graphsDir);
 
 	graphs->accuracyPoints= malloc(syncState->traceNb * sizeof(FILE**));
 	graphs->pointsNb= malloc(syncState->traceNb * sizeof(unsigned int*));

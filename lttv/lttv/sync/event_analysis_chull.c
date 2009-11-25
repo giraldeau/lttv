@@ -192,7 +192,7 @@ static void openGraphFiles(SyncState* const syncState)
 
 	analysisData= (AnalysisDataCHull*) syncState->analysisData;
 
-	cwd= changeToGraphDir(syncState->graphsDir);
+	cwd= changeToGraphsDir(syncState->graphsDir);
 
 	analysisData->graphsData->hullPoints= malloc(syncState->traceNb *
 		sizeof(FILE**));

@@ -586,7 +586,7 @@ static void openGraphDataFiles(SyncState* const syncState)
 
 	matchingData= (MatchingDataTCP*) syncState->matchingData;
 
-	cwd= changeToGraphDir(syncState->graphsDir);
+	cwd= changeToGraphsDir(syncState->graphsDir);
 
 	matchingData->messagePoints= malloc(syncState->traceNb * sizeof(FILE**));
 	for (i= 0; i < syncState->traceNb; i++)

@@ -295,35 +295,10 @@ void setupSyncChain(LttvTracesetContext* const traceSetContext)
 
 	if (optionEvalGraphs)
 	{
-		char* cwd;
-		int graphsFp;
-
 		// Create the graph directory right away in case the module initialization
 		// functions have something to write in it.
 		syncState->graphsDir= optionEvalGraphsDir;
-		cwd= changeToGraphDir(optionEvalGraphsDir);
-
-		if ((graphsFp= open("graphs.gnu", O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR |
-				S_IWUSR | S_IXUSR | S_IRGRP | S_IWGRP | S_IXGRP | S_IROTH
-				| S_IWOTH | S_IXOTH)) == -1)
-		{
-			g_error(strerror(errno));
-		}
-		if ((syncState->graphsStream= fdopen(graphsFp, "w")) == NULL)
-		{
-			g_error(strerror(errno));
-		}
-
-		fprintf(syncState->graphsStream,
-			"#!/usr/bin/gnuplot\n\n"
-			"set terminal postscript eps color size 8in,6in\n");
-
-		retval= chdir(cwd);
-		if (retval == -1)
-		{
-			g_error(strerror(errno));
-		}
-		free(cwd);
+		syncState->graphsStream= createGraphsDir(syncState->graphsDir);
 	}
 	else
 	{

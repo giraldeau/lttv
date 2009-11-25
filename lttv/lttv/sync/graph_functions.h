@@ -42,6 +42,8 @@ typedef struct
 } GraphFunctions;
 
 
+FILE* createGraphsDir(const char* const graphsDir);
+char* changeToGraphsDir(const char* const graphsDir);
 void writeGraphsScript(struct _SyncState* const syncState);
 
 #endif
