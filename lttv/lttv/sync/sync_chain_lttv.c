@@ -101,7 +101,7 @@ static void init()
 {
 	int retval;
 
-	g_debug("\t\t\tXXXX sync init\n");
+	g_debug("Sync init");
 
 	g_assert(g_queue_get_length(&analysisModules) > 0);
 	optionSyncAnalysis.arg = ((AnalysisModule*)
@@ -138,7 +138,7 @@ static void init()
  */
 static void destroy()
 {
-	g_debug("\t\t\tXXXX sync destroy\n");
+	g_debug("Sync destroy");
 
 	g_queue_foreach(&moduleOptions, &gfRemoveModuleOption, NULL);
 	g_string_free(analysisModulesNames, TRUE);

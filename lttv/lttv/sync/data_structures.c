@@ -234,8 +234,6 @@ void gdnTCPSegmentListDestroy(gpointer data)
 
 	list= (GQueue*) data;
 
-	g_debug("XXXX gdnTCPSegmentListDestroy\n");
-
 	g_queue_foreach(list, &gfTCPSegmentDestroy, NULL);
 	g_queue_free(list);
 }
@@ -250,7 +248,6 @@ void gdnTCPSegmentListDestroy(gpointer data)
  */
 void gfTCPSegmentDestroy(gpointer data, gpointer user_data)
 {
-	g_debug("XXXX gfTCPSegmentDestroy\n");
 	destroyTCPSegment((Message*) data);
 }
 
@@ -266,7 +263,6 @@ void destroyTCPSegment(Message* const segment)
 {
 	TCPEvent* inE, *outE;
 
-	g_debug("XXXX destroyTCPSegment");
 	segment->print(segment);
 
 	g_assert(segment->inE != NULL && segment->outE != NULL);

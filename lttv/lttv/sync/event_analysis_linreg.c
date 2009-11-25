@@ -178,8 +178,8 @@ static void analyzeExchangeLinReg(SyncState* const syncState, Exchange* const ex
 	Message* ackedMessage;
 	AnalysisDataLinReg* analysisData;
 
-	g_debug("Synchronization calculation, ");
-	g_debug("%d acked packets - using last one, ",
+	g_debug("Synchronization calculation, "
+		"%d acked packets - using last one,",
 		g_queue_get_length(exchange->acks));
 
 	analysisData= (AnalysisDataLinReg*) syncState->analysisData;
@@ -357,11 +357,11 @@ static void finalizeLSA(SyncState* const syncState)
 							pow(fit->sd, 2) * fit->st2 - 2 * fit->st * fit->sd
 							* fit->std) / delta) / (fit->n - 2));
 
-				g_debug("[i= %u j= %u]\n", i, j);
-				g_debug("n= %d st= %g st2= %g sd= %g sd2= %g std= %g\n",
+				g_debug("[i= %u j= %u]", i, j);
+				g_debug("n= %d st= %g st2= %g sd= %g sd2= %g std= %g",
 					fit->n, fit->st, fit->st2, fit->sd, fit->sd2, fit->std);
-				g_debug("xij= %g d0ij= %g e= %g\n", fit->x, fit->d0, fit->e);
-				g_debug("(xji= %g d0ji= %g)\n", -fit->x / (1 + fit->x),
+				g_debug("xij= %g d0ij= %g e= %g", fit->x, fit->d0, fit->e);
+				g_debug("(xji= %g d0ji= %g)", -fit->x / (1 + fit->x),
 					-fit->d0 / (1 + fit->x));
 			}
 		}
@@ -398,7 +398,7 @@ static void doGraphProcessing(SyncState* const syncState)
 		GList* result;
 
 		// Perform shortest path search
-		g_debug("shortest path trace %d\ndistances: ", i);
+		g_debug("shortest path trace %d, distances: ", i);
 		shortestPath(analysisData->fitArray, i, syncState->traceNb, distances,
 			previousVertex);
 
@@ -406,12 +406,11 @@ static void doGraphProcessing(SyncState* const syncState)
 		{
 			g_debug("%g, ", distances[j]);
 		}
-		g_debug("\npreviousVertex: ");
+		g_debug("previousVertex: ");
 		for (j= 0; j < syncState->traceNb; j++)
 		{
 			g_debug("%u, ", previousVertex[j]);
 		}
-		g_debug("\n");
 
 		// Group in graphs nodes that have exchanges
 		errorSum= sumDistances(distances, syncState->traceNb);
@@ -421,11 +420,11 @@ static void doGraphProcessing(SyncState* const syncState)
 		{
 			Graph* graph;
 
-			g_debug("found graph\n");
+			g_debug("found graph");
 			graph= (Graph*) result->data;
 			if (errorSum < graph->errorSum)
 			{
-				g_debug("adding to graph\n");
+				g_debug("adding to graph");
 				graph->errorSum= errorSum;
 				free(graph->previousVertex);
 				graph->previousVertex= previousVertex;
@@ -438,7 +437,7 @@ static void doGraphProcessing(SyncState* const syncState)
 		{
 			Graph* newGraph;
 
-			g_debug("creating new graph\n");
+			g_debug("creating new graph");
 			newGraph= malloc(sizeof(Graph));
 			newGraph->errorSum= errorSum;
 			newGraph->previousVertex= previousVertex;
@@ -542,7 +541,7 @@ static void shortestPath(Fit* const* const fitArray, const unsigned int
 		visited[i]= false;
 
 		fit= &fitArray[traceNum][i];
-		g_debug("fitArray[traceNum= %u][i= %u]->n = %u\n", traceNum, i, fit->n);
+		g_debug("fitArray[traceNum= %u][i= %u]->n = %u", traceNum, i, fit->n);
 		if (fit->n > 0)
 		{
 			distances[i]= fit->e;
@@ -560,7 +559,6 @@ static void shortestPath(Fit* const* const fitArray, const unsigned int
 	{
 		g_debug("(%d, %u, %g), ", visited[j], previousVertex[j], distances[j]);
 	}
-	g_debug("\n");
 
 	for (i= 0; i < traceNb - 2; i++)
 	{
@@ -577,7 +575,7 @@ static void shortestPath(Fit* const* const fitArray, const unsigned int
 			}
 		}
 
-		g_debug("v= %u dvMin= %g\n", v, dvMin);
+		g_debug("v= %u dvMin= %g", v, dvMin);
 
 		if (dvMin != INFINITY)
 		{
@@ -605,7 +603,6 @@ static void shortestPath(Fit* const* const fitArray, const unsigned int
 		{
 			g_debug("(%d, %u, %g), ", visited[j], previousVertex[j], distances[j]);
 		}
-		g_debug("\n");
 	}
 
 	free(visited);

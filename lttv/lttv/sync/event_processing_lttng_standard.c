@@ -232,7 +232,7 @@ static void finalizeProcessingLTTVStandard(SyncState* const syncState)
 	lttv_traceset_context_compute_time_span(processingData->traceSetContext,
 		&processingData->traceSetContext->time_span);
 
-	g_debug("traceset start %ld.%09ld end %ld.%09ld\n",
+	g_debug("traceset start %ld.%09ld end %ld.%09ld",
 		processingData->traceSetContext->time_span.start_time.tv_sec,
 		processingData->traceSetContext->time_span.start_time.tv_nsec,
 		processingData->traceSetContext->time_span.end_time.tv_sec,
@@ -347,7 +347,7 @@ static void partialDestroyProcessingLTTVStandard(SyncState* const syncState)
 	for(i= 0; i < syncState->traceNb; i++)
 	{
 
-		g_debug("Cleaning up pendingRecv list\n");
+		g_debug("Cleaning up pendingRecv list");
 		g_hash_table_destroy(processingData->pendingRecv[i]);
 	}
 	free(processingData->pendingRecv);
@@ -397,7 +397,7 @@ static gboolean processEventLTTVStandard(void* hookData, void* callData)
 	g_assert(g_hash_table_lookup_extended(processingData->traceNumTable,
 			trace, NULL, (gpointer*) &traceNum));
 
-	g_debug("XXXX process event: time: %ld.%09ld trace: %ld (%p) name: %s ",
+	g_debug("Process event: time: %ld.%09ld trace: %ld (%p) name: %s ",
 		time.tv_sec, time.tv_nsec, traceNum, trace,
 		g_quark_to_string(info->name));
 
@@ -468,7 +468,7 @@ static gboolean processEventLTTVStandard(void* hookData, void* callData)
 
 		syncState->matchingModule->matchEvent(syncState, outE);
 
-		g_debug("Output event done\n");
+		g_debug("Output event done");
 	}
 	else if (info->name == LTT_EVENT_DEV_RECEIVE)
 	{
@@ -505,11 +505,7 @@ static gboolean processEventLTTVStandard(void* hookData, void* callData)
 			g_hash_table_replace(processingData->pendingRecv[traceNum], skb,
 				inE);
 
-			g_debug("Adding inE %p for skb %p to pendingRecv\n", inE, skb);
-		}
-		else
-		{
-			g_debug("\n");
+			g_debug("Adding inE %p for skb %p to pendingRecv", inE, skb);
 		}
 	}
 	else if (info->name == LTT_EVENT_TCPV4_RCV_EXTENDED)
@@ -586,7 +582,7 @@ static gboolean processEventLTTVStandard(void* hookData, void* callData)
 
 			syncState->matchingModule->matchEvent(syncState, inE);
 
-			g_debug("TCP input event %p for skb %p done\n", inE, skb);
+			g_debug("TCP input event %p for skb %p done", inE, skb);
 		}
 	}
 	else if (info->name == LTT_EVENT_UDPV4_RCV_EXTENDED)
@@ -660,7 +656,7 @@ static gboolean processEventLTTVStandard(void* hookData, void* callData)
 
 			syncState->matchingModule->matchEvent(syncState, inE);
 
-			g_debug("UDP input event %p for skb %p done\n", inE, skb);
+			g_debug("UDP input event %p for skb %p done", inE, skb);
 		}
 	}
 	else
