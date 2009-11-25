@@ -625,8 +625,7 @@ static void analyzeMessageEval(SyncState* const syncState, Message* const
 	message)
 {
 	AnalysisDataEval* analysisData= syncState->analysisData;
-	MessageStats* messageStats=
-		&analysisData->stats->messageStats[message->outE->traceNum][message->inE->traceNum];
+	MessageStats* messageStats;
 	double* rtt;
 	double tt;
 	struct RttKey rttKey;
@@ -635,6 +634,8 @@ static void analyzeMessageEval(SyncState* const syncState, Message* const
 
 	if (syncState->stats)
 	{
+		messageStats=
+			&analysisData->stats->messageStats[message->outE->traceNum][message->inE->traceNum];
 		messageStats->total++;
 	}
 
