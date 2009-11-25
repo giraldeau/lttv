@@ -589,18 +589,19 @@ static void printAnalysisStatsCHull(SyncState* const syncState)
 			FactorsCHull* factorsCHull;
 
 			factorsCHull= &analysisData->stats->allFactors[j][i];
-			printf("\t\t%3d - %-3d: ", i, j);
+			printf("\t\t%3d - %-3d: %s", i, j,
+				approxNames[factorsCHull->type]);
 
 			if (factorsCHull->type == EXACT)
 			{
-				printf("Exact      a0= % 7g a1= 1 %c %7g\n",
+				printf("      a0= % 7g a1= 1 %c %7g\n",
 					factorsCHull->approx->offset,
 					factorsCHull->approx->drift < 0. ? '-' : '+',
 					fabs(factorsCHull->approx->drift));
 			}
 			else if (factorsCHull->type == MIDDLE)
 			{
-				printf("Middle     a0= % 7g a1= 1 %c %7g accuracy %7g\n",
+				printf("     a0= % 7g a1= 1 %c %7g accuracy %7g\n",
 					factorsCHull->approx->offset, factorsCHull->approx->drift
 					- 1. < 0. ? '-' : '+', fabs(factorsCHull->approx->drift -
 						1.), factorsCHull->accuracy);
@@ -613,14 +614,14 @@ static void printAnalysisStatsCHull(SyncState* const syncState)
 			}
 			else if (factorsCHull->type == FALLBACK)
 			{
-				printf("Fallback   a0= % 7g a1= 1 %c %7g error= %7g\n",
+				printf("   a0= % 7g a1= 1 %c %7g error= %7g\n",
 					factorsCHull->approx->offset, factorsCHull->approx->drift
 					- 1. < 0. ? '-' : '+', fabs(factorsCHull->approx->drift -
 						1.), factorsCHull->accuracy);
 			}
 			else if (factorsCHull->type == INCOMPLETE)
 			{
-				printf("Incomplete\n");
+				printf("\n");
 
 				if (factorsCHull->min->drift != -INFINITY)
 				{
@@ -639,7 +640,7 @@ static void printAnalysisStatsCHull(SyncState* const syncState)
 			}
 			else if (factorsCHull->type == SCREWED)
 			{
-				printf("Screwed\n");
+				printf("\n");
 
 				if (factorsCHull->min != NULL && factorsCHull->min->drift != -INFINITY)
 				{
@@ -658,7 +659,7 @@ static void printAnalysisStatsCHull(SyncState* const syncState)
 			}
 			else if (factorsCHull->type == ABSENT)
 			{
-				printf("Absent\n");
+				printf("\n");
 			}
 			else
 			{
