@@ -73,21 +73,20 @@ static void registerProcessingLTTVNull()
 static void initProcessingLTTVNull(SyncState* const syncState, ...)
 {
 	ProcessingDataLTTVNull* processingData;
-	LttvTracesetContext* traceSetContext;
 	va_list ap;
 
 	processingData= malloc(sizeof(ProcessingDataLTTVNull));
 	syncState->processingData= processingData;
-	processingData->traceSetContext= traceSetContext;
-
+	va_start(ap, syncState);
+	processingData->traceSetContext= va_arg(ap, LttvTracesetContext*);
+	va_end(ap);
+	syncState->traceNb=
+		lttv_traceset_number(processingData->traceSetContext->ts);
 	processingData->hookListList= g_array_sized_new(FALSE, FALSE,
 		sizeof(GArray*), syncState->traceNb);
 
-	va_start(ap, syncState);
-	traceSetContext= va_arg(ap, LttvTracesetContext*);
-	va_end(ap);
-	registerHooks(processingData->hookListList, traceSetContext,
-		&processEventLTTVNull, syncState,
+	registerHooks(processingData->hookListList,
+		processingData->traceSetContext, &processEventLTTVNull, syncState,
 		syncState->matchingModule->canMatch);
 }
 

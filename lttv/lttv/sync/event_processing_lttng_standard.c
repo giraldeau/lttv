@@ -104,6 +104,25 @@ static void initProcessingLTTVStandard(SyncState* const syncState, ...)
 	va_start(ap, syncState);
 	processingData->traceSetContext= va_arg(ap, LttvTracesetContext*);
 	va_end(ap);
+	syncState->traceNb=
+		lttv_traceset_number(processingData->traceSetContext->ts);
+	processingData->hookListList= g_array_sized_new(FALSE, FALSE,
+		sizeof(GArray*), syncState->traceNb);
+
+	processingData->traceNumTable= g_hash_table_new(&g_direct_hash, NULL);
+	for(i= 0; i < syncState->traceNb; i++)
+	{
+		g_hash_table_insert(processingData->traceNumTable,
+			processingData->traceSetContext->traces[i]->t, (gpointer) i);
+	}
+
+	processingData->pendingRecv= malloc(sizeof(GHashTable*) *
+		syncState->traceNb);
+	for(i= 0; i < syncState->traceNb; i++)
+	{
+		processingData->pendingRecv[i]= g_hash_table_new_full(&g_direct_hash,
+			NULL, NULL, &gdnDestroyEvent);
+	}
 
 	if (syncState->stats)
 	{
@@ -112,18 +131,6 @@ static void initProcessingLTTVStandard(SyncState* const syncState, ...)
 	else
 	{
 		processingData->stats= NULL;
-	}
-
-	processingData->traceNumTable= g_hash_table_new(&g_direct_hash, NULL);
-	processingData->hookListList= g_array_sized_new(FALSE, FALSE,
-		sizeof(GArray*), syncState->traceNb);
-	processingData->pendingRecv= malloc(sizeof(GHashTable*) *
-		syncState->traceNb);
-
-	for(i= 0; i < syncState->traceNb; i++)
-	{
-		g_hash_table_insert(processingData->traceNumTable,
-			processingData->traceSetContext->traces[i]->t, (gpointer) i);
 	}
 
 	if (syncState->graphsStream)
@@ -142,12 +149,6 @@ static void initProcessingLTTVStandard(SyncState* const syncState, ...)
 	else
 	{
 		processingData->graphs= NULL;
-	}
-
-	for(i= 0; i < syncState->traceNb; i++)
-	{
-		processingData->pendingRecv[i]= g_hash_table_new_full(&g_direct_hash,
-			NULL, NULL, &gdnDestroyEvent);
 	}
 
 	registerHooks(processingData->hookListList,

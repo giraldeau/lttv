@@ -171,7 +171,6 @@ void syncTraceset(LttvTracesetContext* const traceSetContext)
 
 	// Initialize data structures
 	syncState= malloc(sizeof(SyncState));
-	syncState->traceNb= lttv_traceset_number(traceSetContext->ts);
 
 	if (optionSyncStats.present)
 	{
@@ -227,12 +226,12 @@ void syncTraceset(LttvTracesetContext* const traceSetContext)
 		g_error("Analysis module '%s' not found", optionSyncAnalysis.arg);
 	}
 
+	syncState->processingModule->initProcessing(syncState, traceSetContext);
 	if (!optionSyncNull.present)
 	{
-		syncState->analysisModule->initAnalysis(syncState);
 		syncState->matchingModule->initMatching(syncState);
+		syncState->analysisModule->initAnalysis(syncState);
 	}
-	syncState->processingModule->initProcessing(syncState, traceSetContext);
 
 	// Process traceset
 	lttv_process_traceset_seek_time(traceSetContext, ltt_time_zero);
