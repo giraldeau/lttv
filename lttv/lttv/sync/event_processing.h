@@ -33,9 +33,9 @@ typedef struct
 	char* name;
 
 	void (*initProcessing)(struct _SyncState* const syncStateLttv, ...);
-	void (*destroyProcessing)(struct _SyncState* const syncState);
 	void (*finalizeProcessing)(struct _SyncState* const syncState);
 	void (*printProcessingStats)(struct _SyncState* const syncState);
+	void (*destroyProcessing)(struct _SyncState* const syncState);
 	GraphFunctions graphFunctions;
 } ProcessingModule;
 

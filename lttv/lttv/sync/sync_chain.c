@@ -122,3 +122,19 @@ gint gcfCompareAnalysis(gconstpointer a, gconstpointer b)
 	return strncmp(analysisModule->name, name, strlen(analysisModule->name) +
 		1);
 }
+
+
+/*
+ * A GFunc for g_queue_foreach()
+ *
+ * Concatenate analysis module names.
+ *
+ * Args:
+ *   data:         AnalysisModule*
+ *   user_data:    GString*, concatenated names
+ */
+void gfAppendAnalysisName(gpointer data, gpointer user_data)
+{
+	g_string_append((GString*) user_data, ((AnalysisModule*) data)->name);
+	g_string_append((GString*) user_data, ", ");
+}

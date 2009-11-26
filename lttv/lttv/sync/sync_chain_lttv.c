@@ -40,28 +40,22 @@
 static void init();
 static void destroy();
 
-static void gfAppendAnalysisName(gpointer data, gpointer user_data);
 static void gfAddModuleOption(gpointer data, gpointer user_data);
 static void gfRemoveModuleOption(gpointer data, gpointer user_data);
 
-static char* argHelpNone= "none";
 static ModuleOption optionSync= {
 	.longName= "sync",
 	.hasArg= NO_ARG,
-	{.present= false},
 	.optionHelp= "synchronize the time between the traces",
 };
-static char graphsDir[20];
 static ModuleOption optionSyncStats= {
 	.longName= "sync-stats",
 	.hasArg= NO_ARG,
-	{.present= false},
 	.optionHelp= "print statistics about the time synchronization",
 };
 static ModuleOption optionSyncNull= {
 	.longName= "sync-null",
 	.hasArg= NO_ARG,
-	{.present= false},
 	.optionHelp= "read the events but do not perform any processing",
 };
 static GString* analysisModulesNames;
@@ -73,14 +67,15 @@ static ModuleOption optionSyncAnalysis= {
 static ModuleOption optionSyncGraphs= {
 	.longName= "sync-graphs",
 	.hasArg= NO_ARG,
-	{.present= false},
 	.optionHelp= "output gnuplot graph showing synchronization points",
 };
+static char graphsDir[20];
 static ModuleOption optionSyncGraphsDir= {
 	.longName= "sync-graphs-dir",
 	.hasArg= REQUIRED_ARG,
 	.optionHelp= "specify the directory where to store the graphs",
 };
+
 
 /*
  * Module init function
@@ -100,7 +95,7 @@ static void init()
 	g_debug("Sync init");
 
 	g_assert(g_queue_get_length(&analysisModules) > 0);
-	optionSyncAnalysis.arg = ((AnalysisModule*)
+	optionSyncAnalysis.arg= ((AnalysisModule*)
 		g_queue_peek_head(&analysisModules))->name;
 	analysisModulesNames= g_string_new("");
 	g_queue_foreach(&analysisModules, &gfAppendAnalysisName,
@@ -125,7 +120,6 @@ static void init()
 	g_queue_push_head(&moduleOptions, &optionSync);
 
 	g_queue_foreach(&moduleOptions, &gfAddModuleOption, NULL);
-
 }
 
 
@@ -323,40 +317,39 @@ void syncTraceset(LttvTracesetContext* const traceSetContext)
 /*
  * A GFunc for g_queue_foreach()
  *
- * Concatenate analysis module names.
- *
- * Args:
- *   data:         AnalysisModule*
- *   user_data:    GString*, concatenated names
- */
-static void gfAppendAnalysisName(gpointer data, gpointer user_data)
-{
-	g_string_append((GString*) user_data, ((AnalysisModule*) data)->name);
-	g_string_append((GString*) user_data, ", ");
-}
-
-
-/*
- * A GFunc for g_queue_foreach()
- *
  * Args:
  *   data:         ModuleOption*
  *   user_data:    NULL
  */
 static void gfAddModuleOption(gpointer data, gpointer user_data)
 {
-	ModuleOption* option;
+	ModuleOption* option= data;
 	LttvOptionType conversion[]= {
 		[NO_ARG]= LTTV_OPT_NONE,
+		[OPTIONAL_ARG]= LTTV_OPT_NONE,
 		[REQUIRED_ARG]= LTTV_OPT_STRING,
 	};
+	size_t fieldOffset[]= {
+		[NO_ARG]= offsetof(ModuleOption, present),
+		[REQUIRED_ARG]= offsetof(ModuleOption, arg),
+	};
+	static const char* argHelpNone= "none";
 
 	g_assert_cmpuint(sizeof(conversion) / sizeof(*conversion), ==,
 		HAS_ARG_COUNT);
-	option= (ModuleOption*) data;
-	lttv_option_add(option->longName, '\0', option->optionHelp,
-		option->argHelp ? option->argHelp : argHelpNone,
-		conversion[option->hasArg], &option->arg, NULL, NULL);
+	if (option->hasArg == OPTIONAL_ARG)
+	{
+		g_warning("Parameters with optional arguments not supported by the "
+			"lttv option scheme, parameter '%s' will not be available",
+			option->longName);
+	}
+	else
+	{
+		lttv_option_add(option->longName, '\0', option->optionHelp,
+			option->argHelp ? option->argHelp : argHelpNone,
+			conversion[option->hasArg], (void*) option + fieldOffset[option->hasArg],
+			NULL, NULL);
+	}
 }
 
 

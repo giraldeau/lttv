@@ -150,7 +150,6 @@ static AnalysisModule analysisModuleEval= {
 static ModuleOption optionEvalRttFile= {
 	.longName= "eval-rtt-file",
 	.hasArg= REQUIRED_ARG,
-	{.arg= NULL},
 	.optionHelp= "specify the file containing RTT information",
 	.argHelp= "FILE",
 };
