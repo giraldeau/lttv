@@ -20,6 +20,7 @@
 #include <config.h>
 #endif
 
+#include <stdarg.h>
 #include <stdlib.h>
 
 #include "sync_chain.h"
@@ -29,8 +30,7 @@
 
 
 // Functions common to all processing modules
-static void initProcessingLTTVNull(SyncState* const syncState,
-	LttvTracesetContext* const traceSetContext);
+static void initProcessingLTTVNull(SyncState* const syncState, ...);
 static void destroyProcessingLTTVNull(SyncState* const syncState);
 
 static void finalizeProcessingLTTVNull(SyncState* const syncState);
@@ -68,12 +68,13 @@ static void registerProcessingLTTVNull()
  *   syncState:    container for synchronization data.
  *                 This function allocates these processingData members:
  *                 hookListList
- *   traceSetContext: set of LTTV traces
+ *   traceSetContext: LttvTracesetContext*, set of LTTV traces
  */
-static void initProcessingLTTVNull(SyncState* const syncState,
-	LttvTracesetContext* const traceSetContext)
+static void initProcessingLTTVNull(SyncState* const syncState, ...)
 {
 	ProcessingDataLTTVNull* processingData;
+	LttvTracesetContext* traceSetContext;
+	va_list ap;
 
 	processingData= malloc(sizeof(ProcessingDataLTTVNull));
 	syncState->processingData= processingData;
@@ -82,6 +83,9 @@ static void initProcessingLTTVNull(SyncState* const syncState,
 	processingData->hookListList= g_array_sized_new(FALSE, FALSE,
 		sizeof(GArray*), syncState->traceNb);
 
+	va_start(ap, syncState);
+	traceSetContext= va_arg(ap, LttvTracesetContext*);
+	va_end(ap);
 	registerHooks(processingData->hookListList, traceSetContext,
 		&processEventLTTVNull, syncState,
 		syncState->matchingModule->canMatch);

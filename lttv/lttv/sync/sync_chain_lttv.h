@@ -16,27 +16,11 @@
  * MA 02111-1307, USA.
  */
 
-#ifndef EVENT_PROCESSING_H
-#define EVENT_PROCESSING_H
+#ifndef SYNC_CHAIN_LTTV_H
+#define SYNC_CHAIN_LTTV_H
 
-#include <glib.h>
-#include <stdio.h>
+#include <lttv/tracecontext.h>
 
-#include "data_structures.h"
-#include "graph_functions.h"
-
-
-struct _SyncState;
-
-typedef struct
-{
-	char* name;
-
-	void (*initProcessing)(struct _SyncState* const syncStateLttv, ...);
-	void (*destroyProcessing)(struct _SyncState* const syncState);
-	void (*finalizeProcessing)(struct _SyncState* const syncState);
-	void (*printProcessingStats)(struct _SyncState* const syncState);
-	GraphFunctions graphFunctions;
-} ProcessingModule;
+void syncTraceset(LttvTracesetContext* const traceSetContext);
 
 #endif

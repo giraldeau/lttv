@@ -25,6 +25,7 @@
 #include <linux/if_ether.h>
 #include <math.h>
 #include <netinet/in.h>
+#include <stdarg.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
@@ -36,8 +37,7 @@
 
 
 // Functions common to all processing modules
-static void initProcessingLTTVStandard(SyncState* const syncState,
-	LttvTracesetContext* const traceSetContext);
+static void initProcessingLTTVStandard(SyncState* const syncState, ...);
 static void destroyProcessingLTTVStandard(SyncState* const syncState);
 
 static void finalizeProcessingLTTVStandard(SyncState* const syncState);
@@ -91,17 +91,19 @@ static void registerProcessingLTTVStandard()
  *                 pendingRecv
  *                 hookListList
  *                 stats
- *   traceSetContext: set of LTTV traces
+ *   traceSetContext: LttvTracesetContext*, set of LTTV traces
  */
-static void initProcessingLTTVStandard(SyncState* const syncState, LttvTracesetContext*
-	const traceSetContext)
+static void initProcessingLTTVStandard(SyncState* const syncState, ...)
 {
 	unsigned int i;
 	ProcessingDataLTTVStandard* processingData;
+	va_list ap;
 
 	processingData= malloc(sizeof(ProcessingDataLTTVStandard));
 	syncState->processingData= processingData;
-	processingData->traceSetContext= traceSetContext;
+	va_start(ap, syncState);
+	processingData->traceSetContext= va_arg(ap, LttvTracesetContext*);
+	va_end(ap);
 
 	if (syncState->stats)
 	{
@@ -131,7 +133,7 @@ static void initProcessingLTTVStandard(SyncState* const syncState, LttvTracesetC
 
 		for(i= 0; i < syncState->traceNb; i++)
 		{
-			LttTrace* traceI= traceSetContext->traces[i]->t;
+			LttTrace* traceI= processingData->traceSetContext->traces[i]->t;
 
 			processingData->graphs[i].startFreq= traceI->start_freq;
 			processingData->graphs[i].freqScale= traceI->freq_scale;
@@ -148,8 +150,8 @@ static void initProcessingLTTVStandard(SyncState* const syncState, LttvTracesetC
 			NULL, NULL, &gdnDestroyEvent);
 	}
 
-	registerHooks(processingData->hookListList, traceSetContext,
-		&processEventLTTVStandard, syncState,
+	registerHooks(processingData->hookListList,
+		processingData->traceSetContext, &processEventLTTVStandard, syncState,
 		syncState->matchingModule->canMatch);
 }
 

@@ -34,6 +34,7 @@
 #include <lttv/option.h>
 
 #include "sync_chain.h"
+#include "sync_chain_lttv.h"
 
 
 static void init();

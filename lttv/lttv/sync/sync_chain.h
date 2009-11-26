@@ -66,8 +66,6 @@ extern GQueue analysisModules;
 extern GQueue moduleOptions;
 
 
-void syncTraceset(LttvTracesetContext* const traceSetContext);
-
 void timeDiff(struct timeval* const end, const struct timeval* const start);
 
 gint gcfCompareProcessing(gconstpointer a, gconstpointer b);
