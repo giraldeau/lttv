@@ -43,7 +43,7 @@ typedef struct _SyncState
 
 typedef struct
 {
-	const char shortName;
+	char shortName;
 	const char* longName;
 	enum {
 		NO_ARG,

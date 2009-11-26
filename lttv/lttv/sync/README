@@ -192,9 +192,11 @@ This reads parameters, creates SyncState and calls the processing init
 function. The "sync chain" is the set of event-* modules. At the moment there
 is only one module at each stage. However, as more module are added, it will
 become relevant to have many modules at the same stage simultaneously. This
-will require some modifications. I've kept this possibility at the back of my
-mind while designing. It is already partly supported at the matching stage
-through encapsulation of other matching modules.
+will require some modifications. It is already partly supported at the
+matching stage through encapsulation of other matching modules.
+
+sync_chain_unitest provides a fairly simple example of sync chain
+implementation.
 
 ++ Stage 1: Event processing
 Specific to the tracing data source.

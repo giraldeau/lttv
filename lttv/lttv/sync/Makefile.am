@@ -1,11 +1,13 @@
 AM_CFLAGS= $(PACKAGE_CFLAGS)
-LDADD = $(M_LIBS)
+LDADD = $(M_LIBS) $(GLPK_LIBS)
 
 check_PROGRAMS = unittest
 
 unittest_SOURCES = \
-	unittest.c\
 	data_structures.c\
+	graph_functions.c\
+	sync_chain.c\
+	sync_chain_unittest.c\
 	event_matching_broadcast.c\
 	event_matching_distributor.c\
 	event_matching_tcp.c\
