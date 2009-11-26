@@ -37,6 +37,29 @@ GQueue moduleOptions= G_QUEUE_INIT;
  * Calculate the elapsed time between two timeval values
  *
  * Args:
+ *   syncState:    Container for synchronization data
+ */
+void printStats(SyncState* const syncState)
+{
+	if (syncState->processingModule->printProcessingStats != NULL)
+	{
+		syncState->processingModule->printProcessingStats(syncState);
+	}
+	if (syncState->matchingModule->printMatchingStats != NULL)
+	{
+		syncState->matchingModule->printMatchingStats(syncState);
+	}
+	if (syncState->analysisModule->printAnalysisStats != NULL)
+	{
+		syncState->analysisModule->printAnalysisStats(syncState);
+	}
+}
+
+
+/*
+ * Calculate the elapsed time between two timeval values
+ *
+ * Args:
  *   end:          end time, result is also stored in this structure
  *   start:        start time
  */

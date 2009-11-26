@@ -181,7 +181,7 @@ void syncTraceset(LttvTracesetContext* const traceSetContext)
 		syncState->stats= false;
 	}
 
-	if (optionSyncGraphs.present)
+	if (!optionSyncNull.present && optionSyncGraphs.present)
 	{
 		// Create the graph directory right away in case the module initialization
 		// functions have something to write in it.
@@ -242,7 +242,7 @@ void syncTraceset(LttvTracesetContext* const traceSetContext)
 	syncState->processingModule->finalizeProcessing(syncState);
 
 	// Write graphs file
-	if (optionSyncGraphs.present)
+	if (!optionSyncNull.present && optionSyncGraphs.present)
 	{
 		writeGraphsScript(syncState);
 
@@ -252,21 +252,10 @@ void syncTraceset(LttvTracesetContext* const traceSetContext)
 		}
 	}
 
-	if (syncState->processingModule->printProcessingStats != NULL)
+	if (!optionSyncNull.present && optionSyncStats.present)
 	{
-		syncState->processingModule->printProcessingStats(syncState);
-	}
-	if (syncState->matchingModule->printMatchingStats != NULL)
-	{
-		syncState->matchingModule->printMatchingStats(syncState);
-	}
-	if (syncState->analysisModule->printAnalysisStats != NULL)
-	{
-		syncState->analysisModule->printAnalysisStats(syncState);
-	}
+		printStats(syncState);
 
-	if (optionSyncStats.present)
-	{
 		printf("Resulting synchronization factors:\n");
 		for (i= 0; i < syncState->traceNb; i++)
 		{

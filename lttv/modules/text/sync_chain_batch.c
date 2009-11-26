@@ -291,6 +291,7 @@ void setupSyncChain(LttvTracesetContext* const traceSetContext)
 	tracesetChainState->syncState= syncState;
 	syncState->traceNb= lttv_traceset_number(traceSetContext->ts);
 
+	// Statistics are always on with eval
 	syncState->stats= true;
 
 	if (optionEvalGraphs)
@@ -357,18 +358,7 @@ void teardownSyncChain(LttvTracesetContext* const traceSetContext)
 		}
 	}
 
-	if (syncState->processingModule->printProcessingStats != NULL)
-	{
-		syncState->processingModule->printProcessingStats(syncState);
-	}
-	if (syncState->matchingModule->printMatchingStats != NULL)
-	{
-		syncState->matchingModule->printMatchingStats(syncState);
-	}
-	if (syncState->analysisModule->printAnalysisStats != NULL)
-	{
-		syncState->analysisModule->printAnalysisStats(syncState);
-	}
+	printStats(syncState);
 
 	printf("Resulting synchronization factors:\n");
     for (i= 0; i < syncState->traceNb; i++)

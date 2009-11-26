@@ -65,6 +65,7 @@ extern GQueue matchingModules;
 extern GQueue analysisModules;
 extern GQueue moduleOptions;
 
+void printStats(SyncState* const syncState);
 
 void timeDiff(struct timeval* const end, const struct timeval* const start);
 
