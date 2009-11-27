@@ -136,7 +136,9 @@ GQuark
     LTT_FIELD_ADDRESS,
     LTT_FIELD_SYMBOL,
     LTT_FIELD_IP,
-    LTT_FIELD_FD;
+    LTT_FIELD_FD,
+    LTT_FIELD_STATE,
+    LTT_FIELD_CPU_ID;
 
 LttvExecutionMode
   LTTV_STATE_MODE_UNKNOWN,
@@ -2933,6 +2935,32 @@ static gboolean dump_softirq(void *hook_data, void *call_data)
   return FALSE;
 }
 
+static gboolean sched_try_wakeup(void *hook_data, void *call_data) {
+
+  LttvTracefileState *s = (LttvTracefileState *)call_data;
+  LttvProcessState *process;
+  
+  LttEvent *e = ltt_tracefile_get_event(s->parent.tf);
+  LttvTraceHook *th = (LttvTraceHook *)hook_data;
+  gint woken_pid;
+  guint woken_cpu;
+
+  woken_pid = ltt_event_get_int(e, lttv_trace_get_hook_field(th, 0));
+  woken_cpu = ltt_event_get_unsigned(e, lttv_trace_get_hook_field(th, 1));
+
+  process = lttv_state_find_process_or_create(
+                  (LttvTraceState*)s->parent.t_context,
+                  woken_cpu, woken_pid,
+                  &s->parent.timestamp);
+  process->state->s = LTTV_STATE_WAIT_CPU;
+  process->state->change = s->parent.timestamp;
+
+  g_debug("Wakeup: process %d on CPU %u\n", woken_pid, woken_cpu);
+
+  return FALSE;
+
+}
+
 static gboolean schedchange(void *hook_data, void *call_data)
 {
   LttvTracefileState *s = (LttvTracefileState *)call_data;
@@ -3637,6 +3665,12 @@ void lttv_state_add_event_hooks(LttvTracesetState *self)
         FIELD_ARRAY(LTT_FIELD_PREV_PID, LTT_FIELD_NEXT_PID,
 	  LTT_FIELD_PREV_STATE),
         schedchange, NULL, &hooks);
+
+    lttv_trace_find_hook(ts->parent.t,
+	LTT_CHANNEL_KERNEL,
+	LTT_EVENT_SCHED_TRY_WAKEUP,		 
+	FIELD_ARRAY(LTT_FIELD_PID, LTT_FIELD_CPU_ID, LTT_FIELD_STATE),
+	sched_try_wakeup, NULL, &hooks);
 
     lttv_trace_find_hook(ts->parent.t,
         LTT_CHANNEL_KERNEL,
@@ -4484,6 +4518,8 @@ static void module_init()
   LTT_FIELD_SYMBOL        = g_quark_from_string("symbol");
   LTT_FIELD_IP            = g_quark_from_string("ip");
   LTT_FIELD_FD            = g_quark_from_string("fd");
+  LTT_FIELD_STATE         = g_quark_from_string("state");
+  LTT_FIELD_CPU_ID        = g_quark_from_string("cpu_id");
   
   LTTV_CPU_UNKNOWN = g_quark_from_string("unknown");
   LTTV_CPU_IDLE = g_quark_from_string("idle");

@@ -142,7 +142,9 @@ extern GQuark
     LTT_FIELD_ADDRESS,
     LTT_FIELD_SYMBOL,
     LTT_FIELD_IP,
-    LTT_FIELD_FD;
+    LTT_FIELD_FD,
+    LTT_FIELD_STATE,
+    LTT_FIELD_CPU_ID;
 
 typedef struct _LttvTracesetState LttvTracesetState;
 typedef struct _LttvTracesetStateClass LttvTracesetStateClass;

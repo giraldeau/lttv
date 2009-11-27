@@ -85,6 +85,7 @@ int event_selected_hook(void *hook_data, void *call_data);
  */
 int before_schedchange_hook(void *hook_data, void *call_data);
 int after_schedchange_hook(void *hook_data, void *call_data);
+int before_trywakeup_hook(void *hook_data, void *call_data);
 int before_execmode_hook(void *hook_data, void *call_data);
 int after_execmode_hook(void *hook_data, void *call_data);
 

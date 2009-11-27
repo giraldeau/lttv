@@ -277,6 +277,199 @@ static inline PropertiesLine prepare_s_e_line(LttvProcessState *process)
 
 }
 
+/* Before try-wake-up hook. A process is being woken; we need to draw its line up to this point in time
+   in that colour. This is basically like exec-state, but the change applies to a process other than that
+   which is currently running. */
+
+int before_trywakeup_hook(void *hook_data, void *call_data)
+{
+  LttvTraceHook *th = (LttvTraceHook*)hook_data;
+  EventsRequest *events_request = (EventsRequest*)th->hook_data;
+  ControlFlowData *control_flow_data = events_request->viewer_data;
+
+  LttvTracefileContext *tfc = (LttvTracefileContext *)call_data;
+
+  LttvTracefileState *tfs = (LttvTracefileState *)call_data;
+  LttvTraceState *ts = (LttvTraceState *)tfc->t_context;
+
+  LttEvent *e = ltt_tracefile_get_event(tfc->tf);
+  gint target_pid_saved = tfc->target_pid;
+
+  LttTime evtime = ltt_event_time(e);
+  LttvFilter *filter = control_flow_data->filter;
+
+  guint woken_pid;
+  gint woken_cpu;
+
+  woken_pid = ltt_event_get_int(e, lttv_trace_get_hook_field(th, 0));
+  woken_cpu = ltt_event_get_unsigned(e, lttv_trace_get_hook_field(th, 1));
+  
+  tfc->target_pid = woken_pid;
+  if(!filter || !filter->head ||
+    lttv_filter_tree_parse(filter->head,e,tfc->tf,
+          tfc->t_context->t,tfc,NULL,NULL)) { 
+
+    /* First, check if the woken process is in the state computation
+     * process list. If it is there, that means we must add it right now and
+     * draw items from the beginning of the read for it. If it is not
+     * present, it's a new process and it was not present : it will
+     * be added after the state update. TOCHECK: What does that last para mean? */
+    guint cpu = tfs->cpu;
+    guint trace_num = ts->parent.index;
+    LttvProcessState *process = lttv_state_find_process(ts, woken_cpu, woken_pid);
+    
+    if(process != NULL) {
+      /* Well, the woken process existed : we must get it in the process hash
+       * or add it, and draw its items.
+       */
+       /* Add process to process list (if not present) */
+      guint pl_height = 0;
+      HashedProcessData *hashed_process_data = NULL;
+      ProcessList *process_list = control_flow_data->process_list;
+      LttTime birth = process->creation_time;
+      
+      hashed_process_data = processlist_get_process_data(process_list,
+              woken_pid,
+              process->cpu,
+              &birth,
+              trace_num);
+      if(hashed_process_data == NULL)
+      {
+        g_assert(woken_pid != process->ppid);
+        /* Process not present */
+        ProcessInfo *process_info;
+        Drawing_t *drawing = control_flow_data->drawing;
+        processlist_add(process_list,
+            drawing,
+            woken_pid,
+            process->tgid,
+            process->cpu,
+            process->ppid,
+            &birth,
+            trace_num,
+            process->name,
+            process->brand,
+            &pl_height,
+            &process_info,
+            &hashed_process_data);
+        gtk_widget_set_size_request(drawing->drawing_area,
+                                    -1,
+                                    pl_height);
+        gtk_widget_queue_draw(drawing->drawing_area);
+
+      }
+  
+      /* Now, the process is in the state hash and our own process hash.
+       * We definitely can draw the items related to the ending state.
+       */
+      
+      if(ltt_time_compare(hashed_process_data->next_good_time,
+                          evtime) > 0)
+      {
+        if(hashed_process_data->x.middle_marked == FALSE) {
+    
+          TimeWindow time_window = 
+            lttvwindow_get_time_window(control_flow_data->tab);
+#ifdef EXTRA_CHECK
+          if(ltt_time_compare(evtime, time_window.start_time) == -1
+                || ltt_time_compare(evtime, time_window.end_time) == 1)
+                    return FALSE;
+#endif //EXTRA_CHECK
+          Drawing_t *drawing = control_flow_data->drawing;
+          guint width = drawing->width;
+          guint x;
+          convert_time_to_pixels(
+                    time_window,
+                    evtime,
+                    width,
+                    &x);
+
+          /* Draw collision indicator */
+          gdk_gc_set_foreground(drawing->gc, &drawing_colors[COL_WHITE]);
+          gdk_draw_point(hashed_process_data->pixmap,
+                         drawing->gc,
+                         x,
+                         COLLISION_POSITION(hashed_process_data->height));
+          hashed_process_data->x.middle_marked = TRUE;
+        }
+      } else {
+        TimeWindow time_window = 
+          lttvwindow_get_time_window(control_flow_data->tab);
+#ifdef EXTRA_CHECK
+        if(ltt_time_compare(evtime, time_window.start_time) == -1
+              || ltt_time_compare(evtime, time_window.end_time) == 1)
+                  return FALSE;
+#endif //EXTRA_CHECK
+        Drawing_t *drawing = control_flow_data->drawing;
+        guint width = drawing->width;
+        guint x;
+        convert_time_to_pixels(
+                  time_window,
+                  evtime,
+                  width,
+                  &x);
+
+
+        /* Jump over draw if we are at the same x position */
+        if(x == hashed_process_data->x.middle &&
+             hashed_process_data->x.middle_used)
+        {
+          if(hashed_process_data->x.middle_marked == FALSE) {
+            /* Draw collision indicator */
+            gdk_gc_set_foreground(drawing->gc, &drawing_colors[COL_WHITE]);
+            gdk_draw_point(hashed_process_data->pixmap,
+                           drawing->gc,
+                           x,
+                           COLLISION_POSITION(hashed_process_data->height));
+            hashed_process_data->x.middle_marked = TRUE;
+          }
+          /* jump */
+        } else {
+          DrawContext draw_context;
+
+          /* Now create the drawing context that will be used to draw
+           * items related to the last state. */
+          draw_context.drawable = hashed_process_data->pixmap;
+          draw_context.gc = drawing->gc;
+          draw_context.pango_layout = drawing->pango_layout;
+          draw_context.drawinfo.start.x = hashed_process_data->x.middle;
+          draw_context.drawinfo.end.x = x;
+
+          draw_context.drawinfo.y.over = 1;
+          draw_context.drawinfo.y.middle = (hashed_process_data->height/2);
+          draw_context.drawinfo.y.under = hashed_process_data->height;
+
+          draw_context.drawinfo.start.offset.over = 0;
+          draw_context.drawinfo.start.offset.middle = 0;
+          draw_context.drawinfo.start.offset.under = 0;
+          draw_context.drawinfo.end.offset.over = 0;
+          draw_context.drawinfo.end.offset.middle = 0;
+          draw_context.drawinfo.end.offset.under = 0;
+
+          {
+            /* Draw the line */
+            PropertiesLine prop_line = prepare_s_e_line(process);
+            draw_line((void*)&prop_line, (void*)&draw_context);
+
+          }
+          /* become the last x position */
+          hashed_process_data->x.middle = x;
+          hashed_process_data->x.middle_used = TRUE;
+          hashed_process_data->x.middle_marked = FALSE;
+
+          /* Calculate the next good time */
+          convert_pixels_to_time(width, x+1, time_window,
+                                 &hashed_process_data->next_good_time);
+        }
+      }
+    }
+  }
+
+  tfc->target_pid = target_pid_saved;
+
+  return 0;
+
+}
 
 /* before_schedchange_hook
  * 

@@ -230,6 +230,14 @@ void drawing_data_request(Drawing_t *drawing,
           &hooks);
 
       lttv_trace_find_hook(ts->parent.t,
+	  LTT_CHANNEL_KERNEL,
+	  LTT_EVENT_SCHED_TRY_WAKEUP,		 
+	  FIELD_ARRAY(LTT_FIELD_PID, LTT_FIELD_CPU_ID, LTT_FIELD_STATE),
+	  before_trywakeup_hook,
+	  events_request,
+	  &hooks);
+
+      lttv_trace_find_hook(ts->parent.t,
           LTT_CHANNEL_KERNEL,
           LTT_EVENT_SYSCALL_EXIT,
           NULL,
