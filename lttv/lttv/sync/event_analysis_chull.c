@@ -342,6 +342,7 @@ static void destroyAnalysisCHull(SyncState* const syncState)
 		for (j= 0; j < syncState->traceNb; j++)
 		{
 			g_queue_foreach(analysisData->hullArray[i][j], gfPointDestroy, NULL);
+			g_queue_free(analysisData->hullArray[i][j]);
 		}
 		free(analysisData->hullArray[i]);
 	}

@@ -16,6 +16,7 @@
  * MA 02111-1307, USA.
  */
 
+#define _GNU_SOURCE
 #define NANOSECONDS_PER_SECOND 1000000000
 #define CPU_FREQ 1e9
 
@@ -120,6 +121,8 @@ static void destroyProcessingText(SyncState* const syncState)
 		return;
 	}
 
+	fclose(processingData->testCase);
+
 	if (syncState->stats && processingData->factors)
 	{
 		g_array_free(processingData->factors, TRUE);
@@ -139,7 +142,6 @@ static void destroyProcessingText(SyncState* const syncState)
  */
 static void finalizeProcessingText(SyncState* const syncState)
 {
-	size_t len;
 	int retval;
 	unsigned int* seq;
 	GArray* factors;
@@ -147,11 +149,12 @@ static void finalizeProcessingText(SyncState* const syncState)
 		syncState->processingData;
 	FILE* testCase= processingData->testCase;
 	char* line= NULL;
+	size_t bufLen;
 
 	seq= calloc(syncState->traceNb, sizeof(unsigned int));
 
 	skipCommentLines(testCase);
-	retval= getline(&line, &len, testCase);
+	retval= getline(&line, &bufLen, testCase);
 	while(!feof(testCase))
 	{
 		unsigned int sender, receiver;
@@ -164,9 +167,9 @@ static void finalizeProcessingText(SyncState* const syncState)
 			g_error(strerror(errno));
 		}
 
-		if (line[len - 1] == '\n')
+		if (line[retval - 1] == '\n')
 		{
-			line[len - 1]= '\0';
+			line[retval - 1]= '\0';
 		}
 
 		retval= sscanf(line, " %u %u %lf %lf %c", &sender, &receiver,
@@ -262,7 +265,7 @@ static void finalizeProcessingText(SyncState* const syncState)
 		seq[sender]++;
 
 		skipCommentLines(testCase);
-		retval= getline(&line, &len, testCase);
+		retval= getline(&line, &bufLen, testCase);
 	}
 
 	free(seq);
@@ -350,6 +353,11 @@ static unsigned int readTraceNb(FILE* testCase)
 
 		// Not really needed but avoids warning from gcc
 		abort();
+	}
+
+	if (line)
+	{
+		free(line);
 	}
 
 	return result;

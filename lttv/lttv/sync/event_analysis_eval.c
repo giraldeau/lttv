@@ -584,7 +584,7 @@ static void destroyAnalysisEval(SyncState* const syncState)
 			for (j= 0; j < i; j++)
 			{
 				// There seems to be a memory leak in glpk, valgrind reports a
-				// loss even if the problem is deleted
+				// loss (reachable) even if the problem is deleted
 				glp_delete_prob(graphs->lps[i][j]);
 			}
 			free(graphs->lps[i]);
@@ -1741,19 +1741,22 @@ static void finalizeAnalysisEvalLP(SyncState* const syncState)
 	unsigned int i, j;
 	AnalysisDataEval* analysisData= syncState->analysisData;
 	AnalysisDataCHull* chAnalysisData= analysisData->chullSS->analysisData;
-	FactorsCHull** lpFactorsArray= createAllFactors(syncState->traceNb);
-	FactorsCHull* lpFactors;
+	FactorsCHull** lpFactorsArray;
 
 	if (!syncState->stats && !syncState->graphsStream)
 	{
 		return;
 	}
 
+	/* Because of matching_distributor, this analysis may be called twice.
+	 * Only run it once */
 	if ((syncState->graphsStream && analysisData->graphs->lps != NULL) ||
 		(syncState->stats && analysisData->stats->chFactorsArray != NULL))
 	{
 		return;
 	}
+
+	lpFactorsArray= createAllFactors(syncState->traceNb);
 
 	if (syncState->stats)
 	{
@@ -1794,7 +1797,6 @@ static void finalizeAnalysisEvalLP(SyncState* const syncState)
 			else
 			{
 				glp_delete_prob(lp);
-				destroyFactorsCHull(lpFactors);
 			}
 		}
 	}

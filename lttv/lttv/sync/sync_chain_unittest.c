@@ -98,6 +98,7 @@ int main(const int argc, char* const argv[])
 	bool stats;
 	const char* testCaseName;
 	GString* analysisModulesNames;
+	unsigned int id;
 
 	// Initialize data structures
 	syncState= malloc(sizeof(SyncState));
@@ -137,7 +138,7 @@ int main(const int argc, char* const argv[])
 	else
 	{
 		syncState->stats= false;
-		g_log_set_handler(NULL, G_LOG_LEVEL_DEBUG, nullLog, NULL);
+		id= g_log_set_handler(NULL, G_LOG_LEVEL_DEBUG, nullLog, NULL);
 	}
 
 	if (optionSyncGraphs.present)
@@ -225,6 +226,11 @@ int main(const int argc, char* const argv[])
 			endUsage.ru_utime.tv_usec);
 		printf("\tsystem time: %ld.%06ld\n", endUsage.ru_stime.tv_sec,
 			endUsage.ru_stime.tv_usec);
+	}
+
+	if (!optionSyncStats.present)
+	{
+		g_log_remove_handler(NULL, id);
 	}
 
 	return EXIT_SUCCESS;
