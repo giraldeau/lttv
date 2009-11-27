@@ -8,6 +8,7 @@ unittest_SOURCES = \
 	graph_functions.c\
 	sync_chain.c\
 	sync_chain_unittest.c\
+	event_processing_text.c\
 	event_matching_broadcast.c\
 	event_matching_distributor.c\
 	event_matching_tcp.c\

@@ -195,7 +195,7 @@ become relevant to have many modules at the same stage simultaneously. This
 will require some modifications. It is already partly supported at the
 matching stage through encapsulation of other matching modules.
 
-sync_chain_unitest provides a fairly simple example of sync chain
+sync_chain_unitest:main() provides a fairly simple example of sync chain
 implementation.
 
 ++ Stage 1: Event processing

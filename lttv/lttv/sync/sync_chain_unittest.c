@@ -42,7 +42,8 @@ struct OptionsInfo
 {
 	GArray* longOptions;
 	GString* optionString;
-	GQueue* index;
+	GQueue* longIndex;
+	GHashTable* shortIndex;
 };
 
 
@@ -52,6 +53,8 @@ static void gfPrintModuleOption(gpointer data, gpointer user_data);
 static void nullLog(const gchar *log_domain, GLogLevelFlags log_level, const
 	gchar *message, gpointer user_data);
 static void gfAddModuleOption(gpointer data, gpointer user_data);
+static guint ghfCharHash(gconstpointer key);
+static gboolean gefCharEqual(gconstpointer a, gconstpointer b);
 
 
 static ModuleOption optionSyncStats= {
@@ -244,34 +247,34 @@ const char* processOptions(const int argc, char* const argv[])
 	extern int optind, opterr, optopt;
 	GArray* longOptions;
 	GString* optionString;
-	GQueue* index;
+	GQueue* longIndex;
+	int longOption;
+	GHashTable* shortIndex;
 
 	longOptions= g_array_sized_new(TRUE, FALSE, sizeof(struct option),
 		g_queue_get_length(&moduleOptions));
 	optionString= g_string_new("");
-	index= g_queue_new();
+	longIndex= g_queue_new();
+	shortIndex= g_hash_table_new(&ghfCharHash, &gefCharEqual);
 
 	g_queue_foreach(&moduleOptions, &gfAddModuleOption, &(struct OptionsInfo)
-		{longOptions, optionString, index});
+		{longOptions, optionString, longIndex, shortIndex});
 
 	do
 	{
 		int optionIndex= 0;
+		ModuleOption* moduleOption;
 
+		longOption= -1;
 		c= getopt_long(argc, argv, optionString->str, (struct option*)
 			longOptions->data, &optionIndex);
 
-		if (c >= 0 && c < g_queue_get_length(index))
+		if (longOption >= 0 && longOption < g_queue_get_length(longIndex))
 		{
-			ModuleOption* moduleOption= g_queue_peek_nth(index, c);
-
-			moduleOption->present= true;
-
-			if (moduleOption->hasArg == REQUIRED_ARG || moduleOption->hasArg
-				== OPTIONAL_ARG)
-			{
-				moduleOption->arg= optarg;
-			}
+			moduleOption= g_queue_peek_nth(longIndex, longOption);
+		}
+		else if ((moduleOption= g_hash_table_lookup(shortIndex, &c)) != NULL)
+		{
 		}
 		else if (c == -1)
 		{
@@ -286,10 +289,23 @@ const char* processOptions(const int argc, char* const argv[])
 		{
 			g_error("Option parse error");
 		}
+
+		moduleOption->present= true;
+
+		if (moduleOption->hasArg == REQUIRED_ARG)
+		{
+			moduleOption->arg= optarg;
+		}
+		if (moduleOption->hasArg == OPTIONAL_ARG && optarg)
+		{
+			moduleOption->arg= optarg;
+		}
 	} while (c != -1);
 
 	g_array_free(longOptions, TRUE);
 	g_string_free(optionString, TRUE);
+	g_queue_free(longIndex);
+	g_hash_table_destroy(shortIndex);
 
 	if (argc <= optind)
 	{
@@ -403,9 +419,50 @@ static void gfAddModuleOption(gpointer data, gpointer user_data)
 	newOption.name= option->longName;
 	newOption.has_arg= conversion[option->hasArg];
 	newOption.flag= NULL;
-	newOption.val= g_queue_get_length(optionsInfo->index);
+	newOption.val= g_queue_get_length(optionsInfo->longIndex);
 
 	g_array_append_val(optionsInfo->longOptions, newOption);
-	g_string_append(optionsInfo->optionString, colons[option->hasArg]);
-	g_queue_push_tail(optionsInfo->index, option);
+	if (option->shortName)
+	{
+		g_string_append_c(optionsInfo->optionString, option->shortName);
+		g_string_append(optionsInfo->optionString, colons[option->hasArg]);
+
+		g_hash_table_insert(optionsInfo->shortIndex, &option->shortName,
+			option);
+	}
+	g_queue_push_tail(optionsInfo->longIndex, option);
+}
+
+
+/*
+ * A GHashFunc for g_hash_table_new()
+ *
+ * Args:
+ *    key        char*, just one character
+ */
+static guint ghfCharHash(gconstpointer key)
+{
+    return *(char*) key;
+}
+
+
+/*
+ * A GEqualFunc for g_hash_table_new()
+ *
+ * Args:
+ *   a, b          char*, just one character each
+ *
+ * Returns:
+ *   TRUE if both values are equal
+ */
+static gboolean gefCharEqual(gconstpointer a, gconstpointer b)
+{
+	if (*(char*) a == *(char*) b)
+	{
+		return TRUE;
+	}
+	else
+	{
+		return FALSE;
+	}
 }

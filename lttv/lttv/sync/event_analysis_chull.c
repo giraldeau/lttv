@@ -927,7 +927,7 @@ void calculateFactorsMiddle(FactorsCHull* const factors)
 	bmin= factors->min->drift;
 	bmax= factors->max->drift;
 
-	g_assert_cmpfloat(bmax, >, bmin);
+	g_assert_cmpfloat(bmax, >=, bmin);
 
 	factors->approx= malloc(sizeof(Factors));
 	bhat= (bmax * bmin - 1. + sqrt(1. + pow(bmax, 2.) * pow(bmin, 2.) +

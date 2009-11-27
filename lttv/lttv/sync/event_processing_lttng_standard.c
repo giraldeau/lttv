@@ -700,14 +700,6 @@ static void writeProcessingGraphVariablesLTTVStandard(SyncState* const
 static void writeProcessingTraceTraceOptionsLTTVStandard(SyncState* const
 	syncState, const unsigned int i, const unsigned int j)
 {
-	ProcessingDataLTTVStandard* processingData;
-	ProcessingGraphsLTTVStandard* traceI, * traceJ;
-
-	processingData= (ProcessingDataLTTVStandard*) syncState->processingData;
-
-	traceI= &processingData->graphs[i];
-	traceJ= &processingData->graphs[j];
-
 	fprintf(syncState->graphsStream,
         "set key inside right bottom\n"
         "set xlabel \"Clock %1$u\"\n"
@@ -734,14 +726,6 @@ static void writeProcessingTraceTraceOptionsLTTVStandard(SyncState* const
 static void writeProcessingTraceTimeOptionsLTTVStandard(SyncState* const
 	syncState, const unsigned int i, const unsigned int j)
 {
-	ProcessingDataLTTVStandard* processingData;
-	ProcessingGraphsLTTVStandard* traceI, * traceJ;
-
-	processingData= (ProcessingDataLTTVStandard*) syncState->processingData;
-
-	traceI= &processingData->graphs[i];
-	traceJ= &processingData->graphs[j];
-
 	fprintf(syncState->graphsStream,
         "set key inside right bottom\n"
         "set xlabel \"Clock %1$u\"\n"
