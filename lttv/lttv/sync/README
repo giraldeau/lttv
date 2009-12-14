@@ -137,8 +137,11 @@ eval is a special module, it doesn't really perform synchronization, instead
 it calculates and prints different metrics about how well traces are
 synchronized. Although it can be run like other analysis modules, it is most
 useful when run in a postprocessing step, after another synchronization module
-has been run. Eval is most common run in text mode. To do this, run
-lttv -m eval [usual options, ex: -t traces/node1 -t traces/node2 --sync ...]
+has been run. Eval is most common run in text mode. To do this, run:
+lttv -m sync_chain_batch [usual options, ex: -t traces/node1 -t traces/node2
+--sync ...]
+It can also be run from the lttv source tree via runlttv:
+./runlttv -m eval [usual runlttv options, ex: traces/node1 traces/node2]
 
 eval provides a few more options:
 --eval-rtt-file  -  argument: FILE
