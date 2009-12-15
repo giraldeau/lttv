@@ -2057,10 +2057,12 @@ create_name_tables(LttvTraceState *tcs)
       name_tables->irq_names[i] = g_quark_from_string(ltt_enum_string_get(t, i));
     }
     */
+    /* FIXME: LttvIRQState *irq_states should become a g_array */
+    /* temp fix: increase from 256 to 512 default size */
 
-    name_tables->nb_irqs = 256;
-    name_tables->irq_names = g_new(GQuark, 256);
-    for(i = 0 ; i < 256 ; i++) {
+    name_tables->nb_irqs = 512;
+    name_tables->irq_names = g_new(GQuark, 512);
+    for(i = 0 ; i < 512 ; i++) {
       g_string_printf(fe_name, "irq %d", i);
       name_tables->irq_names[i] = g_quark_from_string(fe_name->str);
     }

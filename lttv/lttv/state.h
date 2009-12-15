@@ -393,8 +393,11 @@ struct _LttvTraceState {
   LttvProcessState **running_process;
   gboolean has_precomputed_states;
   LttvCPUState *cpu_states; /* state of each cpu */
+  /* FIXME should be a g_array to deal with resize and copy. */
   LttvIRQState *irq_states; /* state of each irq handler */
+  /* FIXME should be a g_array to deal with resize and copy. */
   LttvSoftIRQState *soft_irq_states; /* state of each softirq */
+  /* FIXME should be a g_array to deal with resize and copy. */
   LttvTrapState *trap_states; /* state of each trap */
   GHashTable *bdev_states; /* state of the block devices */
 };
