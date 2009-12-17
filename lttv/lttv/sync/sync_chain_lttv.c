@@ -147,8 +147,11 @@ static void destroy()
  *
  * Args:
  *   traceSetContext: traceset
+ *
+ * Returns:
+ *   false if synchronization was not performed, true otherwise
  */
-void syncTraceset(LttvTracesetContext* const traceSetContext)
+bool syncTraceset(LttvTracesetContext* const traceSetContext)
 {
 	SyncState* syncState;
 	struct timeval startTime, endTime;
@@ -160,7 +163,7 @@ void syncTraceset(LttvTracesetContext* const traceSetContext)
 	if (!optionSync.present)
 	{
 		g_debug("Not synchronizing traceset because option is disabled");
-		return;
+		return false;
 	}
 
 	if (optionSyncStats.present)
@@ -299,6 +302,8 @@ void syncTraceset(LttvTracesetContext* const traceSetContext)
 		printf("\tsystem time: %ld.%06ld\n", endUsage.ru_stime.tv_sec,
 			endUsage.ru_stime.tv_usec);
 	}
+
+	return true;
 }
 
 

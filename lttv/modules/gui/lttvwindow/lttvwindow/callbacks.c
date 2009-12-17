@@ -466,13 +466,66 @@ void insert_viewer(GtkWidget* widget, lttvwindow_viewer_constructor constructor)
 
 int SetTraceset(Tab * tab, LttvTraceset *traceset)
 {
+  guint i;
+  TimeInterval time_span;
+  TimeWindow new_time_window;
+  LttTime new_current_time;
   LttvTracesetContext *tsc =
-        LTTV_TRACESET_CONTEXT(tab->traceset_info->traceset_context);
+    LTTV_TRACESET_CONTEXT(tab->traceset_info->traceset_context);
 
-  syncTraceset(tsc);
-  TimeInterval time_span = tsc->time_span;
-  TimeWindow new_time_window = tab->time_window;
-  LttTime new_current_time = tab->current_time;
+  // Perform time synchronization on the traces
+  if (syncTraceset(tsc))
+  {
+    /* There is some time-dependant information that was calculated during
+     * context initialization. Destroy the old contexts and initialize new
+     * ones.
+     * Modified from lttvwindow_add_trace()
+    */
+    // Keep a reference to the traces so they are not freed
+    for(i = 0; i < lttv_traceset_number(traceset); i++)
+    {
+      LttvTrace *trace = lttv_traceset_get(traceset, i);
+      lttv_trace_ref(trace);
+    }
+
+    // Remove state update hooks
+    lttv_state_remove_event_hooks(
+      (LttvTracesetState*)tab->traceset_info->traceset_context);
+
+    lttv_context_fini(LTTV_TRACESET_CONTEXT(
+        tab->traceset_info->traceset_context));
+    g_object_unref(tab->traceset_info->traceset_context);
+
+    for(i = 0; i < lttv_traceset_number(traceset); i++)
+    {
+      LttvTrace *trace = lttv_traceset_get(traceset, i);
+      lttvwindowtraces_remove_trace(trace);
+      lttvwindowtraces_add_trace(trace);
+    }
+
+    // Create new context
+    tab->traceset_info->traceset_context =
+      g_object_new(LTTV_TRACESET_STATS_TYPE, NULL);
+    lttv_context_init(LTTV_TRACESET_CONTEXT(tab->traceset_info->
+        traceset_context), traceset);
+
+    // Add state update hooks
+    lttv_state_add_event_hooks(
+      (LttvTracesetState*)tab->traceset_info->traceset_context);
+
+    // Remove local reference to the traces
+    for(i=0; i<lttv_traceset_number(traceset); i++)
+    {
+      LttvTrace *trace = lttv_traceset_get(traceset, i);
+      lttv_trace_unref(trace);
+    }
+
+    tsc = LTTV_TRACESET_CONTEXT(tab->traceset_info->traceset_context);
+  }
+
+  time_span = tsc->time_span;
+  new_time_window = tab->time_window;
+  new_current_time = tab->current_time;
 
   /* Set the tab's time window and current time if
    * out of bounds */

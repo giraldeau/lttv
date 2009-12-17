@@ -19,8 +19,10 @@
 #ifndef SYNC_CHAIN_LTTV_H
 #define SYNC_CHAIN_LTTV_H
 
+#include <stdbool.h>
+
 #include <lttv/tracecontext.h>
 
-void syncTraceset(LttvTracesetContext* const traceSetContext);
+bool syncTraceset(LttvTracesetContext* const traceSetContext);
 
 #endif
