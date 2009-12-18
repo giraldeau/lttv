@@ -111,6 +111,7 @@ static void writeHistogram(FILE* graphsStream, const struct RttKey* rttKey,
 static void updateBounds(Bounds** const bounds, Event* const e1, Event* const
 	e2);
 
+static void finalizeAnalysisEvalLP(SyncState* const syncState);
 // The next group of functions is only needed when computing synchronization
 // accuracy.
 #ifdef HAVE_LIBGLPK
@@ -121,9 +122,6 @@ static Factors* calculateFactors(glp_prob* const lp, const int direction);
 static void calculateCompleteFactors(glp_prob* const lp, FactorsCHull*
 	factors);
 static FactorsCHull** createAllFactors(const unsigned int traceNb);
-static inline void finalizeAnalysisEvalLP(SyncState* const syncState);
-#else
-static void finalizeAnalysisEvalLP(SyncState* const syncState);
 #endif
 
 
@@ -531,7 +529,7 @@ static void writeHistogram(FILE* graphsStream, const struct RttKey* rttKey,
  */
 static void destroyAnalysisEval(SyncState* const syncState)
 {
-	unsigned int i, j;
+	unsigned int i;
 	AnalysisDataEval* analysisData;
 
 	analysisData= (AnalysisDataEval*) syncState->analysisData;
@@ -581,6 +579,8 @@ static void destroyAnalysisEval(SyncState* const syncState)
 #ifdef HAVE_LIBGLPK
 		for (i= 0; i < syncState->traceNb; i++)
 		{
+			unsigned int j;
+
 			for (j= 0; j < i; j++)
 			{
 				// There seems to be a memory leak in glpk, valgrind reports a
@@ -985,6 +985,7 @@ static void printAnalysisStatsEval(SyncState* const syncState)
 	g_hash_table_foreach(analysisData->stats->exchangeRtt,
 		&ghfPrintExchangeRtt, analysisData->rttInfo);
 
+#ifdef HAVE_LIBGLPK
 	printf("\tConvex hull factors comparisons:\n"
 		"\t\tTrace pair  Factors type  Differences (lp - chull)\n"
 		"\t\t                          a0                    a1\n"
@@ -1021,6 +1022,7 @@ static void printAnalysisStatsEval(SyncState* const syncState)
 			}
 		}
 	}
+#endif
 }
 
 
@@ -1724,22 +1726,18 @@ static FactorsCHull** createAllFactors(const unsigned int traceNb)
  * Compute synchronization factors using a linear programming approach.
  * Compute the factors using analysis_chull. Compare the two.
  *
- * There are two definitions of this function. The empty one is used when the
- * solver library, glpk, is not available at build time. In that case, nothing
- * is actually produced.
+ * When the solver library, glpk, is not available at build time, only compute
+ * the factors using analysis_chull. This is to make sure that module runs its
+ * finalize function so that its graph functions can be called later.
  *
  * Args:
  *   syncState:    container for synchronization data
  */
-#ifndef HAVE_LIBGLPK
-static inline void finalizeAnalysisEvalLP(SyncState* const syncState)
-{
-}
-#else
 static void finalizeAnalysisEvalLP(SyncState* const syncState)
 {
-	unsigned int i, j;
 	AnalysisDataEval* analysisData= syncState->analysisData;
+#ifdef HAVE_LIBGLPK
+	unsigned int i, j;
 	AnalysisDataCHull* chAnalysisData= analysisData->chullSS->analysisData;
 	FactorsCHull** lpFactorsArray;
 
@@ -1800,11 +1798,11 @@ static void finalizeAnalysisEvalLP(SyncState* const syncState)
 			}
 		}
 	}
+#endif
 
 	g_array_free(analysisData->chullSS->analysisModule->finalizeAnalysis(analysisData->chullSS),
 		TRUE);
 }
-#endif
 
 
 /*
