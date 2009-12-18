@@ -89,7 +89,7 @@ LTTV_ARGS="$BOPTIONS $LIBS $TRACEFILES $AOPTIONS"
 if [ "$HELPER" = "gdb" ]; then
 	LD_LIBRARY_PATH=${BUILDPATH}/ltt/.libs gdb --args $LTTV_EXEC $LTTV_ARGS
 elif [ "$HELPER" = "valgrind" ]; then
-	LD_LIBRARY_PATH=${BUILDPATH}/ltt/.libs valgrind --track-origins=yes --show-reachable=yes --leak-check=full --error-limit=no $LTTV_EXEC $LTTV_ARGS
+	LD_LIBRARY_PATH=${BUILDPATH}/ltt/.libs valgrind --show-reachable=yes --leak-check=full --error-limit=no $LTTV_EXEC $LTTV_ARGS
 elif [ "$HELPER" = "massif" ]; then
 	LD_LIBRARY_PATH=${BUILDPATH}/ltt/.libs valgrind --tool=massif $LTTV_EXEC $LTTV_ARGS
 elif [ "$HELPER" = "strace" ]; then
