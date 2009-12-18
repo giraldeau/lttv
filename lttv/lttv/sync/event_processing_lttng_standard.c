@@ -113,7 +113,8 @@ static void initProcessingLTTVStandard(SyncState* const syncState, ...)
 	for(i= 0; i < syncState->traceNb; i++)
 	{
 		g_hash_table_insert(processingData->traceNumTable,
-			processingData->traceSetContext->traces[i]->t, (gpointer) i);
+			processingData->traceSetContext->traces[i]->t,
+			GUINT_TO_POINTER(i));
 	}
 
 	processingData->pendingRecv= malloc(sizeof(GHashTable*) *
@@ -384,6 +385,7 @@ static gboolean processEventLTTVStandard(void* hookData, void* callData)
 	struct marker_info* info;
 	SyncState* syncState;
 	ProcessingDataLTTVStandard* processingData;
+	gpointer traceNumP;
 
 	traceHook= (LttvTraceHook*) hookData;
 	tfc= (LttvTracefileContext*) callData;
@@ -398,7 +400,8 @@ static gboolean processEventLTTVStandard(void* hookData, void* callData)
 	wTime.nanosec= time.tv_nsec;
 
 	g_assert(g_hash_table_lookup_extended(processingData->traceNumTable,
-			trace, NULL, (gpointer*) &traceNum));
+			trace, NULL, &traceNumP));
+	traceNum= GPOINTER_TO_INT(traceNumP);
 
 	g_debug("Process event: time: %ld.%09ld trace: %ld (%p) name: %s ",
 		time.tv_sec, time.tv_nsec, traceNum, trace,

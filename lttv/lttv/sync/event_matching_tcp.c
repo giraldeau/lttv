@@ -21,6 +21,7 @@
 #endif
 
 #include <errno.h>
+#include <inttypes.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -645,7 +646,7 @@ static void writeMessagePoint(FILE* stream, const Message* const message)
 		y= message->inE->cpuTime;
 	}
 
-	fprintf(stream, "%20llu %20llu\n", x, y);
+	fprintf(stream, "%20" PRIu64 " %20" PRIu64 "\n", x, y);
 }
 
 

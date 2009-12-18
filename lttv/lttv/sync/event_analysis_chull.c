@@ -22,6 +22,7 @@
 #endif
 
 #include <errno.h>
+#include <inttypes.h>
 #include <math.h>
 #include <float.h>
 #include <stdlib.h>
@@ -270,7 +271,7 @@ static void gfDumpHullToFile(gpointer data, gpointer userData)
 	Point* point;
 
 	point= (Point*) data;
-	fprintf((FILE*) userData, "%20llu %20llu\n", point->x, point->y);
+	fprintf((FILE*) userData, "%20" PRIu64 " %20" PRIu64 "\n", point->x, point->y);
 }
 
 
@@ -401,7 +402,8 @@ static void analyzeMessageCHull(SyncState* const syncState, Message* const messa
 		newPoint->x= message->inE->cpuTime;
 		newPoint->y= message->outE->cpuTime;
 		hullType= UPPER;
-		g_debug("Reception point hullArray[%lu][%lu] x= inE->time= %llu y= outE->time= %llu",
+		g_debug("Reception point hullArray[%lu][%lu] "
+			"x= inE->time= %" PRIu64 " y= outE->time= %" PRIu64,
 			message->inE->traceNum, message->outE->traceNum, newPoint->x,
 			newPoint->y);
 	}
@@ -411,7 +413,8 @@ static void analyzeMessageCHull(SyncState* const syncState, Message* const messa
 		newPoint->x= message->outE->cpuTime;
 		newPoint->y= message->inE->cpuTime;
 		hullType= LOWER;
-		g_debug("Send point hullArray[%lu][%lu] x= inE->time= %llu y= outE->time= %llu",
+		g_debug("Send point hullArray[%lu][%lu] "
+			"x= inE->time= %" PRIu64 " y= outE->time= %" PRIu64,
 			message->inE->traceNum, message->outE->traceNum, newPoint->x,
 			newPoint->y);
 	}
@@ -703,7 +706,9 @@ static int jointCmp(const Point const* p1, const Point const* p2, const
 	const double fuzzFactor= 0.;
 
 	result= crossProductK(p1, p2, p1, p3);
-	g_debug("crossProductK(p1= (%llu, %llu), p2= (%llu, %llu), p1= (%llu, %llu), p3= (%llu, %llu))= %g",
+	g_debug("crossProductK(p1= (%" PRIu64 ", %" PRIu64 "), "
+		"p2= (%" PRIu64 ", %" PRIu64 "), p1= (%" PRIu64 ", %" PRIu64 "), "
+		"p3= (%" PRIu64 ", %" PRIu64 "))= %g",
 		p1->x, p1->y, p2->x, p2->y, p1->x, p1->y, p3->x, p3->y, result);
 	if (result < fuzzFactor)
 	{
@@ -1075,14 +1080,15 @@ static Factors* calculateFactorsExact(GQueue* const cu, GQueue* const cl, const
 	p1= g_queue_peek_nth(c1, i1);
 	p2= g_queue_peek_nth(c2, i2);
 
-	g_debug("Resulting points are: c1[i1]: x= %llu y= %llu c2[i2]: x= %llu y= %llu",
-		p1->x, p1->y, p2->x, p2->y);
+	g_debug("Resulting points are: c1[i1]: x= %" PRIu64 " y= %" PRIu64
+		" c2[i2]: x= %" PRIu64 " y= %" PRIu64 "", p1->x, p1->y, p2->x, p2->y);
 
 	result= malloc(sizeof(Factors));
 	result->drift= slope(p1, p2);
 	result->offset= intercept(p1, p2);
 
-	g_debug("Resulting factors are: drift= %g offset= %g", result->drift, result->offset);
+	g_debug("Resulting factors are: drift= %g offset= %g", result->drift,
+		result->offset);
 
 	return result;
 }

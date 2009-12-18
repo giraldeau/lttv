@@ -284,7 +284,6 @@ void setupSyncChain(LttvTracesetContext* const traceSetContext)
 	struct TracesetChainState* tracesetChainState;
 	SyncState* syncState;
 	GList* result;
-	int retval;
 
 	tracesetChainState= g_hash_table_lookup(tracesetChainStates, traceSetContext);
 	syncState= malloc(sizeof(SyncState));
@@ -339,7 +338,7 @@ void teardownSyncChain(LttvTracesetContext* const traceSetContext)
 	SyncState* syncState;
 	struct timeval endTime;
 	struct rusage endUsage;
-	unsigned int i, j;
+	unsigned int i;
 	int retval;
 
 	tracesetChainState= g_hash_table_lookup(tracesetChainStates, traceSetContext);

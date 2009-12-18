@@ -21,6 +21,7 @@
 #endif
 
 #include <errno.h>
+#include <inttypes.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -425,7 +426,7 @@ static void writeAccuracyPoints(MatchingGraphsBroadcast* graphs, const
 			if (eventI->traceNum < eventJ->traceNum)
 			{
 				fprintf(graphs->accuracyPoints[eventJ->traceNum][eventI->traceNum],
-					"%20llu %20.9f\n", eventI->cpuTime,
+					"%20" PRIu64 " %20.9f\n", eventI->cpuTime,
 					wallTimeSub(&eventJ->wallTime, &eventI->wallTime));
 				graphs->pointsNb[eventJ->traceNum][eventI->traceNum]++;
 			}
