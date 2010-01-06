@@ -56,15 +56,23 @@ struct addMarkersArgs
     struct marker_data* mdata;
 };
 
-
 // ### COMMON Methods ###
 // #
+// Empty method to turn off the debug (debug waste time while printing)
+void ignore_and_drop_message(const gchar *log_domain, GLogLevelFlags log_level, const gchar *message, gpointer user_data)
+{
+}
+
+
 // JNI method to call printf from the java side
 JNIEXPORT void JNICALL Java_org_eclipse_linuxtools_lttng_jni_Jni_1C_1Common_ltt_1printC(JNIEnv* env, jobject jobj, jstring new_string)
 {
-        printf("%s", (*env)->GetStringUTFChars(env, new_string, 0) );
+        const char* c_msg = (*env)->GetStringUTFChars(env, new_string, 0);
+        
+        printf("%s", c_msg );
+        
+        (*env)->ReleaseStringUTFChars(env, new_string, c_msg);
 }
-
 // #
 // ####
 
@@ -73,7 +81,14 @@ JNIEXPORT void JNICALL Java_org_eclipse_linuxtools_lttng_jni_Jni_1C_1Common_ltt_
 // ### TRACE methods ###
 // #
 // JNI mapping of   < LttTrace *ltt_trace_open(const gchar *pathname)  > (trace.h)
-JNIEXPORT jlong JNICALL Java_org_eclipse_linuxtools_lttng_jni_JniTrace_ltt_1openTrace(JNIEnv* env, jobject jobj, jstring pathname) {
+JNIEXPORT jlong JNICALL Java_org_eclipse_linuxtools_lttng_jni_JniTrace_ltt_1openTrace(JNIEnv* env, jobject jobj, jstring pathname, jboolean show_debug) {
+        
+        if ( !show_debug) {
+                // Make sure we don't use any debug (speed up the read)
+                g_log_set_handler(NULL, G_LOG_LEVEL_INFO, ignore_and_drop_message, NULL);
+                g_log_set_handler(NULL, G_LOG_LEVEL_DEBUG, ignore_and_drop_message, NULL);
+        }
+        
         const char* c_pathname = (*env)->GetStringUTFChars(env, pathname, 0);
         LttTrace* newPtr = ltt_trace_open( c_pathname );
         
@@ -224,7 +239,7 @@ void g_datalist_foreach_addTracefilesOfTrace(GQuark name, gpointer data, gpointe
 }
 
 // Function to fill up the java map with the event type found in tracefile (the name)
-JNIEXPORT void JNICALL Java_org_eclipse_linuxtools_lttng_jni_JniTrace_ltt_1getAllTracefiles(JNIEnv* env, jobject jobj, jlong trace_ptr) {
+JNIEXPORT void JNICALL Java_org_eclipse_linuxtools_lttng_jni_JniTrace_ltt_1feedAllTracefiles(JNIEnv* env, jobject jobj, jlong trace_ptr) {
         LttTrace* newPtr = (LttTrace*)CONVERT_JLONG_TO_PTR(trace_ptr);
         
         struct java_calling_data args = { env, jobj };
@@ -232,8 +247,27 @@ JNIEXPORT void JNICALL Java_org_eclipse_linuxtools_lttng_jni_JniTrace_ltt_1getAl
         g_datalist_foreach(&newPtr->tracefiles, &g_datalist_foreach_addTracefilesOfTrace, &args);
 }
 
+// Obtain the range of the trace (i.e. "start time" and "end time")
+// Note : this method is quite heavy to use!
+JNIEXPORT void JNICALL Java_org_eclipse_linuxtools_lttng_jni_JniTrace_ltt_1feedTracefileTimeRange(JNIEnv* env, jobject jobj, jlong trace_ptr, jobject jstart_time, jobject jend_time) {
+        LttTrace* newPtr = (LttTrace*)CONVERT_JLONG_TO_PTR(trace_ptr);
+        
+        LttTime tmpStartTime = { 0, 0 };
+        LttTime tmpEndTime = { 0, 0 };
+        ltt_trace_time_span_get(newPtr, &tmpStartTime, &tmpEndTime);
+        
+        jclass startAccessClass = (*env)->GetObjectClass(env, jstart_time);
+        jmethodID startAccessFunction = (*env)->GetMethodID(env, startAccessClass, "setTimeFromC", "(J)V");
+        jlong startTime = (CONVERT_UINT64_TO_JLONG(tmpStartTime.tv_sec)*BILLION) + CONVERT_UINT64_TO_JLONG(tmpStartTime.tv_nsec);
+        (*env)->CallVoidMethod(env, jstart_time, startAccessFunction, startTime);
+        
+        jclass endAccessClass = (*env)->GetObjectClass(env, jend_time);
+        jmethodID endAccessFunction = (*env)->GetMethodID(env, endAccessClass, "setTimeFromC", "(J)V");
+        jlong endTime = (CONVERT_UINT64_TO_JLONG(tmpEndTime.tv_sec)*BILLION) + CONVERT_UINT64_TO_JLONG(tmpEndTime.tv_nsec);
+        (*env)->CallVoidMethod(env, jend_time, endAccessFunction, endTime);
+}
 
-// Function to print the content of a tracefile
+// Function to print the content of a trace
 JNIEXPORT void JNICALL Java_org_eclipse_linuxtools_lttng_jni_JniTrace_ltt_1printTrace(JNIEnv* env, jobject jobj, jlong trace_ptr) {
         
         LttTrace* newPtr = (LttTrace*)CONVERT_JLONG_TO_PTR(trace_ptr);
@@ -267,6 +301,7 @@ JNIEXPORT void JNICALL Java_org_eclipse_linuxtools_lttng_jni_JniTrace_ltt_1print
 
 // ### TRACEFILE methods ###
 // #
+
 // Get of cpu_online
 JNIEXPORT jboolean JNICALL Java_org_eclipse_linuxtools_lttng_jni_JniTracefile_ltt_1getIsCpuOnline(JNIEnv* env, jobject jobj, jlong tracefile_ptr) {
         LttTracefile* newPtr = (LttTracefile*)CONVERT_JLONG_TO_PTR(tracefile_ptr);
@@ -461,7 +496,7 @@ void g_hash_table_foreach_addMarkersOfTracefile(gpointer key, gpointer data, gpo
 }
 
 // Function to fill up the java map with the event type found in tracefile (the name)
-JNIEXPORT void JNICALL Java_org_eclipse_linuxtools_lttng_jni_JniTracefile_ltt_1getAllMarkers(JNIEnv* env, jobject jobj, jlong tracefile_ptr) {
+JNIEXPORT void JNICALL Java_org_eclipse_linuxtools_lttng_jni_JniTracefile_ltt_1feedAllMarkers(JNIEnv* env, jobject jobj, jlong tracefile_ptr) {
         LttTracefile* newPtr = (LttTracefile*)CONVERT_JLONG_TO_PTR(tracefile_ptr);
         
         // *** TODO ***
@@ -501,7 +536,6 @@ JNIEXPORT void JNICALL Java_org_eclipse_linuxtools_lttng_jni_JniTracefile_ltt_1p
         printf("subbuf_corrupt          : %u\n"     ,(unsigned int)newPtr->subbuf_corrupt);
         printf("event ptr               : %p\n"     ,&newPtr->event);
         printf("buffer ptr              : %p\n"     ,&newPtr->buffer);
-        printf("buf_size                : %i\n"     ,(unsigned int)newPtr->buf_size);
         printf("\n");
 }
 // #
@@ -554,7 +588,7 @@ JNIEXPORT jint JNICALL Java_org_eclipse_linuxtools_lttng_jni_JniEvent_ltt_1readN
         
         int returnedValue = ltt_tracefile_read(newPtr);
         
-        // According to Ltt documentation, we need to get back to beginning after an error
+        // We need to get back to previous after an error to keep a sane state
         if ( returnedValue != 0 ) {
                 ltt_tracefile_seek_time(newPtr, lastTime);
         }
@@ -634,7 +668,14 @@ JNIEXPORT jint JNICALL Java_org_eclipse_linuxtools_lttng_jni_JniEvent_ltt_1getEv
         return (jint)newPtr->event_id;
 }
 
-// Get of event_time
+// Get time in nanoseconds
+JNIEXPORT jlong JNICALL Java_org_eclipse_linuxtools_lttng_jni_JniEvent_ltt_1getNanosencondsTime(JNIEnv* env, jobject jobj, jlong event_ptr) {
+        LttEvent* newPtr = (LttEvent*)CONVERT_JLONG_TO_PTR(event_ptr);
+        
+        return (CONVERT_UINT64_TO_JLONG(newPtr->event_time.tv_sec)*BILLION) + CONVERT_UINT64_TO_JLONG(newPtr->event_time.tv_nsec);
+}
+
+// Fill event_time into an object
 JNIEXPORT void JNICALL Java_org_eclipse_linuxtools_lttng_jni_JniEvent_ltt_1feedEventTime(JNIEnv* env, jobject jobj, jlong event_ptr, jobject time_jobj) {
         LttEvent* newPtr = (LttEvent*)CONVERT_JLONG_TO_PTR(event_ptr);
         
@@ -927,83 +968,72 @@ JNIEXPORT void JNICALL Java_org_eclipse_linuxtools_lttng_jni_JniParser_ltt_1getP
         // We will do an extra check on type "LTT_TYPE_UNSIGNED_INT" to check if the marker_field->format is hint of a pointer
         switch ( newMarkerFieldPtr->type ) {
                 case LTT_TYPE_SIGNED_INT : 
-                        accessFunction = (*env)->GetStaticMethodID(env, accessClass, "addLongToParsingFromC", "(Ljava/lang/Object;Ljava/lang/String;J)V");
+                        accessFunction = (*env)->GetStaticMethodID(env, accessClass, "addLongToParsingFromC", "(Ljava/lang/Object;J)V");
                         (*env)->CallStaticVoidMethod(   env, 
                                                         accessClass, 
                                                         accessFunction, 
                                                         javaObj, 
-                                                        (*env)->NewStringUTF(env, g_quark_to_string(newMarkerFieldPtr->name) ), 
-                                                        ltt_event_get_long_int(&newEventPtr, newMarkerFieldPtr), 
-                                                        (*env)->NewStringUTF(env, newMarkerFieldPtr->fmt->str )
+                                                        ltt_event_get_long_int(&newEventPtr, newMarkerFieldPtr)
                                                      );
                         
                         break;
                 
                 case LTT_TYPE_UNSIGNED_INT :
-                        
                         // If the format seems to be a pointer, add it as a pointer
                         if ( (strncmp(newMarkerFieldPtr->fmt->str, "0x%llX", newMarkerFieldPtr->fmt->len) == 0 ) || (strncmp(newMarkerFieldPtr->fmt->str, "%llX", newMarkerFieldPtr->fmt->len) == 0 ) ) {
-                                #if ARCHITECTURE_IS_64BITS == 0
-                                        accessFunction = (*env)->GetStaticMethodID(env, accessClass, "addIntPointerToParsingFromC", "(Ljava/lang/Object;Ljava/lang/String;J)V");
+                                #if __WORDSIZE == 64
+                                        accessFunction = (*env)->GetStaticMethodID(env, accessClass, "addLongPointerToParsingFromC", "(Ljava/lang/Object;J)V");
                                 #else
-                                        accessFunction = (*env)->GetStaticMethodID(env, accessClass, "addLongPointerToParsingFromC", "(Ljava/lang/Object;Ljava/lang/String;J)V");
+                                        accessFunction = (*env)->GetStaticMethodID(env, accessClass, "addIntPointerToParsingFromC", "(Ljava/lang/Object;J)V");
                                 #endif
                                 (*env)->CallStaticVoidMethod(   env, 
                                                                 accessClass, 
                                                                 accessFunction, 
                                                                 javaObj, 
-                                                                (*env)->NewStringUTF(env, g_quark_to_string(newMarkerFieldPtr->name) ),
-                                                                CONVERT_PTR_TO_JLONG(ltt_event_get_long_unsigned(&newEventPtr, newMarkerFieldPtr) ), 
-                                                                (*env)->NewStringUTF(env, newMarkerFieldPtr->fmt->str )
+                                                                CONVERT_PTR_TO_JLONG(ltt_event_get_long_unsigned(&newEventPtr, newMarkerFieldPtr) )
                                                              );
                         }
                         // Otherwise, add it as a number
                         else {
-                                accessFunction = (*env)->GetStaticMethodID(env, accessClass, "addLongToParsingFromC", "(Ljava/lang/Object;Ljava/lang/String;J)V");
+                                accessFunction = (*env)->GetStaticMethodID(env, accessClass, "addLongToParsingFromC", "(Ljava/lang/Object;J)V");
                                 (*env)->CallStaticVoidMethod(   env, 
                                                                 accessClass,
                                                                 accessFunction,
                                                                 javaObj,
-                                                                (*env)->NewStringUTF(env, g_quark_to_string(newMarkerFieldPtr->name) ), 
-                                                                ltt_event_get_long_unsigned(&newEventPtr, newMarkerFieldPtr),
-                                                                (*env)->NewStringUTF(env, newMarkerFieldPtr->fmt->str )
+                                                                ltt_event_get_long_unsigned(&newEventPtr, newMarkerFieldPtr)
                                                              );
                         }
                         
                         break;
                         
                 case LTT_TYPE_POINTER :
-                        #if ARCHITECTURE_IS_64BITS == 0
-                                accessFunction = (*env)->GetStaticMethodID(env, accessClass, "addIntPointerToParsingFromC", "(Ljava/lang/Object;Ljava/lang/String;J)V");
+                        #if __WORDSIZE == 64
+                                accessFunction = (*env)->GetStaticMethodID(env, accessClass, "addLongPointerToParsingFromC", "(Ljava/lang/Object;J)V");
                         #else
-                                accessFunction = (*env)->GetStaticMethodID(env, accessClass, "addLongPointerToParsingFromC", "(Ljava/lang/Object;Ljava/lang/String;J)V");
+                                accessFunction = (*env)->GetStaticMethodID(env, accessClass, "addIntPointerToParsingFromC", "(Ljava/lang/Object;J)V");
                         #endif
                         (*env)->CallStaticVoidMethod(   env, 
                                                         accessClass, 
                                                         accessFunction, 
                                                         javaObj, 
-                                                        (*env)->NewStringUTF(env, g_quark_to_string(newMarkerFieldPtr->name) ),
-                                                        CONVERT_PTR_TO_JLONG(*(GINT_TYPE_FOR_PTR*)(newEventPtr.data + newMarkerFieldPtr->offset)),
-                                                        (*env)->NewStringUTF(env, newMarkerFieldPtr->fmt->str )
+                                                        CONVERT_PTR_TO_JLONG(*(GINT_TYPE_FOR_PTR*)(newEventPtr.data + newMarkerFieldPtr->offset))
                                                      );
                         break;
                         
                 case LTT_TYPE_STRING :
-                        accessFunction = (*env)->GetStaticMethodID(env, accessClass, "addStringToParsingFromC", "(Ljava/lang/Object;Ljava/lang/String;Ljava/lang/String;)V");
+                        accessFunction = (*env)->GetStaticMethodID(env, accessClass, "addStringToParsingFromC", "(Ljava/lang/Object;Ljava/lang/String;)V");
                         (*env)->CallStaticVoidMethod(   env,
                                                         accessClass,
                                                         accessFunction,
                                                         javaObj,
-                                                        (*env)->NewStringUTF(env, g_quark_to_string(newMarkerFieldPtr->name) ),
-                                                        (*env)->NewStringUTF(env, ltt_event_get_string(&newEventPtr, newMarkerFieldPtr) ),
-                                                        (*env)->NewStringUTF(env, newMarkerFieldPtr->fmt->str )
+                                                        (*env)->NewStringUTF(env, ltt_event_get_string(&newEventPtr, newMarkerFieldPtr) )
                                                      );
                         break;
                         
                 case LTT_TYPE_COMPACT :
                 case LTT_TYPE_NONE :
                 default :
-                        printf("Warning : Unrecognized format type! Skipping! (Java_org_eclipse_linuxtools_lttng_jni_JniParser_ltt_1fillParseArray)");
+                        printf("Warning : Unrecognized format type! Skipping! (Java_org_eclipse_linuxtools_lttng_jni_JniParser_ltt_1getParsedData)");
                         break;
         }
         
