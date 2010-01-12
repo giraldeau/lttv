@@ -129,7 +129,7 @@ There are also other, less common, types. See the enum ApproxType in
 event_analysis_chull.h.
 
 +++ Linear Regression
-linreg sometimes gives more accurate results than chull but it provides no
+linreg sometimes gives more precise results than chull but it provides no
 garantee
 
 +++ Synchronization evaluation
@@ -137,7 +137,7 @@ eval is a special module, it doesn't really perform synchronization, instead
 it calculates and prints different metrics about how well traces are
 synchronized. Although it can be run like other analysis modules, it is most
 useful when run in a postprocessing step, after another synchronization module
-has been run. Eval is most common run in text mode. To do this, run:
+has been run. Eval is most commonly run in text mode. To do this, run:
 lttv -m sync_chain_batch [usual options, ex: -t traces/node1 -t traces/node2
 --sync ...]
 It can also be run from the lttv source tree via runlttv:
@@ -163,7 +163,9 @@ fields are separated by whitespace. '#' comments a line.
 Many commands can be used to measure the RTT, for example:
 ping -s 8 -A -c 8000 -w 10 192.168.112.57
 
-Note that this must be repeated in both directions in the file.
+Note that this must be repeated in both directions in the file, that is:
+192.168.112.49 192.168.112.50 0.057
+192.168.112.50 192.168.112.49 0.050
 
 ++++ Linear Programming and GLPK
 The synchronization evaluation can optionally perform an analysis similar to
@@ -173,7 +175,12 @@ measure of the accuracy of the synchronization in any point (this is seen in
 the graph output).
 
 This is enabled by default at configure time (--with-glpk) if the GNU Linear
-Programming Kit is available (libglpk).
+Programming Kit is available (libglpk). On Debian-like systems (ex. Ubuntu),
+install the package "libglpk-dev".
+
+To see the output of this mode, run:
+lttv -m sync_chain_batch --eval-graphs [usual options, ex: -t traces/node1 -t
+traces/node2 --sync ...]
 
 + Design
 This part describes the design of the synchronization framework. This is to

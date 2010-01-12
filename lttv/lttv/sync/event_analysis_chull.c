@@ -1249,7 +1249,7 @@ static double intercept(const Point* const p1, const Point* const p2)
  * is.
  *
  * Two alternative (and subtly different) ways of propagating factors to
- * preserve min and max bondaries have been proposed, see:
+ * preserve min and max boundaries have been proposed, see:
  * [Duda, A., Harrus, G., Haddad, Y., and Bernard, G.: Estimating global time
  * in distributed systems, Proc. 7th Int. Conf. on Distributed Computing
  * Systems, Berlin, volume 18, 1987] p.304
