@@ -49,12 +49,25 @@ struct java_calling_data
 };
 
 // *** TODO **
+// All these struct are used to call g_datalist_foreach()
 // Find a better way! This is ugly!
 struct addMarkersArgs
 { 
     struct java_calling_data* java_args;
     struct marker_data* mdata;
 };
+
+struct saveTimeArgs
+{
+        GArray* saveTimeArray;
+};
+
+struct saveTimeAndTracefile
+{
+        LttTime time;
+        LttTracefile* tracefile;
+};
+
 
 // ### COMMON Methods ###
 // #
@@ -224,13 +237,13 @@ void g_datalist_foreach_addTracefilesOfTrace(GQuark name, gpointer data, gpointe
         jclass accessClass = (*args->env)->GetObjectClass(args->env, args->jobj);
         jmethodID accessFunction = (*args->env)->GetMethodID(args->env, accessClass, "addTracefileFromC", "(Ljava/lang/String;J)V");
         
-        GArray* group = (GArray*)data;
+        GArray* tracefile_array = (GArray*)data;
         LttTracefile* tracefile;
         jlong newPtr;
         
         unsigned int i;
-        for (i=0; i<group->len; i++) {
-                tracefile = &g_array_index(group, LttTracefile, i);
+        for (i=0; i<tracefile_array->len; i++) {
+                tracefile = &g_array_index(tracefile_array, LttTracefile, i);
                 
                 newPtr = CONVERT_PTR_TO_JLONG(tracefile);
                 
@@ -247,15 +260,70 @@ JNIEXPORT void JNICALL Java_org_eclipse_linuxtools_lttng_jni_JniTrace_ltt_1feedA
         g_datalist_foreach(&newPtr->tracefiles, &g_datalist_foreach_addTracefilesOfTrace, &args);
 }
 
+
+// g_list_data function for the "for_each" call in Java_org_eclipse_linuxtools_lttng_jni_JniTrace_ltt_1feedTracefileTimeRange
+//      used to save the current timestamp for each tracefile
+void g_datalist_foreach_saveTracefilesTime(GQuark name, gpointer data, gpointer user_data) {
+        struct saveTimeArgs* args = (struct saveTimeArgs*)user_data;
+        
+        GArray* tracefile_array = (GArray*)data;
+        GArray* save_array = args->saveTimeArray;
+        
+        LttTracefile* tracefile;
+        struct saveTimeAndTracefile* savedData;
+        
+        unsigned int i;
+        for (i=0; i<tracefile_array->len; i++) {
+                tracefile = &g_array_index(tracefile_array, LttTracefile, i);
+                
+                // Allocate a new LttTime for each tracefile (so it won't change if the tracefile seek somewhere else)
+                savedData = (struct saveTimeAndTracefile*)malloc( sizeof(struct saveTimeAndTracefile) );
+                savedData->time.tv_sec = tracefile->event.event_time.tv_sec;
+                savedData->time.tv_nsec = tracefile->event.event_time.tv_nsec;
+                savedData->tracefile = tracefile;
+                // Append the saved data to the array
+                g_array_append_val(save_array, savedData);
+        }
+}
+
+
 // Obtain the range of the trace (i.e. "start time" and "end time")
-// Note : this method is quite heavy to use!
+//
+// Note : This function, unlike ltt_trace_time_span_get, is assured to return all tracefiles to their correct position after operation
+// NOTE : this method is quite heavy to use!!!
 JNIEXPORT void JNICALL Java_org_eclipse_linuxtools_lttng_jni_JniTrace_ltt_1feedTracefileTimeRange(JNIEnv* env, jobject jobj, jlong trace_ptr, jobject jstart_time, jobject jend_time) {
         LttTrace* newPtr = (LttTrace*)CONVERT_JLONG_TO_PTR(trace_ptr);
         
+        // Allocate ourself a new array to save the data in
+        GArray* savedDataArray = g_array_new(FALSE, FALSE, sizeof(struct saveTimeAndTracefile*) );
+        struct saveTimeArgs args = { savedDataArray };
+        // Call g_datalist_foreach_saveTracefilesTime for each element in the GData to save the time
+        g_datalist_foreach(&newPtr->tracefiles, &g_datalist_foreach_saveTracefilesTime, &args);
+        
+        // Call to ltt_trace_time_span_get to find the current start and end time
+        // NOTE : This WILL change the current block of the tracefile (i.e. its timestamp)
         LttTime tmpStartTime = { 0, 0 };
         LttTime tmpEndTime = { 0, 0 };
         ltt_trace_time_span_get(newPtr, &tmpStartTime, &tmpEndTime);
         
+        // Seek back to the correct time for each tracefile and free the allocated memory
+        struct saveTimeAndTracefile* savedData;
+        unsigned int i;
+        for (i=0; i<savedDataArray->len; i++) {
+                savedData = g_array_index(savedDataArray, struct saveTimeAndTracefile*, i);
+                // Seek back to the correct time
+                // Some time will not be consistent here (i.e. unitialized data)
+                //      but the seek should work just fine with that
+                ltt_tracefile_seek_time(savedData->tracefile, savedData->time);
+                
+                // Free the memory allocated for this saveTimeAndTracefile entry
+                free( savedData );
+        }
+        // Free the memory allocated for the GArray
+        g_array_free(savedDataArray, TRUE);
+        
+        // Send the start and end time back to the java
+        // We do it last to make sure a problem won't leave us with unfred memory
         jclass startAccessClass = (*env)->GetObjectClass(env, jstart_time);
         jmethodID startAccessFunction = (*env)->GetMethodID(env, startAccessClass, "setTimeFromC", "(J)V");
         jlong startTime = (CONVERT_UINT64_TO_JLONG(tmpStartTime.tv_sec)*BILLION) + CONVERT_UINT64_TO_JLONG(tmpStartTime.tv_nsec);
