@@ -1442,7 +1442,6 @@ guint lttv_process_traceset_seek_n_backward(LttvTracesetContext *self,
   if(ltt_time_compare(time, self->time_span.end_time) > 0) {
     time = self->time_span.end_time;
   }
-  asked_time = time;
   time_offset = first_offset;
  
   lttv_hooks_add(hooks, seek_back_event_hook, &sd, LTTV_PRIO_DEFAULT);
@@ -1450,17 +1449,16 @@ guint lttv_process_traceset_seek_n_backward(LttvTracesetContext *self,
   lttv_process_traceset_begin(self, NULL, NULL, NULL, hooks, NULL);
 
   while(1) {
-    /* stop criteria : - n events found
-     *                 - asked_time < beginning of trace */
-    if(ltt_time_compare(asked_time, self->time_span.start_time) < 0) break;
-
     lttv_traceset_context_position_copy(end_pos, next_iter_end_pos);
 
     /* We must seek the traceset back to time - time_offset */
     /* this time becomes the new reference time */
-    time = ltt_time_sub(time, time_offset);
+    if(ltt_time_compare(time, time_offset) > 0)
+      time = ltt_time_sub(time, time_offset);
+    else
+      time = self->time_span.start_time;
     asked_time = time;
-    
+
     time_seeker(self, time);
     lttv_traceset_context_position_save(self, next_iter_end_pos);
     /* Resync the time in case of a seek_closest */
@@ -1477,6 +1475,8 @@ guint lttv_process_traceset_seek_n_backward(LttvTracesetContext *self,
     lttv_process_traceset_middle(self, ltt_time_infinite,
         G_MAXUINT, end_pos);
 
+    /* stop criteria : - n events found
+     *                 - asked_time < beginning of trace */
     if(sd.events_found < n) {
       if(sd.first_event > 0) {
         /* Save the first position */
@@ -1493,9 +1493,19 @@ guint lttv_process_traceset_seek_n_backward(LttvTracesetContext *self,
       }
       g_ptr_array_set_size(sd.array, n-sd.events_found);
       sd.first_event = 0;
+
+      /*
+       * Did not fill our event list and started before the beginning of the
+       * trace. There is no hope to fill it then.
+       * It is OK to compare with trace start time here because we explicitely
+       * seeked by time (not by position), so we cannot miss multiple event
+       * happening exactly at trace start.
+       */
+      if(ltt_time_compare(asked_time, self->time_span.start_time) == 0)
+        break;
       
     } else break; /* Second end criterion : n events found */
-    
+
     time_offset = ltt_time_mul(time_offset, BACKWARD_SEEK_MUL);
   }
   
