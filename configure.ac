@@ -21,7 +21,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.57)
-AC_INIT([lttv], [0.12.26-28012010], [ltt-dev@lists.casi.polymtl.ca])
+AC_INIT([lttv], [0.12.27-29012010], [ltt-dev@lists.casi.polymtl.ca])
 AM_INIT_AUTOMAKE
 AM_CONFIG_HEADER(config.h)
 AM_PROG_LIBTOOL
@@ -214,11 +214,10 @@ AC_SUBST(lttctlincludedir)
 
 		 #lttv/modules/gui/tutorial/Makefile
 		 #lttv/modules/gui/diskperformance/Makefile
-	#FIXME: disabled by Mathieu Desnoyers, does not build on x86_64
-	#lttv/lttv/sync/Makefile
 AC_CONFIG_FILES([Makefile
 	lttv/Makefile
 	lttv/lttv/Makefile
+	lttv/lttv/sync/Makefile
 	lttv/modules/Makefile
 	lttv/modules/text/Makefile
 	lttv/modules/gui/Makefile

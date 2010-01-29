@@ -1,5 +1,4 @@
-#Disabled by Mathieu Desnoyers: Build issue on x86_64 (FIXME)
-#SUBDIRS= sync
+SUBDIRS= sync
 
 AM_CFLAGS= $(PACKAGE_CFLAGS)
 LDADD = $(POPT_LIBS) $(M_LIBS) $(GLPK_LIBS) ${top_builddir}/ltt/liblttvtraceread.la
