@@ -259,4 +259,5 @@ static void destroy() {
 
 LTTV_MODULE("lttvwindow", "Viewer main window", \
     "Viewer with multiple windows, tabs and panes for graphical modules", \
-	    init, destroy, "stats", "option", "sync")
+	    //init, destroy, "stats", "option", "sync")
+	    init, destroy, "stats", "option")
