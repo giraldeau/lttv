@@ -120,6 +120,11 @@ static Factors* calculateFactors(glp_prob* const lp, const int direction);
 static void calculateCompleteFactors(glp_prob* const lp, FactorsCHull*
 	factors);
 static FactorsCHull** createAllFactors(const unsigned int traceNb);
+static inline void finalizeAnalysisEvalLP(SyncState* const syncState);
+static void gfAddAbsiscaToArray(gpointer data, gpointer user_data);
+static gint gcfCompareDouble(gconstpointer a, gconstpointer b);
+#else
+static void finalizeAnalysisEvalLP(SyncState* const syncState);
 #endif
 
 
@@ -1770,6 +1775,52 @@ static FactorsCHull** createAllFactors(const unsigned int traceNb)
 
 	return factorsArray;
 }
+
+
+/*
+ * A GFunc for g_queue_foreach()
+ *
+ * Args:
+ *   data          Point*, a convex hull point
+ *   user_data     GArray*, an array of convex hull point absisca values, as
+ *                 double
+ */
+static void gfAddAbsiscaToArray(gpointer data, gpointer user_data)
+{
+	Point* p= data;
+	GArray* a= user_data;
+	double v= p->x;
+
+	g_array_append_val(a, v);
+}
+
+
+/*
+ * A GCompareFunc for g_array_sort()
+ *
+ * Args:
+ *   a, b          double*, absisca values
+ *
+ * Returns:
+ *   "returns less than zero for first arg is less than second arg, zero for
+ *   equal, greater zero if first arg is greater than second arg"
+ *   - the great glib documentation
+ */
+static gint gcfCompareDouble(gconstpointer a, gconstpointer b)
+{
+	if (*(double*) a < *(double*) b)
+	{
+		return -1;
+	}
+	else if (*(double*) a > *(double*) b)
+	{
+		return 1;
+	}
+	else
+	{
+		return 0;
+	}
+}
 #endif
 
 
@@ -1887,10 +1938,7 @@ static void writeAnalysisTraceTimeBackPlotsEval(SyncState* const syncState,
 		char* cwd;
 		char fileName[40];
 		FILE* fp;
-		double* xValues;
-		unsigned int xBegin, xEnd;
-		double interval;
-		const unsigned int graphPointNb= 1000;
+		GArray* xValues;
 
 		// Open the data file
 		snprintf(fileName, 40, "analysis_eval_accuracy-%03u_and_%03u.data", i, j);
@@ -1912,51 +1960,27 @@ static void writeAnalysisTraceTimeBackPlotsEval(SyncState* const syncState,
 		free(cwd);
 
 		// Build the list of absisca values for the points in the accuracy graph
-		g_assert_cmpuint(graphPointNb, >=, 4);
-		xValues= malloc(graphPointNb * sizeof(double));
-		xValues[0]= graphs->bounds[j][i].min;
-		xValues[graphPointNb - 1]= graphs->bounds[j][i].max;
-		xValues[1]= MIN(((Point*) g_queue_peek_head(hullArray[i][j]))->x,
-			((Point*) g_queue_peek_head(hullArray[j][i]))->x);
-		xValues[graphPointNb - 2]= MAX(((Point*)
-				g_queue_peek_tail(hullArray[i][j]))->x, ((Point*)
-				g_queue_peek_tail(hullArray[j][i]))->x);
+		xValues= g_array_sized_new(FALSE, FALSE, sizeof(double),
+			g_queue_get_length(hullArray[i][j]) +
+			g_queue_get_length(hullArray[j][i]));
 
-		if (xValues[0] == xValues[1])
-		{
-			xBegin= 0;
-		}
-		else
-		{
-			xBegin= 1;
-		}
-		if (xValues[graphPointNb - 2] == xValues[graphPointNb - 1])
-		{
-			xEnd= graphPointNb - 1;
-		}
-		else
-		{
-			xEnd= graphPointNb - 2;
-		}
-		interval= (xValues[xEnd] - xValues[xBegin]) / (graphPointNb - 1);
+		g_queue_foreach(hullArray[i][j], &gfAddAbsiscaToArray, xValues);
+		g_queue_foreach(hullArray[j][i], &gfAddAbsiscaToArray, xValues);
 
-		for (it= xBegin; it <= xEnd; it++)
-		{
-			xValues[it]= xValues[xBegin] + interval * (it - xBegin);
-		}
+		g_array_sort(xValues, &gcfCompareDouble);
 
 		/* For each absisca value and each optimisation direction, solve the LP
 		 * and write a line in the data file */
-		for (it= 0; it < graphPointNb; it++)
+		for (it= 0; it < xValues->len; it++)
 		{
 			unsigned int it2;
 			int directions[]= {GLP_MIN, GLP_MAX};
 			glp_set_obj_coef(lp, 1, 1.);
-			glp_set_obj_coef(lp, 2, xValues[it]);
+			glp_set_obj_coef(lp, 2, g_array_index(xValues, double, it));
 
-			fprintf(fp, "%25.9f %25.9f", xValues[it],
+			fprintf(fp, "%25.9f %25.9f", g_array_index(xValues, double, it),
 				lpFactors->approx->offset + lpFactors->approx->drift *
-				xValues[it]);
+				g_array_index(xValues, double, it));
 			for (it2= 0; it2 < sizeof(directions) / sizeof(*directions); it2++)
 			{
 				int status;
@@ -1971,7 +1995,7 @@ static void writeAnalysisTraceTimeBackPlotsEval(SyncState* const syncState,
 			fprintf(fp, "\n");
 		}
 
-		free(xValues);
+		g_array_free(xValues, TRUE);
 		fclose(fp);
 
 		fprintf(syncState->graphsStream,
