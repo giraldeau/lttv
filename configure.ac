@@ -21,7 +21,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.57)
-AC_INIT([lttv], [0.12.27-29012010], [ltt-dev@lists.casi.polymtl.ca])
+AC_INIT([lttv], [0.12.28-29012010], [ltt-dev@lists.casi.polymtl.ca])
 AM_INIT_AUTOMAKE
 AM_CONFIG_HEADER(config.h)
 AM_PROG_LIBTOOL
