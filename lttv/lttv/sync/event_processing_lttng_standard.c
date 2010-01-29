@@ -22,7 +22,6 @@
 #include <config.h>
 #endif
 
-#include <linux/if_ether.h>
 #include <math.h>
 #include <netinet/in.h>
 #include <stdarg.h>
@@ -34,6 +33,11 @@
 #include "event_processing_lttng_common.h"
 
 #include "event_processing_lttng_standard.h"
+
+/* IPv4 Ethertype, taken from <linux/if_ether.h>, unlikely to change as it's
+ * defined by IANA: http://www.iana.org/assignments/ethernet-numbers
+ */
+#define ETH_P_IP    0x0800
 
 
 // Functions common to all processing modules
