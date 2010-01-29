@@ -455,7 +455,6 @@ void insert_viewer(GtkWidget* widget, lttvwindow_viewer_constructor constructor)
   }
 }
 
-
 /**
  * Function to set/update traceset for the viewers
  * @param tab viewer's tab 
@@ -475,9 +474,7 @@ int SetTraceset(Tab * tab, LttvTraceset *traceset)
     LTTV_TRACESET_CONTEXT(tab->traceset_info->traceset_context);
 
   // Perform time synchronization on the traces
-  /* Mathieu Desnoyers: temporarily disable syncTraceset */
-  //if (syncTraceset(tsc))
-  if (0)
+  if (syncTraceset(tsc))
   {
     /* There is some time-dependant information that was calculated during
      * context initialization. Destroy the old contexts and initialize new
