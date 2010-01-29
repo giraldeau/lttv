@@ -1,4 +1,5 @@
-SUBDIRS= sync
+#Disabled by Mathieu Desnoyers: Build issue on x86_64 (FIXME)
+#SUBDIRS= sync
 
 AM_CFLAGS= $(PACKAGE_CFLAGS)
 LDADD = $(POPT_LIBS) $(M_LIBS) $(GLPK_LIBS) ${top_builddir}/ltt/liblttvtraceread.la
@@ -54,20 +55,22 @@ lttv_real_SOURCES = \
 	tracecontext.c\
 	traceset.c\
 	filter.c\
-	print.c\
-	sync/sync_chain.c\
-	sync/sync_chain_lttv.c\
-	sync/graph_functions.c\
-	sync/data_structures.c\
-	sync/event_processing_lttng_common.c\
-	sync/event_processing_lttng_standard.c\
-	sync/event_processing_lttng_null.c\
-	sync/event_matching_broadcast.c\
-	sync/event_matching_distributor.c\
-	sync/event_matching_tcp.c\
-	sync/event_analysis_chull.c\
-	sync/event_analysis_eval.c\
-	sync/event_analysis_linreg.c
+	print.c
+
+#Disabled by Mathieu Desnoyers (does not build on x86_64)
+#	sync/sync_chain.c\
+#	sync/sync_chain_lttv.c\
+#	sync/graph_functions.c\
+#	sync/data_structures.c\
+#	sync/event_processing_lttng_common.c\
+#	sync/event_processing_lttng_standard.c\
+#	sync/event_processing_lttng_null.c\
+#	sync/event_matching_broadcast.c\
+#	sync/event_matching_distributor.c\
+#	sync/event_matching_tcp.c\
+#	sync/event_analysis_chull.c\
+#	sync/event_analysis_eval.c\
+#	sync/event_analysis_linreg.c
 
 lttvinclude_HEADERS = \
 	attribute.h\

@@ -214,10 +214,11 @@ AC_SUBST(lttctlincludedir)
 
 		 #lttv/modules/gui/tutorial/Makefile
 		 #lttv/modules/gui/diskperformance/Makefile
+	#FIXME: disabled by Mathieu Desnoyers, does not build on x86_64
+	#lttv/lttv/sync/Makefile
 AC_CONFIG_FILES([Makefile
 	lttv/Makefile
 	lttv/lttv/Makefile
-	lttv/lttv/sync/Makefile
 	lttv/modules/Makefile
 	lttv/modules/text/Makefile
 	lttv/modules/gui/Makefile
