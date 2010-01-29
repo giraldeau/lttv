@@ -56,18 +56,35 @@ lttv_real_SOURCES = \
 	filter.c\
 	print.c\
 	sync/sync_chain.c\
+	sync/sync_chain.h\
 	sync/sync_chain_lttv.c\
+	sync/sync_chain_lttv.h\
 	sync/graph_functions.c\
+	sync/graph_functions.h\
 	sync/data_structures.c\
+	sync/data_structures.h\
+	sync/event_processing.h\
 	sync/event_processing_lttng_common.c\
+	sync/event_processing_lttng_common.h\
 	sync/event_processing_lttng_standard.c\
+	sync/event_processing_lttng_standard.h\
 	sync/event_processing_lttng_null.c\
+	sync/event_processing_lttng_null.h\
+	sync/event_matching.h\
 	sync/event_matching_broadcast.c\
+	sync/event_matching_broadcast.h\
 	sync/event_matching_distributor.c\
+	sync/event_matching_distributor.h\
 	sync/event_matching_tcp.c\
+	sync/event_matching_tcp.h\
+	sync/event_analysis.h\
 	sync/event_analysis_chull.c\
+	sync/event_analysis_chull.h\
 	sync/event_analysis_eval.c\
-	sync/event_analysis_linreg.c
+	sync/event_analysis_eval.h\
+	sync/event_analysis_linreg.c\
+	sync/event_analysis_linreg.h\
+	sync/lookup3.h
 
 lttvinclude_HEADERS = \
 	attribute.h\
