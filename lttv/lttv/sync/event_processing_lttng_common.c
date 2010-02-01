@@ -119,7 +119,7 @@ void registerHooks(GArray* hookListList, LttvTracesetContext* const
 			.eventName= LTT_EVENT_UDPV4_RCV_EXTENDED,
 			.fields= FIELD_ARRAY(LTT_FIELD_SKB, LTT_FIELD_SADDR,
 				LTT_FIELD_DADDR, LTT_FIELD_UNICAST, LTT_FIELD_ULEN,
-				LTT_FIELD_DATA_START),
+				LTT_FIELD_SOURCE, LTT_FIELD_DEST, LTT_FIELD_DATA_START),
 			.eventTypes[TCP]= false,
 			.eventTypes[UDP]= true,
 		}
