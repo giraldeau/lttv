@@ -61,8 +61,6 @@ static void writeAnalysisGraphsPlotsCHull(SyncState* const syncState, const
 	unsigned int i, const unsigned int j);
 
 // Functions specific to this module
-static void registerAnalysisCHull() __attribute__((constructor (101)));
-
 static void openGraphFiles(SyncState* const syncState);
 static void closeGraphFiles(SyncState* const syncState);
 static void writeGraphFiles(SyncState* const syncState);
@@ -121,7 +119,7 @@ const char* const approxNames[]= {
 /*
  * Analysis module registering function
  */
-static void registerAnalysisCHull()
+void registerAnalysisCHull()
 {
 	g_queue_push_tail(&analysisModules, &analysisModuleCHull);
 }

@@ -54,7 +54,6 @@ static void writeProcessingTraceTimeOptionsLTTVStandard(SyncState* const
 	syncState, const unsigned int i, const unsigned int j);
 
 // Functions specific to this module
-static void registerProcessingLTTVStandard() __attribute__((constructor (102)));
 static gboolean processEventLTTVStandard(void* hookData, void* callData);
 static void partialDestroyProcessingLTTVStandard(SyncState* const syncState);
 
@@ -76,7 +75,7 @@ static ProcessingModule processingModuleLTTVStandard = {
 /*
  * Processing Module registering function
  */
-static void registerProcessingLTTVStandard()
+void registerProcessingLTTVStandard()
 {
 	g_queue_push_tail(&processingModules, &processingModuleLTTVStandard);
 

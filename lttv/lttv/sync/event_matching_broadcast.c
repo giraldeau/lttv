@@ -43,8 +43,6 @@ static void writeMatchingGraphsPlotsBroadcast(SyncState* const syncState, const
 	unsigned int i, const unsigned int j);
 
 // Functions specific to this module
-static void registerMatchingBroadcast() __attribute__((constructor (101)));
-
 static void partialDestroyMatchingBroadcast(SyncState* const syncState);
 
 static void openGraphDataFiles(SyncState* const syncState);
@@ -71,7 +69,7 @@ static MatchingModule matchingModuleBroadcast = {
 /*
  * Matching module registering function
  */
-static void registerMatchingBroadcast()
+void registerMatchingBroadcast()
 {
 	g_queue_push_tail(&matchingModules, &matchingModuleBroadcast);
 }

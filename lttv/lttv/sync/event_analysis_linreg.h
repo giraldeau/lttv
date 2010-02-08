@@ -49,4 +49,6 @@ typedef struct
 	double* stDev;
 } AnalysisDataLinReg;
 
+void registerAnalysisLinReg();
+
 #endif

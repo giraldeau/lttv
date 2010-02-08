@@ -36,7 +36,6 @@ static void destroyProcessingLTTVNull(SyncState* const syncState);
 static void finalizeProcessingLTTVNull(SyncState* const syncState);
 
 // Functions specific to this module
-static void registerProcessingLTTVNull() __attribute__((constructor (102)));
 static gboolean processEventLTTVNull(void* hookData, void* callData);
 
 
@@ -52,7 +51,7 @@ static ProcessingModule processingModuleLTTVNull = {
 /*
  * Processing Module registering function
  */
-static void registerProcessingLTTVNull()
+void registerProcessingLTTVNull()
 {
 	g_queue_push_tail(&processingModules, &processingModuleLTTVNull);
 

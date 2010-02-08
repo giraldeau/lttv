@@ -78,7 +78,6 @@ static void writeAnalysisTraceTraceForePlotsEval(SyncState* const syncState,
 	const unsigned int i, const unsigned int j);
 
 // Functions specific to this module
-static void registerAnalysisEval() __attribute__((constructor (102)));
 static guint ghfRttKeyHash(gconstpointer key);
 static gboolean gefRttKeyEqual(gconstpointer a, gconstpointer b);
 static void gdnDestroyRttKey(gpointer data);
@@ -156,7 +155,7 @@ static ModuleOption optionEvalRttFile= {
 /*
  * Analysis module registering function
  */
-static void registerAnalysisEval()
+void registerAnalysisEval()
 {
 	binBase= exp10(6. / (BIN_NB - 3));
 

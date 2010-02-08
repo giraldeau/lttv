@@ -61,4 +61,6 @@ typedef struct
 	ProcessingGraphsLTTVStandard* graphs;
 } ProcessingDataLTTVStandard;
 
+void registerProcessingLTTVStandard();
+
 #endif

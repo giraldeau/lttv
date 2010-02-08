@@ -33,6 +33,15 @@
 #include <lttv/module.h>
 #include <lttv/option.h>
 
+
+#include "event_processing_lttng_standard.h"
+#include "event_processing_lttng_null.h"
+#include "event_matching_tcp.h"
+#include "event_matching_broadcast.h"
+#include "event_matching_distributor.h"
+#include "event_analysis_chull.h"
+#include "event_analysis_linreg.h"
+#include "event_analysis_eval.h"
 #include "sync_chain.h"
 #include "sync_chain_lttv.h"
 
@@ -80,19 +89,31 @@ static ModuleOption optionSyncGraphsDir= {
 /*
  * Module init function
  *
- * This function is declared to be the module initialization function. Event
- * modules are registered with a "constructor (102)" attribute except one in
- * each class (processing, matching, analysis) which is chosen to be the
- * default and which is registered with a "constructor (101)" attribute.
- * Constructors with no priority are called after constructors with
- * priorities. The result is that the list of event modules is known when this
- * function is executed.
+ * This function is declared to be the module initialization function.
  */
 static void init()
 {
 	int retval;
 
 	g_debug("Sync init");
+
+	/*
+	 * Initialize event modules
+	 * Call the "constructor" or initialization function of each event module
+	 * so it can register itself. This must be done before elements in
+	 * processingModules, matchingModules, analysisModules or moduleOptions
+	 * are accessed.
+	 */
+	registerProcessingLTTVStandard();
+	registerProcessingLTTVNull();
+
+	registerMatchingTCP();
+	registerMatchingBroadcast();
+	registerMatchingDistributor();
+
+	registerAnalysisCHull();
+	registerAnalysisLinReg();
+	registerAnalysisEval();
 
 	g_assert(g_queue_get_length(&analysisModules) > 0);
 	optionSyncAnalysis.arg= ((AnalysisModule*)

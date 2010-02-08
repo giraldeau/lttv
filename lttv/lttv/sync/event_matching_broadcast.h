@@ -65,4 +65,6 @@ typedef struct
 	MatchingGraphsBroadcast* graphs;
 } MatchingDataBroadcast;
 
+void registerMatchingBroadcast();
+
 #endif

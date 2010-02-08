@@ -48,8 +48,6 @@ static void writeProcessingGraphVariablesText(SyncState* const syncState,
 	const unsigned int i);
 
 // Functions specific to this module
-static void registerProcessingText() __attribute__((constructor (102)));
-
 static unsigned int readTraceNb(FILE* testCase);
 static void skipCommentLines(FILE* testCase);
 
@@ -71,7 +69,7 @@ static ProcessingModule processingModuleText = {
 /*
  * Processing Module registering function
  */
-static void registerProcessingText()
+void registerProcessingText()
 {
 	g_queue_push_tail(&processingModules, &processingModuleText);
 }

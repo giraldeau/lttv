@@ -43,8 +43,6 @@ static void writeMatchingGraphsPlotsTCPMessages(SyncState* const syncState,
 	const unsigned int i, const unsigned int j);
 
 // Functions specific to this module
-static void registerMatchingTCP() __attribute__((constructor (101)));
-
 static void matchEvents(SyncState* const syncState, Event* const event,
 	GHashTable* const unMatchedList, GHashTable* const
 	unMatchedOppositeList, const size_t fieldOffset, const size_t
@@ -79,7 +77,7 @@ static MatchingModule matchingModuleTCP = {
 /*
  * Matching module registering function
  */
-static void registerMatchingTCP()
+void registerMatchingTCP()
 {
 	g_queue_push_tail(&matchingModules, &matchingModuleTCP);
 }

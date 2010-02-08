@@ -35,4 +35,6 @@ typedef struct
 	GArray* hookListList;
 } ProcessingDataLTTVNull;
 
+void registerProcessingLTTVNull();
+
 #endif

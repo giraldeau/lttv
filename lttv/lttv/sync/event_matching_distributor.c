@@ -68,8 +68,6 @@ static void writeMatchingTraceTimeOptionsDistributor(SyncState* const
 	syncState, const unsigned int i, const unsigned int j);
 
 // Functions specific to this module
-static void registerMatchingDistributor() __attribute__((constructor (101)));
-
 void gfInitModule(gpointer data, gpointer user_data);
 void gfDestroyModule(gpointer data, gpointer user_data);
 void gfMatchEvent(gpointer data, gpointer user_data);
@@ -103,7 +101,7 @@ static MatchingModule matchingModuleDistributor = {
 /*
  * Matching module registering function
  */
-static void registerMatchingDistributor()
+void registerMatchingDistributor()
 {
 	g_queue_push_tail(&matchingModules, &matchingModuleDistributor);
 }

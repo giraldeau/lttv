@@ -31,4 +31,6 @@ typedef struct
 	GQueue* distributedModules;
 } MatchingDataDistributor;
 
+void registerMatchingDistributor();
+
 #endif

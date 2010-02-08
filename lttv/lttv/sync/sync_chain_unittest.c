@@ -35,6 +35,13 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+#include "event_processing_text.h"
+#include "event_matching_tcp.h"
+#include "event_matching_broadcast.h"
+#include "event_matching_distributor.h"
+#include "event_analysis_chull.h"
+#include "event_analysis_linreg.h"
+#include "event_analysis_eval.h"
 #include "sync_chain.h"
 
 
@@ -99,6 +106,23 @@ int main(const int argc, char* const argv[])
 	const char* testCaseName;
 	GString* analysisModulesNames;
 	unsigned int id;
+
+	/*
+	 * Initialize event modules
+	 * Call the "constructor" or initialization function of each event module
+	 * so it can register itself. This must be done before elements in
+	 * processingModules, matchingModules, analysisModules or moduleOptions
+	 * are accessed.
+	 */
+	registerProcessingText();
+
+	registerMatchingTCP();
+	registerMatchingBroadcast();
+	registerMatchingDistributor();
+
+	registerAnalysisCHull();
+	registerAnalysisLinReg();
+	registerAnalysisEval();
 
 	// Initialize data structures
 	syncState= malloc(sizeof(SyncState));

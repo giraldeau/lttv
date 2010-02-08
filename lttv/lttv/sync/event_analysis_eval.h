@@ -153,4 +153,6 @@ typedef struct
 	AnalysisGraphsEval* graphs;
 } AnalysisDataEval;
 
+void registerAnalysisEval();
+
 #endif

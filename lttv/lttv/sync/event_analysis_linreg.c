@@ -43,8 +43,6 @@ static void writeAnalysisGraphsPlotsLinReg(SyncState* const syncState, const
 	unsigned int i, const unsigned int j);
 
 // Functions specific to this module
-static void registerAnalysisLinReg() __attribute__((constructor (102)));
-
 static void finalizeLSA(SyncState* const syncState);
 static void doGraphProcessing(SyncState* const syncState);
 static GArray* calculateFactors(SyncState* const syncState);
@@ -78,7 +76,7 @@ static AnalysisModule analysisModuleLinReg= {
 /*
  * Analysis module registering function
  */
-static void registerAnalysisLinReg()
+void registerAnalysisLinReg()
 {
 	g_queue_push_tail(&analysisModules, &analysisModuleLinReg);
 }

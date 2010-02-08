@@ -60,4 +60,6 @@ typedef struct
 	FILE*** messagePoints;
 } MatchingDataTCP;
 
+void registerMatchingTCP();
+
 #endif

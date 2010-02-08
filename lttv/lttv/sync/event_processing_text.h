@@ -29,4 +29,6 @@ typedef struct
 	FILE* testCase;
 } ProcessingDataText;
 
+void registerProcessingText();
+
 #endif

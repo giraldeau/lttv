@@ -169,6 +169,7 @@ typedef struct
 	AnalysisGraphsDataCHull* graphsData;
 } AnalysisDataCHull;
 
+void registerAnalysisCHull();
 
 FactorsCHull** calculateAllFactors(struct _SyncState* const syncState);
 void freeAllFactors(const unsigned int traceNb, FactorsCHull** const
