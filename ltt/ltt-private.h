@@ -196,23 +196,24 @@ struct LttSystemDescription {
 
 /*
  * Calculate the offset needed to align the type.
- * If alignment is 0, alignment is disactivated.
+ * If alignment is 0, alignment is deactivated.
  * else, the function returns the offset needed to
  * align align_drift on the alignment value.
  *
- * Do not limit alignment on architecture size anymore,
- * because uint64_t types are aligned on 64-bit even
- * on 32-bit archs.
+ * align align_drift on the alignment value (should be
+ * the size of the architecture).
  */
 static inline unsigned int ltt_align(size_t align_drift,
           size_t size_of_type,
           size_t alignment)
 {
+  size_t align_offset = min(alignment, size_of_type);
+  
   if(!alignment)
     return 0;
   
   g_assert(size_of_type != 0);
-  return ((size_of_type - align_drift) & (size_of_type - 1));
+  return ((align_offset - align_drift) & (align_offset-1));
 }
 
 
