@@ -3807,6 +3807,7 @@ powerpc64, s390, sparc, sparc64.<br>
 </td>
 <td style="vertical-align: top;">
 0.191<br>
+0.192<br>
 </td>
 <td style="vertical-align: top;">
 0.76<br>
@@ -3834,6 +3835,9 @@ LTTng 0.191, LTTV 0.12.30 coming with trace format 2.6 revert to the pre-2.4
 behavior for alignment of 64-bit fields on 32-bit architectures. It aligns them
 on 32-bit (maximum alignment is the architecture size). This follows gcc
 behavior.<br>
+LTTng 0.192 fixes a crash with immediate values on x86 for kernel configured
+without modules. It was caused by a mainline commit which restricted the
+liveness of the "nop" table to init time in this configuration.<br>
 </td>
 <td style="vertical-align: top;">
 </td>
