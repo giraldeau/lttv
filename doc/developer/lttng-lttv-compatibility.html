@@ -3809,6 +3809,7 @@ powerpc64, s390, sparc, sparc64.<br>
 0.191<br>
 0.192<br>
 0.193<br>
+0.194<br>
 </td>
 <td style="vertical-align: top;">
 0.76<br>
@@ -3842,6 +3843,8 @@ liveness of the "nop" table to init time in this configuration.<br>
 LTTng 0.193 modifies timers to support RT kernels again, and modifies omap3
 trace clock spinlock taken with irqs off, turning it into a raw spinlock
 (needed for RT kernel).<br>
+LTTng 0.194 uses mod_timer_pinned with add_timer_on to support NO_HZ SMP
+configs. Fixes incorrect API use introduced in 0.193.<br>
 </td>
 <td style="vertical-align: top;">
 </td>
