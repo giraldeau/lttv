@@ -1537,7 +1537,10 @@ static glp_prob* lpCreateProblem(GQueue* const lowerHull, GQueue* const
 
 	// Create the LP problem
 	glp_term_out(GLP_OFF);
-	glp_add_rows(lp, hullPointNb);
+	if (hullPointNb > 0)
+	{
+		glp_add_rows(lp, hullPointNb);
+	}
 	glp_add_cols(lp, 2);
 
 	glp_set_col_name(lp, 1, "a0");
