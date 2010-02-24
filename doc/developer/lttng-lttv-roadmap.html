@@ -12,6 +12,7 @@ for the TODO items :<br>
 Dependencies are written between brackets [ ].<br>
 The # symbol marks who is currently working on the item.<br>
 The % symbol marks who is interested in the realisation of the item.<br>
+The $ symbol marks who is contributing funding for the realisation of the item.<br>
 <br>
 <br>
 <big>LTT Next Generation Roadmap<small><br>
@@ -19,10 +20,9 @@ The % symbol marks who is interested in the realisation of the item.<br>
 * TODO (high priority)<br>
 <BR>
 (1) LTTng event description: move from tracepoint/markers to Ftrace TRACE_EVENT
- declarations. Extend TRACE_EVENT as needed. (<A HREF="mailto: Douglas Santos
-<douglas.santos@polymtl.ca>">Douglas Santos</A>)<BR>
-(1) LTTng ring buffer adaptation for FTrace.<A HREF="mailto:
-<mathieu.desnoyers@efficios.com>">Mathieu Desnoyers</A>)<BR>
+ declarations. Extend TRACE_EVENT as needed.<br>
+# <A HREF="mailto: Douglas Santos <douglas.santos@polymtl.ca>">Douglas Santos</A>)<BR>
+(1) LTTng ring buffer adaptation for FTrace.
 (1) FTrace/LTTng trace format standardization.<BR>
 (1) Extend NO_HZ support vs trace streaming support to other architectures (need
 to add cpu idle notifiers and test).<br>
@@ -34,6 +34,7 @@ approach should be tested and probably derived into an SMP implementation)<br>
 <br>
 <br>
 * Nice to have<br>
+<br>
 (3) Bring stack dump in sync with new lttng.<br>
 (4) Dump mounts. (to fix)<br>
 (4) Add Xen support. (Trace buffer desallocation needs to be fixed)<br>
@@ -52,6 +53,16 @@ fault handler. (or use vmalloc_sync_all at each tracing module load)<br>
 ltt-instrument-functions.<br>
 <br>
 <br>
+* Done<br>
+<br>
+- (2009) Port LTTng to ARM OMAP3 with power management and dynamic frequency scaling
+  support. (Done by Mathieu Desnoyers, funded by Nokia).<br>
+- (2009) Improvement of trace streaming power consumption efficiency (NO_HZ
+  support) (x86 only for now).<br>
+- (2009) Periodic flush for trace streaming (Mathieu Desnoyers).<br>
+- (2009) Ascii text output from LTTng. (started by Lai Jiangshan (Fujitsu),
+  completed by Mathieu Desnoyers)<br>
+<br>
 <br>
 <big>LTTV Roadmap<small><br>
 <br>
@@ -60,6 +71,7 @@ LTTng Integration. Mainwhile, LTTV is maintained as a known-stable viewer.<br>
 <br>
 <br>
 * Nice to have<br>
+<br>
 (4) Statistics per time window.<br>
 (4) Add Xen per physical CPU view.<br>
 (4) Add Xen per vcpu view.<br>
@@ -86,6 +98,7 @@ page faults, interrupts...). This will be a generalisation of the event rate
 view into a view of the evolution of a user definable event field.<br>
 <br>
 * TO FIX<br>
+<br>
 (10) Add cancel button to LTTV filter GUI window.<br>
 (10) Sometimes, in the control flow view, a process with 0 creation time is
 created in addition to the real process itself. Seems to be caused by end of
