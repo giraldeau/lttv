@@ -16,18 +16,21 @@ The % symbol marks who is interested in the realisation of the item.<br>
 <br>
 <big>LTT Next Generation Roadmap<small><br>
 <br>
-* TODO<br>
+* TODO (high priority)<br>
+<BR>
 (1) LTTng event description: move from tracepoint/markers to Ftrace TRACE_EVENT
  declarations. Extend TRACE_EVENT as needed. (<A HREF="mailto: Douglas Santos
-<douglas.santos@polymtl.ca">Douglas Santos</A><BR>)
+<douglas.santos@polymtl.ca">Douglas Santos</A>)<BR>
 (1) LTTng ring buffer adaptation for FTrace.<A HREF="mailto:
-mathieu.desnoyers@efficios.com">Mathieu Desnoyers</A><BR>
+mathieu.desnoyers@efficios.com">Mathieu Desnoyers</A>)<BR>
 (1) FTrace/LTTng trace format standardization.<BR>
 (1) Extend NO_HZ support vs trace streaming support to other architectures (need
 to add cpu idle notifiers and test).<br>
 (1) Make sure ltt-ascii kernel text dump fits well with streaming hooked into
 cpu idle.<br>
-(1) Support CPUs with scalable frequency. (done for ARM OMAP3 UP only)<br>
+(1) Support CPUs with scalable frequency with a time-consistent increment and
+with an approach scalable to SMP. (done for ARM OMAP3 UP only, but the OMAP3
+approach should be tested and probably derived into an SMP implementation)<br>
 <br>
 <br>
 * Nice to have<br>
