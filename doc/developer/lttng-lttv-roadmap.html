@@ -17,15 +17,20 @@ The % symbol marks who is interested in the realisation of the item.<br>
 <big>LTT Next Generation Roadmap<small><br>
 <br>
 * TODO<br>
-(1) Get lttng ascii dump to work.<br>
-	# <A HREF="mailto:Lai Jiangshan <laijs@cn.fujitsu.com>">Lai Jiangshan</A><br>
-- Create periodical buffer flush per-cpu timer for data streaming.<br>
-	# <A HREF="mailto:Mathieu Desnoyers <compudj@krystal.dyndns.org>">Mathieu Desnoyers</A><br>
-- Modify LTTng/lttd/lttv to support variable-sized buffers.<br>
-	# <A HREF="mailto:Mathieu Desnoyers <compudj@krystal.dyndns.org>">Mathieu Desnoyers</A><br>
-(1) Support CPUs with scalable frequency.<br>
-(1) Post core set of patches to LKML for mainlining.<br>
-(2) Create 3rd generation of userspace tracing.<br>
+(1) LTTng event description: move from tracepoint/markers to Ftrace TRACE_EVENT
+ declarations. Extend TRACE_EVENT as needed. (<A HREF="mailto: Douglas Santos
+<douglas.santos@polymtl.ca">Douglas Santos</A><BR>)
+(1) LTTng ring buffer adaptation for FTrace.<A HREF="mailto:
+mathieu.desnoyers@efficios.com">Mathieu Desnoyers</A><BR>
+(1) FTrace/LTTng trace format standardization.<BR>
+(1) Extend NO_HZ support vs trace streaming support to other architectures (need
+to add cpu idle notifiers and test).<br>
+(1) Make sure ltt-ascii kernel text dump fits well with streaming hooked into
+cpu idle.<br>
+(1) Support CPUs with scalable frequency. (done for ARM OMAP3 UP only)<br>
+<br>
+<br>
+* Nice to have<br>
 (3) Bring stack dump in sync with new lttng.<br>
 (4) Dump mounts. (to fix)<br>
 (4) Add Xen support. (Trace buffer desallocation needs to be fixed)<br>
@@ -42,15 +47,16 @@ fault handler. (or use vmalloc_sync_all at each tracing module load)<br>
 (8) Integrate periodical dump of SystemTAP computed information.<br>
 (9) Add support for setjmp/longjmp and jump tables instrumentation to
 ltt-instrument-functions.<br>
-(3) port LTTng to :<br>
-ARM OMAP3<BR>
-% Nokia<BR>
+<br>
 <br>
 <br>
 <big>LTTV Roadmap<small><br>
 <br>
-* TODO<br>
-(3) Add cluster support.<br>
+Note: new feature development is currently done in the Linux Tools Project:
+LTTng Integration. Mainwhile, LTTV is maintained as a known-stable viewer.<br>
+<br>
+<br>
+* Nice to have<br>
 (4) Statistics per time window.<br>
 (4) Add Xen per physical CPU view.<br>
 (4) Add Xen per vcpu view.<br>
@@ -85,20 +91,6 @@ process life.<br>
 the beginning of the trace. Example : real time spent in system call on behalf
 of process 0.<br>
 <br>
-<br>
-<br>
-* TODO (low priority)<br>
-enhance RPM packages for lttng kernel<br>
-Export buffers with time constraint for "live" visualisation. Use
-ltt_force_switch periodically from a timer to insure slow channels do not
-interfere with viewing.<br>
-Have an optional round-robin mode to write information into multiple channels
-from the same source.<br>
-<br>
-* Need to be discussed<br>
-Drop ltt-module-register and ltt-module-unregister, use exported variables.<br>
-drop ltt_filter_control, use functions pointers instead.<br>
-Remove ltt-base.c.<br>
 <br>
 Mathieu Desnoyers<br>
 
