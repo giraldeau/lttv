@@ -3851,6 +3851,10 @@ configs. Fixes incorrect API use introduced in 0.193.<br>
 LTTng 0.195 supports kernel 2.6.32.9.<br>
 LTTng 0.196 fixes a declaration omission in ARM omap3 trace clock, introduced in
 0.194.<br>
+LTTng 0.197 adds compiler barriers within nesting count. Eliminates possible
+false-negative caused by heavy compiler optimization. This only affects
+self-detection of internal LTTng problems (e.g. detecting trap recursion within
+the tracer), so it is not crucially important to update.<br>
 </td>
 <td style="vertical-align: top;">
 </td>
