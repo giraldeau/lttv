@@ -232,7 +232,7 @@ mv linux-2.6.X linux-2.6.X-lttng-0.x.xx
 su -
 cd /usr/src/linux-2.6.X-lttng-0.x.xx
 make menuconfig (or make xconfig or make config)
-    Select the < Help > button if you are not familiar with kernel
+    Select the &lt; Help &gt; button if you are not familiar with kernel
     configuration.
     Items preceded by [*] means they has to be built into the kernel.
     Items preceded by [M] means they has to be built as modules.
@@ -243,21 +243,21 @@ make menuconfig (or make xconfig or make config)
     [*] Activate markers
     [*] Activate userspace markers ABI (experimental, optional)
     [*] Immediate value optimization (optional)
-    [*] Linux Trace Toolkit Next Generation (LTTng) --->
-    <M> or <*> Compile lttng tracing probes
-    <M> or <*> Linux Trace Toolkit High-speed Lockless Data Relay
-    <M> or <*> Linux Trace Toolkit Lock-Protected Data Relay
-    <M> or <*> Linux Trace Toolkit Serializer
-    <M> or <*>   Linux Trace Toolkit Marker Control
-    <M> or <*>     Linux Trace Toolkit Tracer
+    [*] Linux Trace Toolkit Next Generation (LTTng) ---&gt;
+    &lt;M&gt; or &lt;*&gt; Compile lttng tracing probes
+    &lt;M&gt; or &lt;*&gt; Linux Trace Toolkit High-speed Lockless Data Relay
+    &lt;M&gt; or &lt;*&gt; Linux Trace Toolkit Lock-Protected Data Relay
+    &lt;M&gt; or &lt;*&gt; Linux Trace Toolkit Serializer
+    &lt;M&gt; or &lt;*&gt;   Linux Trace Toolkit Marker Control
+    &lt;M&gt; or &lt;*&gt;     Linux Trace Toolkit Tracer
     [*] Align Linux Trace Toolkit Traces
-    <M> or <*> Support logging events from userspace
+    &lt;M&gt; or &lt;*&gt; Support logging events from userspace
     [*] Support trace extraction from crash dump
-    <M> or <*> Linux Trace Toolkit Trace Controller
-    <M> or <*> Linux Trace Toolkit State Dump
-  Select <Exit>
-  Select <Exit>
-  Select <Yes>
+    &lt;M&gt; or &lt;*&gt; Linux Trace Toolkit Trace Controller
+    &lt;M&gt; or &lt;*&gt; Linux Trace Toolkit State Dump
+  Select &lt;Exit&gt;
+  Select &lt;Exit&gt;
+  Select &lt;Yes&gt;
 make
 make modules_install
 (if necessary, create a initrd with mkinitrd or your preferate alternative)
@@ -385,12 +385,12 @@ ldconfig
 
 <PRE>
 Make sure you selected the kernel menuconfig option :
-    <M> or <*> Support logging events from userspace
+    &lt;M&gt; or &lt;*&gt; Support logging events from userspace
 And that the ltt-userspace-event kernel module is loaded if selected as a
 module.
 
 Simple userspace tracing is available through
-echo "some text to record" > /mnt/debugfs/ltt/write_event
+echo "some text to record" &gt; /mnt/debugfs/ltt/write_event
 
 It will appear in the trace under event :
 channel : userspace
