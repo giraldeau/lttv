@@ -15,12 +15,15 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#define _ISOC99_SOURCE
+
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
 
 #include <errno.h>
 #include <fcntl.h>
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/resource.h>
@@ -178,6 +181,9 @@ bool syncTraceset(LttvTracesetContext* const traceSetContext)
 	struct rusage startUsage, endUsage;
 	GList* result;
 	unsigned int i;
+	GArray* factors;
+	double minOffset, minDrift;
+	unsigned int refFreqTrace;
 	int retval;
 
 	if (!optionSync.present)
@@ -262,7 +268,69 @@ bool syncTraceset(LttvTracesetContext* const traceSetContext)
 		G_MAXULONG, NULL);
 	lttv_process_traceset_seek_time(traceSetContext, ltt_time_zero);
 
-	syncState->processingModule->finalizeProcessing(syncState);
+	// Obtain, adjust and set correction factors
+	factors= syncState->processingModule->finalizeProcessing(syncState);
+
+	/* The offsets are adjusted so the lowest one is 0. This is done because
+	 * of a Lttv specific limitation: events cannot have negative times. By
+	 * having non-negative offsets, events cannot be moved backwards to
+	 * negative times.
+	 */
+	minOffset= 0;
+	for (i= 0; i < syncState->traceNb; i++)
+	{
+		minOffset= MIN(g_array_index(factors, Factors, i).offset, minOffset);
+	}
+
+	for (i= 0; i < syncState->traceNb; i++)
+	{
+		g_array_index(factors, Factors, i).offset-= minOffset;
+	}
+
+	/* Because the timestamps are corrected at the TSC level (not at the
+	 * LttTime level) all trace frequencies must be made equal. We use the
+	 * frequency of the system with the lowest drift
+	 */
+	minDrift= INFINITY;
+	refFreqTrace= 0;
+	for (i= 0; i < syncState->traceNb; i++)
+	{
+		if (g_array_index(factors, Factors, i).drift < minDrift)
+		{
+			minDrift= g_array_index(factors, Factors, i).drift;
+			refFreqTrace= i;
+		}
+	}
+	g_assert(syncState->traceNb == 0 || minDrift != INFINITY);
+
+	// Write the factors to the LttTrace structures
+	for (i= 0; i < syncState->traceNb; i++)
+	{
+		LttTrace* t;
+		Factors* traceFactors;
+
+		t= traceSetContext->traces[i]->t;
+		traceFactors= &g_array_index(factors, Factors, i);
+
+		t->drift= traceFactors->drift;
+		t->offset= traceFactors->offset;
+		t->start_freq= traceSetContext->traces[refFreqTrace]->t->start_freq;
+		t->freq_scale= traceSetContext->traces[refFreqTrace]->t->freq_scale;
+		t->start_time_from_tsc =
+			ltt_time_from_uint64(tsc_to_uint64(t->freq_scale, t->start_freq,
+					t->drift * t->start_tsc + t->offset));
+	}
+
+	g_array_free(factors, TRUE);
+
+	lttv_traceset_context_compute_time_span(traceSetContext,
+		&traceSetContext->time_span);
+
+	g_debug("traceset start %ld.%09ld end %ld.%09ld",
+		traceSetContext->time_span.start_time.tv_sec,
+		traceSetContext->time_span.start_time.tv_nsec,
+		traceSetContext->time_span.end_time.tv_sec,
+		traceSetContext->time_span.end_time.tv_nsec);
 
 	// Write graphs file
 	if (!optionSyncNull.present && optionSyncGraphs.present)

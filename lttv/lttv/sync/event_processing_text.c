@@ -37,7 +37,7 @@
 // Functions common to all processing modules
 static void initProcessingText(SyncState* const syncState, ...);
 static void destroyProcessingText(SyncState* const syncState);
-static void finalizeProcessingText(SyncState* const syncState);
+static GArray* finalizeProcessingText(SyncState* const syncState);
 static void printProcessingStatsText(SyncState* const syncState);
 static void writeProcessingTraceTimeOptionsText(SyncState* const syncState,
 	const unsigned int i, const unsigned int j);
@@ -136,8 +136,11 @@ static void destroyProcessingText(SyncState* const syncState)
  *
  * Args:
  *   syncState:    container for synchronization data.
+ *
+ * Returns:
+ *   Factors[traceNb] synchronization factors for each trace
  */
-static void finalizeProcessingText(SyncState* const syncState)
+static GArray* finalizeProcessingText(SyncState* const syncState)
 {
 	int retval;
 	unsigned int* seq;
@@ -277,10 +280,8 @@ static void finalizeProcessingText(SyncState* const syncState)
 	{
 		processingData->factors= factors;
 	}
-	else
-	{
-		g_array_free(factors, TRUE);
-	}
+
+	return factors;
 }
 
 

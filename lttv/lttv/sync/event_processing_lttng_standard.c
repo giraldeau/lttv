@@ -15,13 +15,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#define _ISOC99_SOURCE
-
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
 
-#include <math.h>
 #include <netinet/in.h>
 #include <stdarg.h>
 #include <stdint.h>
@@ -43,7 +40,7 @@
 static void initProcessingLTTVStandard(SyncState* const syncState, ...);
 static void destroyProcessingLTTVStandard(SyncState* const syncState);
 
-static void finalizeProcessingLTTVStandard(SyncState* const syncState);
+static GArray* finalizeProcessingLTTVStandard(SyncState* const syncState);
 static void printProcessingStatsLTTVStandard(SyncState* const syncState);
 static void writeProcessingGraphVariablesLTTVStandard(SyncState* const
 	syncState, const unsigned int i);
@@ -166,83 +163,19 @@ static void initProcessingLTTVStandard(SyncState* const syncState, ...)
  *
  * Args:
  *   syncState     container for synchronization data.
+ *
+ * Returns:
+ *   Factors[traceNb] synchronization factors for each trace
  */
-static void finalizeProcessingLTTVStandard(SyncState* const syncState)
+static GArray* finalizeProcessingLTTVStandard(SyncState* const syncState)
 {
-	unsigned int i;
-	GArray* factors;
-	double minOffset, minDrift;
-	unsigned int refFreqTrace;
 	ProcessingDataLTTVStandard* processingData;
 
 	processingData= (ProcessingDataLTTVStandard*) syncState->processingData;
 
 	partialDestroyProcessingLTTVStandard(syncState);
 
-	factors= syncState->matchingModule->finalizeMatching(syncState);
-
-	/* The offsets are adjusted so the lowest one is 0. This is done because
-	 * of a Lttv specific limitation: events cannot have negative times. By
-	 * having non-negative offsets, events cannot be moved backwards to
-	 * negative times.
-	 */
-	minOffset= 0;
-	for (i= 0; i < syncState->traceNb; i++)
-	{
-		minOffset= MIN(g_array_index(factors, Factors, i).offset, minOffset);
-	}
-
-	for (i= 0; i < syncState->traceNb; i++)
-	{
-		g_array_index(factors, Factors, i).offset-= minOffset;
-	}
-
-	/* Because the timestamps are corrected at the TSC level (not at the
-	 * LttTime level) all trace frequencies must be made equal. We choose to
-	 * use the frequency of the system with the lowest drift
-	 */
-	minDrift= INFINITY;
-	refFreqTrace= 0;
-	for (i= 0; i < syncState->traceNb; i++)
-	{
-		if (g_array_index(factors, Factors, i).drift < minDrift)
-		{
-			minDrift= g_array_index(factors, Factors, i).drift;
-			refFreqTrace= i;
-		}
-	}
-	g_assert(syncState->traceNb == 0 || minDrift != INFINITY);
-
-	// Write the factors to the LttTrace structures
-	for (i= 0; i < syncState->traceNb; i++)
-	{
-		LttTrace* t;
-		Factors* traceFactors;
-
-		t= processingData->traceSetContext->traces[i]->t;
-		traceFactors= &g_array_index(factors, Factors, i);
-
-		t->drift= traceFactors->drift;
-		t->offset= traceFactors->offset;
-		t->start_freq=
-			processingData->traceSetContext->traces[refFreqTrace]->t->start_freq;
-		t->freq_scale=
-			processingData->traceSetContext->traces[refFreqTrace]->t->freq_scale;
-		t->start_time_from_tsc =
-			ltt_time_from_uint64(tsc_to_uint64(t->freq_scale, t->start_freq,
-					t->drift * t->start_tsc + t->offset));
-	}
-
-	g_array_free(factors, TRUE);
-
-	lttv_traceset_context_compute_time_span(processingData->traceSetContext,
-		&processingData->traceSetContext->time_span);
-
-	g_debug("traceset start %ld.%09ld end %ld.%09ld",
-		processingData->traceSetContext->time_span.start_time.tv_sec,
-		processingData->traceSetContext->time_span.start_time.tv_nsec,
-		processingData->traceSetContext->time_span.end_time.tv_sec,
-		processingData->traceSetContext->time_span.end_time.tv_nsec);
+	return syncState->matchingModule->finalizeMatching(syncState);
 }
 
 

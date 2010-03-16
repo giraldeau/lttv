@@ -33,7 +33,7 @@ GQueue moduleOptions= G_QUEUE_INIT;
 
 
 /*
- * Calculate the elapsed time between two timeval values
+ * Call the statistics function of each module of a sync chain
  *
  * Args:
  *   syncState:    Container for synchronization data

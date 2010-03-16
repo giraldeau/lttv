@@ -421,7 +421,7 @@ static void doGraphProcessing(SyncState* const syncState)
 			graph= (Graph*) result->data;
 			if (errorSum < graph->errorSum)
 			{
-				g_debug("adding to graph");
+				g_debug("new reference");
 				graph->errorSum= errorSum;
 				free(graph->previousVertex);
 				graph->previousVertex= previousVertex;

@@ -105,6 +105,7 @@ int main(const int argc, char* const argv[])
 	const char* testCaseName;
 	GString* analysisModulesNames;
 	unsigned int id;
+	GArray* factors;
 
 	/*
 	 * Initialize event modules
@@ -207,7 +208,8 @@ int main(const int argc, char* const argv[])
 	syncState->analysisModule->initAnalysis(syncState);
 
 	// Process traceset
-	syncState->processingModule->finalizeProcessing(syncState);
+	factors= syncState->processingModule->finalizeProcessing(syncState);
+	g_array_free(factors, TRUE);
 
 	// Write graphs file
 	if (syncState->graphsStream)
