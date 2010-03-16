@@ -45,8 +45,14 @@ typedef struct
 
 typedef struct
 {
-	double broadcastDiffSum;
 	unsigned int broadcastNb;
+	double broadcastStdevSum;
+
+	unsigned int broadcastPairNb;
+	double broadcastRangeMin;
+	double broadcastRangeMax;
+	double broadcastSum;
+	double broadcastSumSquares;
 
 	// MessageStats messageStats[traceNb][traceNb]
 	MessageStats** messageStats;

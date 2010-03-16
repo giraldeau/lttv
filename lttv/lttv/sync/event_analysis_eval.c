@@ -205,7 +205,8 @@ static void initAnalysisEval(SyncState* const syncState)
 	if (syncState->stats)
 	{
 		analysisData->stats= calloc(1, sizeof(AnalysisStatsEval));
-		analysisData->stats->broadcastDiffSum= 0.;
+		analysisData->stats->broadcastRangeMin= INFINITY;
+		analysisData->stats->broadcastRangeMax= -INFINITY;
 
 		analysisData->stats->messageStats= malloc(syncState->traceNb *
 			sizeof(MessageStats*));
@@ -823,7 +824,40 @@ static void analyzeBroadcastEval(SyncState* const syncState, Broadcast* const
 			g_queue_get_length(broadcast->events), 2.);
 		if (y > 0)
 		{
-			analysisData->stats->broadcastDiffSum+= sqrt(y);
+			analysisData->stats->broadcastStdevSum+= sqrt(y);
+		}
+
+		if (syncState->traceNb == 2 && g_queue_get_length(broadcast->events)
+			== 2)
+		{
+			Event* e0, * e1;
+			double dd;
+
+			e0= g_queue_peek_head(broadcast->events);
+			e1= g_queue_peek_tail(broadcast->events);
+			if (e0->traceNum > e1->traceNum)
+			{
+				Event* tmp;
+
+				tmp= e0;
+				e0= e1;
+				e1= tmp;
+			}
+
+			dd= wallTimeSub(&e1->wallTime, &e0->wallTime);
+
+			analysisData->stats->broadcastPairNb++;
+			if (dd < analysisData->stats->broadcastRangeMin)
+			{
+				analysisData->stats->broadcastRangeMin= dd;
+			}
+			if (dd > analysisData->stats->broadcastRangeMax)
+			{
+				analysisData->stats->broadcastRangeMax= dd;
+			}
+
+			analysisData->stats->broadcastSum+= dd;
+			analysisData->stats->broadcastSumSquares+= pow(dd, 2);
 		}
 	}
 
@@ -923,11 +957,27 @@ static void printAnalysisStatsEval(SyncState* const syncState)
 	printf("Synchronization evaluation analysis stats:\n");
 	if (analysisData->stats->broadcastNb)
 	{
-		printf("\tsum of broadcast differential delays: %g\n",
-			analysisData->stats->broadcastDiffSum);
-		printf("\taverage broadcast differential delay: %g\n",
-			analysisData->stats->broadcastDiffSum /
+		printf("\tBroadcast differential delay:\n");
+		printf("\t\tsum of standard deviations: %g\n",
+			analysisData->stats->broadcastStdevSum);
+		printf("\t\taverage standard deviation: %g\n",
+			analysisData->stats->broadcastStdevSum /
 			analysisData->stats->broadcastNb);
+
+		if (syncState->traceNb == 2)
+		{
+			printf("\t\tdifferential delay range: [ %g .. %g ]\n",
+				analysisData->stats->broadcastRangeMin,
+				analysisData->stats->broadcastRangeMax);
+			printf("\t\tdifferential delay average: %g\n",
+				analysisData->stats->broadcastSum /
+				analysisData->stats->broadcastPairNb);
+			printf("\t\tdifferential delay standard deviation: %g\n",
+				sqrt(analysisData->stats->broadcastSumSquares /
+					analysisData->stats->broadcastPairNb -
+					pow(analysisData->stats->broadcastSum /
+						analysisData->stats->broadcastPairNb, 2)));
+		}
 	}
 
 	printf("\tIndividual evaluation:\n"
@@ -951,13 +1001,13 @@ static void printAnalysisStatsEval(SyncState* const syncState)
 					&analysisData->stats->messageStats[loopValues[k].t1][loopValues[k].t2];
 
 				printf("\t\t%3d - %-3d   ", loopValues[k].t1, loopValues[k].t2);
-				printf("%u (%u%%)%n", messageStats->inversionNb, (unsigned
-						int) ceil((double) messageStats->inversionNb /
-						messageStats->total * 100), &charNb);
+				printf("%u (%.2f%%)%n", messageStats->inversionNb, (double)
+					messageStats->inversionNb / messageStats->total * 100,
+					&charNb);
 				printf("%*s", 17 - charNb > 0 ? 17 - charNb + 1: 1, " ");
-				printf("%u (%u%%)%n", messageStats->tooFastNb, (unsigned int)
-					ceil((double) messageStats->tooFastNb /
-						messageStats->total * 100), &charNb);
+				printf("%u (%.2f%%)%n", messageStats->tooFastNb, (double)
+					messageStats->tooFastNb / messageStats->total * 100,
+					&charNb);
 				printf("%*s%-10u   %u\n", 17 - charNb > 0 ? 17 - charNb + 1:
 					1, " ", messageStats->noRTTInfoNb, messageStats->total);
 
@@ -970,11 +1020,11 @@ static void printAnalysisStatsEval(SyncState* const syncState)
 	}
 
 	printf("\t\t  total     ");
-	printf("%u (%u%%)%n", totInversion, (unsigned int) ceil((double)
-			totInversion / totTotal * 100), &charNb);
+	printf("%u (%.2f%%)%n", totInversion, (double) totInversion / totTotal *
+		100, &charNb);
 	printf("%*s", 17 - charNb > 0 ? 17 - charNb + 1: 1, " ");
-	printf("%u (%u%%)%n", totTooFast, (unsigned int) ceil((double) totTooFast
-			/ totTotal * 100), &charNb);
+	printf("%u (%.2f%%)%n", totTooFast, (double) totTooFast / totTotal * 100,
+		&charNb);
 	printf("%*s%-10u   %u\n", 17 - charNb > 0 ? 17 - charNb + 1: 1, " ",
 		totNoInfo, totTotal);
 
@@ -1901,12 +1951,12 @@ static void writeAnalysisTraceTimeBackPlotsEval(SyncState* const syncState,
 		{
 			unsigned int it2;
 			int directions[]= {GLP_MIN, GLP_MAX};
-
 			glp_set_obj_coef(lp, 1, 1.);
 			glp_set_obj_coef(lp, 2, xValues[it]);
 
-			fprintf(fp, "%25.9f %25.9f", xValues[it], lpFactors->approx->offset
-				+ lpFactors->approx->drift * xValues[it]);
+			fprintf(fp, "%25.9f %25.9f", xValues[it],
+				lpFactors->approx->offset + lpFactors->approx->drift *
+				xValues[it]);
 			for (it2= 0; it2 < sizeof(directions) / sizeof(*directions); it2++)
 			{
 				int status;
