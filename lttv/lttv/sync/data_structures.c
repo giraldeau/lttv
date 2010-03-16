@@ -453,9 +453,14 @@ void gdnConnectionKeyDestroy(gpointer data)
 guint ghfDatagramKeyHash(gconstpointer key)
 {
 	DatagramKey* datagramKey;
+	union {
+		uint8_t byteKey[8];
+		uint32_t hashableKey[2];
+	} dataKey;
 	uint32_t a, b, c;
 
 	datagramKey= (DatagramKey*) key;
+	memcpy(dataKey.byteKey, datagramKey->dataKey, sizeof(dataKey.byteKey));
 
 	a= datagramKey->saddr;
 	b= datagramKey->daddr;
@@ -463,8 +468,8 @@ guint ghfDatagramKeyHash(gconstpointer key)
 	mix(a, b, c);
 
 	a+= datagramKey->ulen; // 16 bits left here
-	b+= *((uint32_t*) datagramKey->dataKey);
-	c+= *((uint32_t*) ((void*) datagramKey->dataKey + 4));
+	b+= dataKey.hashableKey[0];
+	c+= dataKey.hashableKey[1];
 	final(a, b, c);
 
 	return c;
