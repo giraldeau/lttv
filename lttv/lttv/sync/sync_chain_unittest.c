@@ -100,12 +100,13 @@ int main(const int argc, char* const argv[])
 	struct timeval startTime, endTime;
 	struct rusage startUsage, endUsage;
 	GList* result;
+	GArray* factors;
 	int retval;
 	bool stats;
 	const char* testCaseName;
 	GString* analysisModulesNames;
 	unsigned int id;
-	GArray* factors;
+	AllFactors* allFactors;
 
 	/*
 	 * Initialize event modules
@@ -208,8 +209,9 @@ int main(const int argc, char* const argv[])
 	syncState->analysisModule->initAnalysis(syncState);
 
 	// Process traceset
-	factors= syncState->processingModule->finalizeProcessing(syncState);
-	g_array_free(factors, TRUE);
+	allFactors= syncState->processingModule->finalizeProcessing(syncState);
+	factors= reduceFactors(allFactors);
+	freeAllFactors(allFactors);
 
 	// Write graphs file
 	if (syncState->graphsStream)
@@ -223,9 +225,19 @@ int main(const int argc, char* const argv[])
 	}
 
 	// Print statistics
-	if (syncState->stats)
+	if (optionSyncStats.present)
 	{
+		unsigned int i;
+
 		printStats(syncState);
+
+		printf("Resulting synchronization factors:\n");
+		for (i= 0; i < factors->len; i++)
+		{
+			Factors* traceFactors= &g_array_index(factors, Factors, i);
+			printf("\ttrace %u drift= %g offset= %g\n", i,
+				traceFactors->drift, traceFactors->offset);
+		}
 	}
 
 	// Destroy modules and clean up
@@ -263,7 +275,7 @@ int main(const int argc, char* const argv[])
 
 
 /*
- * Read program arguments dans update ModuleOptions structures
+ * Read program arguments and update ModuleOptions structures
  *
  * Args:
  *   argc, argv:   standard argument arrays

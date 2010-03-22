@@ -32,7 +32,7 @@
 static void initProcessingLTTVNull(SyncState* const syncState, ...);
 static void destroyProcessingLTTVNull(SyncState* const syncState);
 
-static GArray* finalizeProcessingLTTVNull(SyncState* const syncState);
+static AllFactors* finalizeProcessingLTTVNull(SyncState* const syncState);
 
 // Functions specific to this module
 static gboolean processEventLTTVNull(void* hookData, void* callData);
@@ -96,12 +96,12 @@ static void initProcessingLTTVNull(SyncState* const syncState, ...)
  *   syncState     container for synchronization data.
  *
  * Returns:
- *   Factors[traceNb] synchronization factors for each trace, empty in this
- *   case
+ *   AllFactors    synchronization factors for each trace pair, all of them
+ *                 ABSENT
  */
-static GArray* finalizeProcessingLTTVNull(SyncState* const syncState)
+static AllFactors* finalizeProcessingLTTVNull(SyncState* const syncState)
 {
-	return g_array_new(FALSE, FALSE, sizeof(Factors));
+	return createAllFactors(syncState->traceNb);
 }
 
 

@@ -22,8 +22,8 @@
 
 typedef struct
 {
-	// Factors factors[traceNb], only used for stats
-	GArray* factors;
+	// Only used for stats
+	AllFactors* factors;
 
 	FILE* testCase;
 } ProcessingDataText;

@@ -37,8 +37,7 @@
 // Functions common to all processing modules
 static void initProcessingText(SyncState* const syncState, ...);
 static void destroyProcessingText(SyncState* const syncState);
-static GArray* finalizeProcessingText(SyncState* const syncState);
-static void printProcessingStatsText(SyncState* const syncState);
+static AllFactors* finalizeProcessingText(SyncState* const syncState);
 static void writeProcessingTraceTimeOptionsText(SyncState* const syncState,
 	const unsigned int i, const unsigned int j);
 static void writeProcessingTraceTraceOptionsText(SyncState* const syncState,
@@ -56,7 +55,6 @@ static ProcessingModule processingModuleText = {
 	.initProcessing= &initProcessingText,
 	.destroyProcessing= &destroyProcessingText,
 	.finalizeProcessing= &finalizeProcessingText,
-	.printProcessingStats= &printProcessingStatsText,
 	.graphFunctions= {
 		.writeVariables= &writeProcessingGraphVariablesText,
 		.writeTraceTraceOptions= &writeProcessingTraceTraceOptionsText,
@@ -122,7 +120,7 @@ static void destroyProcessingText(SyncState* const syncState)
 
 	if (syncState->stats && processingData->factors)
 	{
-		g_array_free(processingData->factors, TRUE);
+		freeAllFactors(processingData->factors);
 	}
 
 	free(syncState->processingData);
@@ -138,13 +136,13 @@ static void destroyProcessingText(SyncState* const syncState)
  *   syncState:    container for synchronization data.
  *
  * Returns:
- *   Factors[traceNb] synchronization factors for each trace
+ *   AllFactors    synchronization factors for each trace pair
  */
-static GArray* finalizeProcessingText(SyncState* const syncState)
+static AllFactors* finalizeProcessingText(SyncState* const syncState)
 {
 	int retval;
 	unsigned int* seq;
-	GArray* factors;
+	AllFactors* factors;
 	ProcessingDataText* processingData= (ProcessingDataText*)
 		syncState->processingData;
 	FILE* testCase= processingData->testCase;
@@ -282,29 +280,6 @@ static GArray* finalizeProcessingText(SyncState* const syncState)
 	}
 
 	return factors;
-}
-
-
-/*
- * Print statistics related to processing. Must be called after
- * finalizeProcessing.
- *
- * Args:
- *   syncState     container for synchronization data.
- */
-static void printProcessingStatsText(SyncState* const syncState)
-{
-	unsigned int i;
-
-	printf("Resulting synchronization factors:\n");
-	for (i= 0; i < syncState->traceNb; i++)
-	{
-		Factors* factors= &g_array_index(((ProcessingDataText*)
-				syncState->processingData)->factors, Factors, i);
-
-		printf("\ttrace %u drift= %g offset= %g (%f)\n", i, factors->drift,
-			factors->offset, factors->offset / CPU_FREQ);
-	}
 }
 
 

@@ -124,11 +124,64 @@ typedef struct
 	GQueue* events;
 } Broadcast;
 
-// One set of factors for each trace, this is the result of synchronization
+// Stage 4: These structures contain correction factors
+/* Correction factors for each trace, this is the final result of
+ * synchronization */
 typedef struct
 {
 	double drift, offset;
 } Factors;
+
+// Correction factors between trace pairs, to be used for reduction
+typedef enum
+{
+	EXACT,
+	/* Used for identity factors (a0= 0, a1= 1) that map a trace to itself. In
+	 * this case, min, max and accuracy are NULL.
+	 */
+
+	ACCURATE,
+	/* The approximation is the middle of the min and max limits. All fields
+	 * are initialized.
+	 */
+
+	APPROXIMATE,
+	/* min and max are not available. The approximation is a "best effort".
+	 * min and max are NULL.
+	 */
+
+	INCOMPLETE,
+	/* min or max is available but not both. approx and accuracy are not
+	 * NULL.
+	 */
+
+	ABSENT,
+	/* The pair of trace did not have communications in both directions (maybe
+	 * even no communication at all). approx and accuracy are NULL.
+	 */
+
+	SCREWED,
+	/* The algorithms are screwed. All fields may be NULL.
+	 */
+
+	APPROX_NB, // This must be the last member
+} ApproxType;
+
+extern const char* const approxNames[APPROX_NB];
+
+typedef struct
+{
+	Factors* min, * max, * approx;
+	ApproxType type;
+	double accuracy;
+} PairFactors;
+
+typedef struct
+{
+	unsigned int refCount;
+	unsigned int traceNb;
+	PairFactors** pairFactors;
+} AllFactors;
 
 
 // ConnectionKey-related functions
@@ -178,5 +231,11 @@ void destroyTCPExchange(Exchange* const exchange);
 // Broadcast-related functions
 void gdnDestroyBroadcast(gpointer data);
 void destroyBroadcast(Broadcast* const broadcast);
+
+// Factor-related functions
+void destroyPairFactors(PairFactors* factorsCHull);
+
+AllFactors* createAllFactors(const unsigned int traceNb);
+void freeAllFactors(AllFactors* const allFactors);
 
 #endif

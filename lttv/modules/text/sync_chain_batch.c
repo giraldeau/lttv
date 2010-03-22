@@ -338,13 +338,12 @@ void teardownSyncChain(LttvTracesetContext* const traceSetContext)
 	SyncState* syncState;
 	struct timeval endTime;
 	struct rusage endUsage;
-	unsigned int i;
 	int retval;
 
 	tracesetChainState= g_hash_table_lookup(tracesetChainStates, traceSetContext);
 	syncState= tracesetChainState->syncState;
 
-	syncState->processingModule->finalizeProcessing(syncState);
+	freeAllFactors(syncState->processingModule->finalizeProcessing(syncState));
 
 	// Write graphs file
 	if (optionEvalGraphs)
@@ -358,19 +357,6 @@ void teardownSyncChain(LttvTracesetContext* const traceSetContext)
 	}
 
 	printStats(syncState);
-
-	printf("Resulting synchronization factors:\n");
-    for (i= 0; i < syncState->traceNb; i++)
-    {
-        LttTrace* t;
-
-        t= traceSetContext->traces[i]->t;
-
-        printf("\ttrace %u drift= %g offset= %g (%f) start time= %ld.%09ld\n",
-            i, t->drift, t->offset, (double) tsc_to_uint64(t->freq_scale,
-                t->start_freq, t->offset) / NANOSECONDS_PER_SECOND,
-            t->start_time_from_tsc.tv_sec, t->start_time_from_tsc.tv_nsec);
-    }
 
 	syncState->processingModule->destroyProcessing(syncState);
 	if (syncState->matchingModule != NULL)

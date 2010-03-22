@@ -40,6 +40,15 @@
 #define SEQ_GT(a,b)     ((int32_t)((a)-(b)) > 0)
 #define SEQ_GEQ(a,b)    ((int32_t)((a)-(b)) >= 0)
 
+const char* const approxNames[]= {
+	[EXACT]= "Exact",
+	[ACCURATE]= "Accurate",
+	[APPROXIMATE]= "Approximate",
+	[INCOMPLETE]= "Incomplete",
+	[ABSENT]= "Absent",
+	[SCREWED]= "Screwed",
+};
+
 
 /*
  * Compare two ConnectionKey structures
@@ -648,4 +657,101 @@ void copyUDPEvent(const Event* const event, Event** const newEvent)
 void gfAddEventToArray(gpointer data, gpointer user_data)
 {
 	g_array_append_val((GArray*) user_data, data);
+}
+
+
+/*
+ * Free a PairFactors
+ *
+ * Args:
+ *   factorsCHull: container of Factors
+ */
+void destroyPairFactors(PairFactors* pairFactors)
+{
+	if (pairFactors->min != NULL)
+	{
+		free(pairFactors->min);
+	}
+	if (pairFactors->max != NULL)
+	{
+		free(pairFactors->max);
+	}
+	if (pairFactors->approx != NULL)
+	{
+		free(pairFactors->approx);
+	}
+}
+
+
+/*
+ * Create and initialize a container of PairFactors
+ *
+ * Args:
+ *   traceNb:      number of traces
+ *
+ * Returns:
+ *   A new array, which can be freed with freeAllFactors()
+ */
+AllFactors* createAllFactors(const unsigned int traceNb)
+{
+	AllFactors* allFactors;
+	PairFactors** factorsArray;
+	unsigned int i, j;
+
+	allFactors= malloc(sizeof(AllFactors));
+	allFactors->traceNb= traceNb;
+	allFactors->refCount= 1;
+	allFactors->pairFactors= malloc(traceNb * sizeof(PairFactors*));
+	factorsArray=allFactors->pairFactors;
+	for (i= 0; i < traceNb; i++)
+	{
+		factorsArray[i]= calloc(traceNb, sizeof(PairFactors));
+
+		for (j= 0; j < traceNb; j++)
+		{
+			if (i == j)
+			{
+				factorsArray[i][i].type= EXACT;
+				factorsArray[i][i].approx= malloc(sizeof(Factors));
+				factorsArray[i][i].approx->drift= 1.;
+				factorsArray[i][i].approx->offset= 0.;
+			}
+			else
+			{
+				factorsArray[i][j].type= ABSENT;
+			}
+		}
+	}
+
+	return allFactors;
+}
+
+
+/*
+ * Free a container of PairFactors
+ *
+ * Args:
+ *   traceNb:      number of traces
+ *   allFactors:   container of PairFactors
+ */
+void freeAllFactors(AllFactors* const allFactors)
+{
+	unsigned int i, j;
+	const unsigned int traceNb= allFactors->traceNb;
+
+	allFactors->refCount--;
+
+	if (allFactors->refCount == 0)
+	{
+		for (i= 0; i < traceNb; i++)
+		{
+			for (j= 0; j < traceNb; j++)
+			{
+				destroyPairFactors(&allFactors->pairFactors[i][j]);
+			}
+			free(allFactors->pairFactors[i]);
+		}
+		free(allFactors->pairFactors);
+		free(allFactors);
+	}
 }

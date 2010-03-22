@@ -36,7 +36,7 @@ static void initMatchingTCP(SyncState* const syncState);
 static void destroyMatchingTCP(SyncState* const syncState);
 
 static void matchEventTCP(SyncState* const syncState, Event* const event);
-static GArray* finalizeMatchingTCP(SyncState* const syncState);
+static AllFactors* finalizeMatchingTCP(SyncState* const syncState);
 static void printMatchingStatsTCP(SyncState* const syncState);
 static void writeMatchingGraphsPlotsTCPMessages(SyncState* const syncState,
 	const unsigned int i, const unsigned int j);
@@ -256,9 +256,9 @@ static void matchEventTCP(SyncState* const syncState, Event* const event)
  *   syncState     container for synchronization data.
  *
  * Returns:
- *   Factors[traceNb] synchronization factors for each trace
+ *   AllFactors*   synchronization factors for each trace pair
  */
-static GArray* finalizeMatchingTCP(SyncState* const syncState)
+static AllFactors* finalizeMatchingTCP(SyncState* const syncState)
 {
 	partialDestroyMatchingTCP(syncState);
 

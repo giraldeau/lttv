@@ -36,7 +36,7 @@ static void initMatchingBroadcast(SyncState* const syncState);
 static void destroyMatchingBroadcast(SyncState* const syncState);
 
 static void matchEventBroadcast(SyncState* const syncState, Event* const event);
-static GArray* finalizeMatchingBroadcast(SyncState* const syncState);
+static AllFactors* finalizeMatchingBroadcast(SyncState* const syncState);
 static void printMatchingStatsBroadcast(SyncState* const syncState);
 static void writeMatchingGraphsPlotsBroadcast(SyncState* const syncState, const
 	unsigned int i, const unsigned int j);
@@ -295,9 +295,9 @@ static void matchEventBroadcast(SyncState* const syncState, Event* const event)
  *   syncState     container for synchronization data.
  *
  * Returns:
- *   Factors[traceNb] synchronization factors for each trace
+ *   AllFactors*   synchronization factors for each trace pair
  */
-static GArray* finalizeMatchingBroadcast(SyncState* const syncState)
+static AllFactors* finalizeMatchingBroadcast(SyncState* const syncState)
 {
 	MatchingDataBroadcast* matchingData;
 

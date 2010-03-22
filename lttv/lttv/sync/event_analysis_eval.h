@@ -63,13 +63,9 @@ typedef struct
 	GHashTable* exchangeRtt;
 
 #ifdef HAVE_LIBGLPK
-	/* FactorsCHull** chFactorsArray[traceNum][traceNum]
-	 * FactorsCHull** lpFactorsArray[traceNum][traceNum]
-	 *
-	 * As usual, only the lower triangular part of theses matrixes is
-	 * allocated */
-	FactorsCHull** chFactorsArray;
-	FactorsCHull** lpFactorsArray;
+	// Only the lower triangular part of theses matrixes is used
+	AllFactors* chFactorsArray;
+	AllFactors* lpFactorsArray;
 #endif
 } AnalysisStatsEval;
 
@@ -136,11 +132,9 @@ typedef struct
 	 * lps[i][j] where i > j */
 	glp_prob*** lps;
 
-	/* Factors lpFactors[traceNum][traceNum]
-	 *
-	 * Only the lower triangular part of the matrix is allocated, that is
+	/* Only the lower triangular part of the matrix is allocated, that is
 	 * lpFactorsArray[i][j] where i > j */
-	FactorsCHull** lpFactorsArray;
+	AllFactors* lpFactorsArray;
 #endif
 } AnalysisGraphsEval;
 

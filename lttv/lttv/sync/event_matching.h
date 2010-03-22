@@ -35,7 +35,7 @@ typedef struct
 
 	void (*matchEvent)(struct _SyncState* const syncState, Event* const
 		event);
-	GArray* (*finalizeMatching)(struct _SyncState* const syncState);
+	AllFactors* (*finalizeMatching)(struct _SyncState* const syncState);
 
 	void (*printMatchingStats)(struct _SyncState* const syncState);
 	GraphFunctions graphFunctions;

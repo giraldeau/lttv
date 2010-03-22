@@ -51,7 +51,7 @@ static void destroyMatchingDistributor(SyncState* const syncState);
 
 static void matchEventDistributor(SyncState* const syncState, Event* const
 	event);
-static GArray* finalizeMatchingDistributor(SyncState* const syncState);
+static AllFactors* finalizeMatchingDistributor(SyncState* const syncState);
 static void printMatchingStatsDistributor(SyncState* const syncState);
 static void writeMatchingTraceTraceForePlotsDistributor(SyncState* const
 	syncState, const unsigned int i, const unsigned int j);
@@ -144,7 +144,7 @@ static void destroyMatchingDistributor(SyncState* const syncState)
 
 	g_queue_foreach(matchingData->distributedModules, &gfDestroyModule, NULL);
 
-	g_queue_clear(matchingData->distributedModules);
+	g_queue_free(matchingData->distributedModules);
 	free(syncState->matchingData);
 	syncState->matchingData= NULL;
 }
@@ -168,35 +168,21 @@ static void matchEventDistributor(SyncState* const syncState, Event* const event
 
 
 /*
- * Call the distributed finalization functions and return identity factors
+ * Call the distributed finalization functions and return absent factors
  *
  * Args:
  *   syncState     container for synchronization data.
  *
  * Returns:
- *   Factors[traceNb] identity factors for each trace
+ *   AllFactors*   synchronization factors for each trace pair
  */
-static GArray* finalizeMatchingDistributor(SyncState* const syncState)
+static AllFactors* finalizeMatchingDistributor(SyncState* const syncState)
 {
-	GArray* factors;
-	unsigned int i;
 	MatchingDataDistributor* matchingData= syncState->matchingData;
 
 	g_queue_foreach(matchingData->distributedModules, &gfFinalize, NULL);
 
-	factors= g_array_sized_new(FALSE, FALSE, sizeof(Factors),
-		syncState->traceNb);
-	g_array_set_size(factors, syncState->traceNb);
-	for (i= 0; i < syncState->traceNb; i++)
-	{
-		Factors* e;
-
-		e= &g_array_index(factors, Factors, i);
-		e->drift= 1.;
-		e->offset= 0.;
-	}
-
-	return factors;
+	return createAllFactors(syncState->traceNb);
 }
 
 
@@ -406,11 +392,9 @@ void gfMatchEvent(gpointer data, gpointer user_data)
  */
 void gfFinalize(gpointer data, gpointer user_data)
 {
-	GArray* factors;
 	SyncState* parallelSS= data;
 
-	factors= parallelSS->matchingModule->finalizeMatching(parallelSS);
-	g_array_free(factors, TRUE);
+	freeAllFactors(parallelSS->matchingModule->finalizeMatching(parallelSS));
 }
 
 

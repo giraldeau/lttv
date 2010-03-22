@@ -32,17 +32,7 @@ typedef struct
 
 typedef struct
 {
-	double errorSum;
-	unsigned int* previousVertex;
-	unsigned int reference;
-} Graph;
-
-typedef struct
-{
 	Fit** fitArray;
-
-	// Graph[]
-	GQueue* graphList;
 
 	// for statistics
 	double* stDev;

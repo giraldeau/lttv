@@ -32,7 +32,7 @@ typedef struct
 	char* name;
 
 	void (*initProcessing)(struct _SyncState* const syncStateLttv, ...);
-	GArray* (*finalizeProcessing)(struct _SyncState* const syncState);
+	AllFactors* (*finalizeProcessing)(struct _SyncState* const syncState);
 	void (*printProcessingStats)(struct _SyncState* const syncState);
 	void (*destroyProcessing)(struct _SyncState* const syncState);
 	GraphFunctions graphFunctions;

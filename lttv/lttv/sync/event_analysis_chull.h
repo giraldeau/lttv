@@ -29,63 +29,12 @@ typedef struct
 } Point;
 
 
-typedef enum
-{
-	EXACT,
-	/* Used for identity factors (a0= 0, a1= 1) that map a trace to itself. In
-	 * this case, min, max and accuracy are not initialized.
-	 */
-
-	MIDDLE,
-	/* The approximation is the middle of the min and max limits, all fields
-	 * are initialized.
-	 */
-
-	FALLBACK,
-	/* min and max are not available because the hulls do not respect
-	 * assumptions (hulls should not intersect and the upper half-hull should
-	 * be below the lower half-hull). The approximation is a "best effort".
-	 * All fields are initialized but min and max are NULL.
-	 */
-
-	INCOMPLETE,
-	/* min or max is available but not both. The hulls respected assumptions
-	 * but all receives took place after all sends or vice versa. approx and
-	 * accuracy are not initialized.
-	 */
-
-	ABSENT,
-	/* The pair of trace did not have communications in both directions (maybe
-	 * even no communication at all). approx and accuracy are not initialized.
-	 */
-
-	SCREWED,
-	/* min and max are not available because the algorithms are screwed. One
-	 * of min or max (but not both) is NULL. The other is initialized. Approx
-	 * is not initialized.
-	 */
-
-	APPROX_NB, // This must be the last member
-} ApproxType;
-
-extern const char* const approxNames[APPROX_NB];
-
-typedef struct
-{
-	Factors* min, * max, * approx;
-	ApproxType type;
-	double accuracy;
-} FactorsCHull;
-
-
 typedef struct
 {
 	unsigned int dropped;
 
-	/* FactorsCHull allFactors[traceNb][traceNb]
-	 *
-	 * allFactors is divided into three parts depending on the position of an
-	 * element allFactors[i][j]:
+	/* allFactors is divided into three parts depending on the position of an
+	 * element allFactors->pairFactors[i][j]:
 	 *   Lower triangular part of the matrix
 	 *     i > j
 	 *     This contains the factors between nodes i and j. These factors
@@ -95,9 +44,36 @@ typedef struct
 	 *     This contains identity factors (a0= 0, a1= 1).
 	 *   Upper triangular part of the matrix
 	 *     i < j
-	 *     This area is not allocated.
+	 *     These factors are absent
+	 *
+	 * Factor types are used as follows:
+	 * EXACT,
+	 * Used for identity factors (a0= 0, a1= 1) that map a trace to itself. In
+	 * this case, min, max and accuracy are not initialized.
+	 *
+	 * ACCURATE,
+	 * The approximation is the middle of the min and max limits.
+	 *
+	 * APPROXIMATE,
+	 * min and max are not available because the hulls do not respect
+	 * assumptions (hulls should not intersect and the upper half-hull should
+	 * be below the lower half-hull). The approximation is a "best effort".
+	 * All fields are initialized but min and max are NULL.
+	 *
+	 * INCOMPLETE,
+	 * min or max is available but not both. The hulls respected assumptions
+	 * but all receives took place after all sends or vice versa.
+	 *
+	 * ABSENT,
+	 * The pair of trace did not have communications in both directions (maybe
+	 * even no communication at all). Also used for factors in the upper
+	 * triangular matrix.
+	 *
+	 * SCREWED,
+	 * min and max are not available because the algorithms are screwed. One
+	 * of min or max (but not both) is NULL. The other is initialized.
 	 */
-	FactorsCHull** allFactors;
+	AllFactors* allFactors;
 } AnalysisStatsCHull;
 
 
@@ -114,10 +90,9 @@ typedef struct
 	 */
 	FILE*** hullPoints;
 
-	/* FactorsCHull allFactors[traceNb][traceNb]
-	 * This is the same array as AnalysisStatsCHull.allFactors.
+	/* This is the same array as AnalysisStatsCHull.allFactors.
 	 */
-	FactorsCHull** allFactors;
+	AllFactors* allFactors;
 } AnalysisGraphsDataCHull;
 
 
@@ -170,11 +145,8 @@ typedef struct
 
 void registerAnalysisCHull();
 
-FactorsCHull** calculateAllFactors(struct _SyncState* const syncState);
-void freeAllFactors(const unsigned int traceNb, FactorsCHull** const
-	allFactors);
+AllFactors* calculateAllFactors(struct _SyncState* const syncState);
 
-void calculateFactorsMiddle(FactorsCHull* const factors);
-void destroyFactorsCHull(FactorsCHull* factorsCHull);
+void calculateFactorsMiddle(PairFactors* const factors);
 
 #endif

@@ -68,6 +68,8 @@ void printStats(SyncState* const syncState);
 
 void timeDiff(struct timeval* const end, const struct timeval* const start);
 
+GArray* reduceFactors(AllFactors* allFactors);
+
 gint gcfCompareProcessing(gconstpointer a, gconstpointer b);
 gint gcfCompareMatching(gconstpointer a, gconstpointer b);
 gint gcfCompareAnalysis(gconstpointer a, gconstpointer b);

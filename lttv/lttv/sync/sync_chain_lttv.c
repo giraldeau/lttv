@@ -181,6 +181,7 @@ bool syncTraceset(LttvTracesetContext* const traceSetContext)
 	struct rusage startUsage, endUsage;
 	GList* result;
 	unsigned int i;
+	AllFactors* allFactors;
 	GArray* factors;
 	double minOffset, minDrift;
 	unsigned int refFreqTrace;
@@ -268,8 +269,10 @@ bool syncTraceset(LttvTracesetContext* const traceSetContext)
 		G_MAXULONG, NULL);
 	lttv_process_traceset_seek_time(traceSetContext, ltt_time_zero);
 
-	// Obtain, adjust and set correction factors
-	factors= syncState->processingModule->finalizeProcessing(syncState);
+	// Obtain, reduce, adjust and set correction factors
+	allFactors= syncState->processingModule->finalizeProcessing(syncState);
+	factors= reduceFactors(allFactors);
+	freeAllFactors(allFactors);
 
 	/* The offsets are adjusted so the lowest one is 0. This is done because
 	 * of a Lttv specific limitation: events cannot have negative times. By

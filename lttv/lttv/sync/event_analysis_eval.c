@@ -65,7 +65,7 @@ static void analyzeExchangeEval(SyncState* const syncState, Exchange* const
 	exchange);
 static void analyzeBroadcastEval(SyncState* const syncState, Broadcast* const
 	broadcast);
-static GArray* finalizeAnalysisEval(SyncState* const syncState);
+static AllFactors* finalizeAnalysisEval(SyncState* const syncState);
 static void printAnalysisStatsEval(SyncState* const syncState);
 static void writeAnalysisTraceTimeBackPlotsEval(SyncState* const syncState,
 	const unsigned int i, const unsigned int j);
@@ -117,9 +117,8 @@ static glp_prob* lpCreateProblem(GQueue* const lowerHull, GQueue* const
 	upperHull);
 static void gfLPAddRow(gpointer data, gpointer user_data);
 static Factors* calculateFactors(glp_prob* const lp, const int direction);
-static void calculateCompleteFactors(glp_prob* const lp, FactorsCHull*
+static void calculateCompleteFactors(glp_prob* const lp, PairFactors*
 	factors);
-static FactorsCHull** createAllFactors(const unsigned int traceNb);
 static inline void finalizeAnalysisEvalLP(SyncState* const syncState);
 static void gfAddAbsiscaToArray(gpointer data, gpointer user_data);
 static gint gcfCompareDouble(gconstpointer a, gconstpointer b);
@@ -558,8 +557,8 @@ static void destroyAnalysisEval(SyncState* const syncState)
 		g_hash_table_destroy(stats->exchangeRtt);
 
 #ifdef HAVE_LIBGLPK
-		freeAllFactors(syncState->traceNb, stats->chFactorsArray);
-		freeAllFactors(syncState->traceNb, stats->lpFactorsArray);
+		freeAllFactors(stats->chFactorsArray);
+		freeAllFactors(stats->lpFactorsArray);
 #endif
 
 		free(stats);
@@ -597,7 +596,7 @@ static void destroyAnalysisEval(SyncState* const syncState)
 
 		if (!syncState->stats)
 		{
-			freeAllFactors(syncState->traceNb, graphs->lpFactorsArray);
+			freeAllFactors(graphs->lpFactorsArray);
 		}
 #endif
 
@@ -896,19 +895,17 @@ static void analyzeBroadcastEval(SyncState* const syncState, Broadcast* const
 
 /*
  * Finalize the factor calculations. Since this module does not really
- * calculate factors, identity factors are returned. Instead, histograms are
+ * calculate factors, absent factors are returned. Instead, histograms are
  * written out and histogram structures are freed.
  *
  * Args:
  *   syncState     container for synchronization data.
  *
  * Returns:
- *   Factors[traceNb] identity factors for each trace
+ *   AllFactors*   synchronization factors for each trace pair
  */
-static GArray* finalizeAnalysisEval(SyncState* const syncState)
+static AllFactors* finalizeAnalysisEval(SyncState* const syncState)
 {
-	GArray* factors;
-	unsigned int i;
 	AnalysisDataEval* analysisData= syncState->analysisData;
 
 	if (syncState->graphsStream && analysisData->graphs->histograms)
@@ -922,19 +919,7 @@ static GArray* finalizeAnalysisEval(SyncState* const syncState)
 
 	finalizeAnalysisEvalLP(syncState);
 
-	factors= g_array_sized_new(FALSE, FALSE, sizeof(Factors),
-		syncState->traceNb);
-	g_array_set_size(factors, syncState->traceNb);
-	for (i= 0; i < syncState->traceNb; i++)
-	{
-		Factors* e;
-
-		e= &g_array_index(factors, Factors, i);
-		e->drift= 1.;
-		e->offset= 0.;
-	}
-
-	return factors;
+	return createAllFactors(syncState->traceNb);
 }
 
 
@@ -1048,13 +1033,15 @@ static void printAnalysisStatsEval(SyncState* const syncState)
 	{
 		for (j= 0; j < i; j++)
 		{
-			FactorsCHull* chFactors= &analysisData->stats->chFactorsArray[i][j];
-			FactorsCHull* lpFactors= &analysisData->stats->lpFactorsArray[i][j];
+			PairFactors* chFactors=
+				&analysisData->stats->chFactorsArray->pairFactors[i][j];
+			PairFactors* lpFactors=
+				&analysisData->stats->lpFactorsArray->pairFactors[i][j];
 
 			printf("\t\t%3d - %-3d   ", i, j);
 			if (lpFactors->type == chFactors->type)
 			{
-				if (lpFactors->type == MIDDLE)
+				if (lpFactors->type == ACCURATE)
 				{
 					printf("%-13s %-10.4g %-10.4g %-10.4g %.4g\n",
 						approxNames[lpFactors->type],
@@ -1721,18 +1708,18 @@ static Factors* calculateFactors(glp_prob* const lp, const int direction)
  *                 initialized.
  *
  * Returns:
- *   Please note that the approximation type may be MIDDLE, INCOMPLETE or
+ *   Please note that the approximation type may be ACCURATE, INCOMPLETE or
  *   ABSENT. Unlike in analysis_chull, ABSENT is also used when the hulls do
  *   not respect assumptions.
  */
-static void calculateCompleteFactors(glp_prob* const lp, FactorsCHull* factors)
+static void calculateCompleteFactors(glp_prob* const lp, PairFactors* factors)
 {
 	factors->min= calculateFactors(lp, GLP_MIN);
 	factors->max= calculateFactors(lp, GLP_MAX);
 
 	if (factors->min && factors->max)
 	{
-		factors->type= MIDDLE;
+		factors->type= ACCURATE;
 		calculateFactorsMiddle(factors);
 	}
 	else if (factors->min || factors->max)
@@ -1745,35 +1732,6 @@ static void calculateCompleteFactors(glp_prob* const lp, FactorsCHull* factors)
 		factors->type= ABSENT;
 		factors->approx= NULL;
 	}
-}
-
-
-/*
- * Create and initialize an array like AnalysisStatsCHull.allFactors
- *
- * Args:
- *   traceNb:      number of traces
- *
- * Returns:
- *   A new array, which can be freed with freeAllFactors()
- */
-static FactorsCHull** createAllFactors(const unsigned int traceNb)
-{
-	FactorsCHull** factorsArray;
-	unsigned int i;
-
-	factorsArray= malloc(traceNb * sizeof(FactorsCHull*));
-	for (i= 0; i < traceNb; i++)
-	{
-		factorsArray[i]= calloc((i + 1), sizeof(FactorsCHull));
-
-		factorsArray[i][i].type= EXACT;
-		factorsArray[i][i].approx= malloc(sizeof(Factors));
-		factorsArray[i][i].approx->drift= 1.;
-		factorsArray[i][i].approx->offset= 0.;
-	}
-
-	return factorsArray;
 }
 
 
@@ -1841,7 +1799,7 @@ static void finalizeAnalysisEvalLP(SyncState* const syncState)
 #ifdef HAVE_LIBGLPK
 	unsigned int i, j;
 	AnalysisDataCHull* chAnalysisData= analysisData->chullSS->analysisData;
-	FactorsCHull** lpFactorsArray;
+	AllFactors* lpFactorsArray;
 
 	if (!syncState->stats && !syncState->graphsStream)
 	{
@@ -1888,7 +1846,7 @@ static void finalizeAnalysisEvalLP(SyncState* const syncState)
 
 			// Use the LP problem to find the correction factors for this pair of
 			// traces
-			calculateCompleteFactors(lp, &lpFactorsArray[i][j]);
+			calculateCompleteFactors(lp, &lpFactorsArray->pairFactors[i][j]);
 
 			if (syncState->graphsStream)
 			{
@@ -1902,8 +1860,7 @@ static void finalizeAnalysisEvalLP(SyncState* const syncState)
 	}
 #endif
 
-	g_array_free(analysisData->chullSS->analysisModule->finalizeAnalysis(analysisData->chullSS),
-		TRUE);
+	freeAllFactors(analysisData->chullSS->analysisModule->finalizeAnalysis(analysisData->chullSS));
 }
 
 
@@ -1929,10 +1886,10 @@ static void writeAnalysisTraceTimeBackPlotsEval(SyncState* const syncState,
 	AnalysisGraphsEval* graphs= analysisData->graphs;
 	GQueue*** hullArray= ((AnalysisDataCHull*)
 		analysisData->chullSS->analysisData)->hullArray;
-	FactorsCHull* lpFactors= &graphs->lpFactorsArray[j][i];
+	PairFactors* lpFactors= &graphs->lpFactorsArray->pairFactors[j][i];
 	glp_prob* lp= graphs->lps[j][i];
 
-	if (lpFactors->type == MIDDLE)
+	if (lpFactors->type == ACCURATE)
 	{
 		int retval;
 		char* cwd;
@@ -2026,8 +1983,8 @@ static void writeAnalysisTraceTimeForePlotsEval(SyncState* const syncState,
 {
 #ifdef HAVE_LIBGLPK
 	if (((AnalysisDataEval*)
-			syncState->analysisData)->graphs->lpFactorsArray[j][i].type ==
-		MIDDLE)
+			syncState->analysisData)->graphs->lpFactorsArray->pairFactors[j][i].type
+		== ACCURATE)
 	{
 		fprintf(syncState->graphsStream,
 			"\t\"analysis_eval_accuracy-%1$03u_and_%2$03u.data\" "

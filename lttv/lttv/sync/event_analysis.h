@@ -40,7 +40,7 @@ typedef struct
 		exchange);
 	void (*analyzeBroadcast)(struct _SyncState* const syncState, Broadcast* const
 		broadcast);
-	GArray* (*finalizeAnalysis)(struct _SyncState* const syncState);
+	AllFactors* (*finalizeAnalysis)(struct _SyncState* const syncState);
 
 	void (*printAnalysisStats)(struct _SyncState* const syncState);
 	GraphFunctions graphFunctions;

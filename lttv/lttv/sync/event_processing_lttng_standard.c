@@ -40,7 +40,7 @@
 static void initProcessingLTTVStandard(SyncState* const syncState, ...);
 static void destroyProcessingLTTVStandard(SyncState* const syncState);
 
-static GArray* finalizeProcessingLTTVStandard(SyncState* const syncState);
+static AllFactors* finalizeProcessingLTTVStandard(SyncState* const syncState);
 static void printProcessingStatsLTTVStandard(SyncState* const syncState);
 static void writeProcessingGraphVariablesLTTVStandard(SyncState* const
 	syncState, const unsigned int i);
@@ -165,9 +165,9 @@ static void initProcessingLTTVStandard(SyncState* const syncState, ...)
  *   syncState     container for synchronization data.
  *
  * Returns:
- *   Factors[traceNb] synchronization factors for each trace
+ *   AllFactors    synchronization factors for each trace pair
  */
-static GArray* finalizeProcessingLTTVStandard(SyncState* const syncState)
+static AllFactors* finalizeProcessingLTTVStandard(SyncState* const syncState)
 {
 	ProcessingDataLTTVStandard* processingData;
 

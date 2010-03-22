@@ -54,7 +54,7 @@ static void destroyAnalysisCHull(SyncState* const syncState);
 
 static void analyzeMessageCHull(SyncState* const syncState, Message* const
 	message);
-static GArray* finalizeAnalysisCHull(SyncState* const syncState);
+static AllFactors* finalizeAnalysisCHull(SyncState* const syncState);
 static void printAnalysisStatsCHull(SyncState* const syncState);
 static void writeAnalysisGraphsPlotsCHull(SyncState* const syncState, const
 	unsigned int i, const unsigned int j);
@@ -74,21 +74,13 @@ static double crossProductK(const Point const* p1, const Point const* p2,
 static Factors* calculateFactorsExact(GQueue* const cu, GQueue* const cl, const
 	LineType lineType) __attribute__((pure));
 static void calculateFactorsFallback(GQueue* const cr, GQueue* const cs,
-	FactorsCHull* const result);
+	PairFactors* const result);
 static double slope(const Point* const p1, const Point* const p2)
 	__attribute__((pure));
 static double intercept(const Point* const p1, const Point* const p2)
 	__attribute__((pure));
-static GArray* reduceFactors(SyncState* const syncState, FactorsCHull**
-	allFactors);
 static double verticalDistance(Point* p1, Point* p2, Point* const point)
 	__attribute__((pure));
-static void floydWarshall(SyncState* const syncState, FactorsCHull** const
-	allFactors, double*** const distances, unsigned int*** const
-	predecessors);
-static void getFactors(FactorsCHull** const allFactors, unsigned int** const
-	predecessors, unsigned int* const references, const unsigned int traceNum,
-	Factors* const factors);
 
 static void gfPointDestroy(gpointer data, gpointer userData);
 
@@ -103,15 +95,6 @@ static AnalysisModule analysisModuleCHull= {
 	.graphFunctions= {
 		.writeTraceTraceForePlots= &writeAnalysisGraphsPlotsCHull,
 	}
-};
-
-const char* const approxNames[]= {
-	[EXACT]= "Exact",
-	[MIDDLE]= "Middle",
-	[FALLBACK]= "Fallback",
-	[INCOMPLETE]= "Incomplete",
-	[ABSENT]= "Absent",
-	[SCREWED]= "Screwed",
 };
 
 
@@ -348,10 +331,7 @@ static void destroyAnalysisCHull(SyncState* const syncState)
 
 	if (syncState->stats)
 	{
-		if (analysisData->stats->allFactors != NULL)
-		{
-			freeAllFactors(syncState->traceNb, analysisData->stats->allFactors);
-		}
+		freeAllFactors(analysisData->stats->allFactors);
 
 		free(analysisData->stats);
 	}
@@ -363,10 +343,7 @@ static void destroyAnalysisCHull(SyncState* const syncState)
 			closeGraphFiles(syncState);
 		}
 
-		if (!syncState->stats && analysisData->graphsData->allFactors != NULL)
-		{
-			freeAllFactors(syncState->traceNb, analysisData->graphsData->allFactors);
-		}
+		freeAllFactors(analysisData->graphsData->allFactors);
 
 		free(analysisData->graphsData);
 	}
@@ -501,13 +478,13 @@ static void grahamScan(GQueue* const hull, Point* const newPoint, const
  *   syncState     container for synchronization data.
  *
  * Returns:
- *   Factors[traceNb] synchronization factors for each trace
+ *   AllFactors*   synchronization factors for each trace pair, the caller is
+ *   responsible for freeing the structure
  */
-static GArray* finalizeAnalysisCHull(SyncState* const syncState)
+static AllFactors* finalizeAnalysisCHull(SyncState* const syncState)
 {
 	AnalysisDataCHull* analysisData;
-	GArray* factors;
-	FactorsCHull** allFactors;
+	AllFactors* allFactors;
 
 	analysisData= (AnalysisDataCHull*) syncState->analysisData;
 
@@ -519,26 +496,19 @@ static GArray* finalizeAnalysisCHull(SyncState* const syncState)
 
 	allFactors= calculateAllFactors(syncState);
 
-	factors= reduceFactors(syncState, allFactors);
-
-	if (syncState->stats || syncState->graphsStream)
+	if (syncState->stats)
 	{
-		if (syncState->stats)
-		{
-			analysisData->stats->allFactors= allFactors;
-		}
-
-		if (syncState->graphsStream)
-		{
-			analysisData->graphsData->allFactors= allFactors;
-		}
-	}
-	else
-	{
-		freeAllFactors(syncState->traceNb, allFactors);
+		allFactors->refCount++;
+		analysisData->stats->allFactors= allFactors;
 	}
 
-	return factors;
+	if (syncState->graphsStream)
+	{
+		allFactors->refCount++;
+		analysisData->graphsData->allFactors= allFactors;
+	}
+
+	return allFactors;
 }
 
 
@@ -583,9 +553,9 @@ static void printAnalysisStatsCHull(SyncState* const syncState)
 	{
 		for (j= i + 1; j < syncState->traceNb; j++)
 		{
-			FactorsCHull* factorsCHull;
+			PairFactors* factorsCHull;
 
-			factorsCHull= &analysisData->stats->allFactors[j][i];
+			factorsCHull= &analysisData->stats->allFactors->pairFactors[j][i];
 			printf("\t\t%3d - %-3d: %s", i, j,
 				approxNames[factorsCHull->type]);
 
@@ -596,20 +566,16 @@ static void printAnalysisStatsCHull(SyncState* const syncState)
 					factorsCHull->approx->drift < 0. ? '-' : '+',
 					fabs(factorsCHull->approx->drift));
 			}
-			else if (factorsCHull->type == MIDDLE)
+			else if (factorsCHull->type == ACCURATE)
 			{
-				printf("     a0= % 7g a1= 1 %c %7g accuracy %7g\n",
-					factorsCHull->approx->offset, factorsCHull->approx->drift
-					- 1. < 0. ? '-' : '+', fabs(factorsCHull->approx->drift -
-						1.), factorsCHull->accuracy);
-				printf("\t\t                      a0: % 7g to % 7g (delta= %7g)\n",
+				printf("\n\t\t                      a0: % 7g to % 7g (delta= %7g)\n",
 					factorsCHull->max->offset, factorsCHull->min->offset,
 					factorsCHull->min->offset - factorsCHull->max->offset);
 				printf("\t\t                      a1: 1 %+7g to %+7g (delta= %7g)\n",
 					factorsCHull->min->drift - 1., factorsCHull->max->drift -
 					1., factorsCHull->max->drift - factorsCHull->min->drift);
 			}
-			else if (factorsCHull->type == FALLBACK)
+			else if (factorsCHull->type == APPROXIMATE)
 			{
 				printf("   a0= % 7g a1= 1 %c %7g error= %7g\n",
 					factorsCHull->approx->offset, factorsCHull->approx->drift
@@ -743,64 +709,6 @@ static double crossProductK(const Point const* p1, const Point const* p2,
 
 
 /*
- * Free a container of FactorsCHull
- *
- * Args:
- *   traceNb:      number of traces
- *   allFactors:   container of FactorsCHull
- */
-void freeAllFactors(const unsigned int traceNb, FactorsCHull** const
-	allFactors)
-{
-	unsigned int i, j;
-
-	for (i= 0; i < traceNb; i++)
-	{
-		for (j= 0; j <= i; j++)
-		{
-			destroyFactorsCHull(&allFactors[i][j]);
-		}
-		free(allFactors[i]);
-	}
-	free(allFactors);
-}
-
-
-/*
- * Free a FactorsCHull
- *
- * Args:
- *   factorsCHull: container of Factors
- */
-void destroyFactorsCHull(FactorsCHull* factorsCHull)
-{
-	if (factorsCHull->type == MIDDLE || factorsCHull->type ==
-		INCOMPLETE || factorsCHull->type == ABSENT)
-	{
-		free(factorsCHull->min);
-		free(factorsCHull->max);
-	}
-	else if (factorsCHull->type == SCREWED)
-	{
-		if (factorsCHull->min != NULL)
-		{
-			free(factorsCHull->min);
-		}
-		if (factorsCHull->max != NULL)
-		{
-			free(factorsCHull->max);
-		}
-	}
-
-	if (factorsCHull->type == EXACT || factorsCHull->type == MIDDLE ||
-		factorsCHull->type == FALLBACK)
-	{
-		free(factorsCHull->approx);
-	}
-}
-
-
-/*
  * Analyze the convex hulls to determine the synchronization factors between
  * each pair of trace.
  *
@@ -808,28 +716,21 @@ void destroyFactorsCHull(FactorsCHull* factorsCHull)
  *   syncState     container for synchronization data.
  *
  * Returns:
- *   FactorsCHull*[TraceNum][TraceNum] array. See the documentation for the
- *   member allFactors of AnalysisStatsCHull.
+ *   AllFactors*, see the documentation for the member allFactors of
+ *   AnalysisStatsCHull.
  */
-FactorsCHull** calculateAllFactors(SyncState* const syncState)
+AllFactors* calculateAllFactors(SyncState* const syncState)
 {
 	unsigned int traceNumA, traceNumB;
-	FactorsCHull** allFactors;
+	AllFactors* allFactors;
 	AnalysisDataCHull* analysisData;
 
 	analysisData= (AnalysisDataCHull*) syncState->analysisData;
 
 	// Allocate allFactors and calculate min and max
-	allFactors= malloc(syncState->traceNb * sizeof(FactorsCHull*));
+	allFactors= createAllFactors(syncState->traceNb);
 	for (traceNumA= 0; traceNumA < syncState->traceNb; traceNumA++)
 	{
-		allFactors[traceNumA]= malloc((traceNumA + 1) * sizeof(FactorsCHull));
-
-		allFactors[traceNumA][traceNumA].type= EXACT;
-		allFactors[traceNumA][traceNumA].approx= malloc(sizeof(Factors));
-		allFactors[traceNumA][traceNumA].approx->drift= 1.;
-		allFactors[traceNumA][traceNumA].approx->offset= 0.;
-
 		for (traceNumB= 0; traceNumB < traceNumA; traceNumB++)
 		{
 			unsigned int i;
@@ -839,8 +740,8 @@ FactorsCHull** calculateAllFactors(SyncState* const syncState)
 				LineType lineType;
 				size_t factorsOffset;
 			} loopValues[]= {
-				{MINIMUM, offsetof(FactorsCHull, min)},
-				{MAXIMUM, offsetof(FactorsCHull, max)}
+				{MINIMUM, offsetof(PairFactors, min)},
+				{MAXIMUM, offsetof(PairFactors, max)}
 			};
 
 			cr= analysisData->hullArray[traceNumB][traceNumA];
@@ -848,12 +749,14 @@ FactorsCHull** calculateAllFactors(SyncState* const syncState)
 
 			for (i= 0; i < sizeof(loopValues) / sizeof(*loopValues); i++)
 			{
-				g_debug("allFactors[%u][%u].%s = calculateFactorsExact(cr= hullArray[%u][%u], cs= hullArray[%u][%u], %s)",
+				g_debug("allFactors[%u][%u].%s = calculateFactorsExact(cr= "
+					"hullArray[%u][%u], cs= hullArray[%u][%u], %s)",
 					traceNumA, traceNumB, loopValues[i].factorsOffset ==
-					offsetof(FactorsCHull, min) ? "min" : "max", traceNumB,
+					offsetof(PairFactors, min) ? "min" : "max", traceNumB,
 					traceNumA, traceNumA, traceNumB, loopValues[i].lineType ==
 					MINIMUM ? "MINIMUM" : "MAXIMUM");
-				*((Factors**) ((void*) &allFactors[traceNumA][traceNumB] +
+				*((Factors**) ((void*)
+						&allFactors->pairFactors[traceNumA][traceNumB] +
 						loopValues[i].factorsOffset))=
 					calculateFactorsExact(cr, cs, loopValues[i].lineType);
 			}
@@ -865,22 +768,22 @@ FactorsCHull** calculateAllFactors(SyncState* const syncState)
 	{
 		for (traceNumB= 0; traceNumB < traceNumA; traceNumB++)
 		{
-			FactorsCHull* factorsCHull;
+			PairFactors* factorsCHull;
 
-			factorsCHull= &allFactors[traceNumA][traceNumB];
+			factorsCHull= &allFactors->pairFactors[traceNumA][traceNumB];
 			if (factorsCHull->min == NULL && factorsCHull->max == NULL)
 			{
-				factorsCHull->type= FALLBACK;
+				factorsCHull->type= APPROXIMATE;
 				calculateFactorsFallback(analysisData->hullArray[traceNumB][traceNumA],
 					analysisData->hullArray[traceNumA][traceNumB],
-					&allFactors[traceNumA][traceNumB]);
+					&allFactors->pairFactors[traceNumA][traceNumB]);
 			}
 			else if (factorsCHull->min != NULL && factorsCHull->max != NULL)
 			{
 				if (factorsCHull->min->drift != -INFINITY &&
 					factorsCHull->max->drift != INFINITY)
 				{
-					factorsCHull->type= MIDDLE;
+					factorsCHull->type= ACCURATE;
 					calculateFactorsMiddle(factorsCHull);
 				}
 				else if (factorsCHull->min->drift != -INFINITY ||
@@ -921,7 +824,7 @@ FactorsCHull** calculateAllFactors(SyncState* const syncState)
  * Args:
  *   factors:      contains the min and max limits, used to store the result
  */
-void calculateFactorsMiddle(FactorsCHull* const factors)
+void calculateFactorsMiddle(PairFactors* const factors)
 {
 	double amin, amax, bmin, bmax, bhat;
 
@@ -1117,7 +1020,7 @@ static Factors* calculateFactorsExact(GQueue* const cu, GQueue* const cl, const
  *                 will be stored
  */
 static void calculateFactorsFallback(GQueue* const cr, GQueue* const cs,
-	FactorsCHull* const result)
+	PairFactors* const result)
 {
 	unsigned int i, j, k;
 	double errorMin;
@@ -1225,314 +1128,6 @@ static double intercept(const Point* const p1, const Point* const p2)
 
 
 /*
- * Calculate a resulting offset and drift for each trace.
- *
- * Traces are assembled in groups. A group is an "island" of nodes/traces that
- * exchanged messages. A reference is determined for each group by using a
- * shortest path search based on the accuracy of the approximation. This also
- * forms a tree of the best way to relate each node's clock to the reference's
- * based on the accuracy. Sometimes it may be necessary or advantageous to
- * propagate the factors through intermediary clocks. Resulting factors for
- * each trace are determined based on this tree.
- *
- * This part was not the focus of my research. The algorithm used here is
- * inexact in some ways:
- * 1) The reference used may not actually be the best one to use. This is
- *    because the accuracy is not corrected based on the drift during the
- *    shortest path search.
- * 2) The min and max factors are not propagated and are no longer valid.
- * 3) Approximations of different types (MIDDLE and FALLBACK) are compared
- *    together. The "accuracy" parameters of these have different meanings and
- *    are not readily comparable.
- *
- * Nevertheless, the result is satisfactory. You just can't tell "how much" it
- * is.
- *
- * Two alternative (and subtly different) ways of propagating factors to
- * preserve min and max boundaries have been proposed, see:
- * [Duda, A., Harrus, G., Haddad, Y., and Bernard, G.: Estimating global time
- * in distributed systems, Proc. 7th Int. Conf. on Distributed Computing
- * Systems, Berlin, volume 18, 1987] p.304
- *
- * [Jezequel, J.M., and Jard, C.: Building a global clock for observing
- * computations in distributed memory parallel computers, Concurrency:
- * Practice and Experience 8(1), volume 8, John Wiley & Sons, Ltd Chichester,
- * 1996, 32] Section 5; which is mostly the same as
- * [Jezequel, J.M.: Building a global time on parallel machines, Proceedings
- * of the 3rd International Workshop on Distributed Algorithms, LNCS, volume
- * 392, 136–147, 1989] Section 5
- *
- * Args:
- *   syncState:    container for synchronization data.
- *   allFactors:   offset and drift between each pair of traces
- *
- * Returns:
- *   Factors[traceNb] synchronization factors for each trace
- */
-static GArray* reduceFactors(SyncState* const syncState, FactorsCHull** const
-	allFactors)
-{
-	GArray* factors;
-	double** distances;
-	unsigned int** predecessors;
-	double* distanceSums;
-	unsigned int* references;
-	unsigned int i, j;
-
-	// Solve the all-pairs shortest path problem using the Floyd-Warshall
-	// algorithm
-	floydWarshall(syncState, allFactors, &distances, &predecessors);
-
-	/* Find the reference for each node
-	 *
-	 * First calculate, for each node, the sum of the distances to each other
-	 * node it can reach.
-	 *
-	 * Then, go through each "island" of traces to find the trace that has the
-	 * lowest distance sum. Assign this trace as the reference to each trace
-	 * of the island.
-	 */
-	distanceSums= malloc(syncState->traceNb * sizeof(double));
-	for (i= 0; i < syncState->traceNb; i++)
-	{
-		distanceSums[i]= 0.;
-		for (j= 0; j < syncState->traceNb; j++)
-		{
-			distanceSums[i]+= distances[i][j];
-		}
-	}
-
-	references= malloc(syncState->traceNb * sizeof(unsigned int));
-	for (i= 0; i < syncState->traceNb; i++)
-	{
-		references[i]= UINT_MAX;
-	}
-	for (i= 0; i < syncState->traceNb; i++)
-	{
-		if (references[i] == UINT_MAX)
-		{
-			unsigned int reference;
-			double distanceSumMin;
-
-			// A node is its own reference by default
-			reference= i;
-			distanceSumMin= INFINITY;
-			for (j= 0; j < syncState->traceNb; j++)
-			{
-				if (distances[i][j] != INFINITY && distanceSums[j] <
-					distanceSumMin)
-				{
-					reference= j;
-					distanceSumMin= distanceSums[j];
-				}
-			}
-			for (j= 0; j < syncState->traceNb; j++)
-			{
-				if (distances[i][j] != INFINITY)
-				{
-					references[j]= reference;
-				}
-			}
-		}
-	}
-
-	for (i= 0; i < syncState->traceNb; i++)
-	{
-		free(distances[i]);
-	}
-	free(distances);
-	free(distanceSums);
-
-	/* For each trace, calculate the factors based on their corresponding
-	 * tree. The tree is rooted at the reference and the shortest path to each
-	 * other nodes are the branches.
-	 */
-	factors= g_array_sized_new(FALSE, FALSE, sizeof(Factors),
-		syncState->traceNb);
-	g_array_set_size(factors, syncState->traceNb);
-	for (i= 0; i < syncState->traceNb; i++)
-	{
-		getFactors(allFactors, predecessors, references, i, &g_array_index(factors,
-				Factors, i));
-	}
-
-	for (i= 0; i < syncState->traceNb; i++)
-	{
-		free(predecessors[i]);
-	}
-	free(predecessors);
-	free(references);
-
-	return factors;
-}
-
-
-/*
- * Perform an all-source shortest path search using the Floyd-Warshall
- * algorithm.
- *
- * The algorithm is implemented accoding to the description here:
- * http://web.mit.edu/urban_or_book/www/book/chapter6/6.2.2.html
- *
- * Args:
- *   syncState:    container for synchronization data.
- *   allFactors:   offset and drift between each pair of traces
- *   distances:    resulting matrix of the length of the shortest path between
- *                 two nodes. If there is no path between two nodes, the
- *                 length is INFINITY
- *   predecessors: resulting matrix of each node's predecessor on the shortest
- *                 path between two nodes
- */
-static void floydWarshall(SyncState* const syncState, FactorsCHull** const
-	allFactors, double*** const distances, unsigned int*** const
-	predecessors)
-{
-	unsigned int i, j, k;
-
-	// Setup initial conditions
-	*distances= malloc(syncState->traceNb * sizeof(double*));
-	*predecessors= malloc(syncState->traceNb * sizeof(unsigned int*));
-	for (i= 0; i < syncState->traceNb; i++)
-	{
-		(*distances)[i]= malloc(syncState->traceNb * sizeof(double));
-		for (j= 0; j < syncState->traceNb; j++)
-		{
-			if (i == j)
-			{
-				g_assert(allFactors[i][j].type == EXACT);
-
-				(*distances)[i][j]= 0.;
-			}
-			else
-			{
-				unsigned int row, col;
-
-				if (i > j)
-				{
-					row= i;
-					col= j;
-				}
-				else if (i < j)
-				{
-					row= j;
-					col= i;
-				}
-
-				if (allFactors[row][col].type == MIDDLE ||
-					allFactors[row][col].type == FALLBACK)
-				{
-					(*distances)[i][j]= allFactors[row][col].accuracy;
-				}
-				else if (allFactors[row][col].type == INCOMPLETE ||
-					allFactors[row][col].type == SCREWED ||
-					allFactors[row][col].type == ABSENT)
-				{
-					(*distances)[i][j]= INFINITY;
-				}
-				else
-				{
-					g_assert_not_reached();
-				}
-			}
-		}
-
-		(*predecessors)[i]= malloc(syncState->traceNb * sizeof(unsigned int));
-		for (j= 0; j < syncState->traceNb; j++)
-		{
-			if (i != j)
-			{
-				(*predecessors)[i][j]= i;
-			}
-			else
-			{
-				(*predecessors)[i][j]= UINT_MAX;
-			}
-		}
-	}
-
-	// Run the iterations
-	for (k= 0; k < syncState->traceNb; k++)
-	{
-		for (i= 0; i < syncState->traceNb; i++)
-		{
-			for (j= 0; j < syncState->traceNb; j++)
-			{
-				double distanceMin;
-
-				distanceMin= MIN((*distances)[i][j], (*distances)[i][k] +
-					(*distances)[k][j]);
-
-				if (distanceMin != (*distances)[i][j])
-				{
-					(*predecessors)[i][j]= (*predecessors)[k][j];
-				}
-
-				(*distances)[i][j]= distanceMin;
-			}
-		}
-	}
-}
-
-
-/*
- * Cummulate the time correction factors to convert a node's time to its
- * reference's time.
- * This function recursively calls itself until it reaches the reference node.
- *
- * Args:
- *   allFactors:   offset and drift between each pair of traces
- *   predecessors: matrix of each node's predecessor on the shortest
- *                 path between two nodes
- *   references:   reference node for each node
- *   traceNum:     node for which to find the factors
- *   factors:      resulting factors
- */
-static void getFactors(FactorsCHull** const allFactors, unsigned int** const
-	predecessors, unsigned int* const references, const unsigned int traceNum,
-	Factors* const factors)
-{
-	unsigned int reference;
-
-	reference= references[traceNum];
-
-	if (reference == traceNum)
-	{
-		factors->offset= 0.;
-		factors->drift= 1.;
-	}
-	else
-	{
-		Factors previousVertexFactors;
-
-		getFactors(allFactors, predecessors, references,
-			predecessors[reference][traceNum], &previousVertexFactors);
-
-		// convertir de traceNum à reference
-
-		// allFactors convertit de col à row
-
-		if (reference > traceNum)
-		{
-			factors->offset= previousVertexFactors.drift *
-				allFactors[reference][traceNum].approx->offset +
-				previousVertexFactors.offset;
-			factors->drift= previousVertexFactors.drift *
-				allFactors[reference][traceNum].approx->drift;
-		}
-		else
-		{
-			factors->offset= previousVertexFactors.drift * (-1. *
-				allFactors[traceNum][reference].approx->offset /
-				allFactors[traceNum][reference].approx->drift) +
-				previousVertexFactors.offset;
-			factors->drift= previousVertexFactors.drift * (1. /
-				allFactors[traceNum][reference].approx->drift);
-		}
-	}
-}
-
-
-/*
  * Write the analysis-specific graph lines in the gnuplot script.
  *
  * Args:
@@ -1544,7 +1139,7 @@ void writeAnalysisGraphsPlotsCHull(SyncState* const syncState, const unsigned
 	int i, const unsigned int j)
 {
 	AnalysisDataCHull* analysisData;
-	FactorsCHull* factorsCHull;
+	PairFactors* factorsCHull;
 
 	analysisData= (AnalysisDataCHull*) syncState->analysisData;
 
@@ -1557,7 +1152,7 @@ void writeAnalysisGraphsPlotsCHull(SyncState* const syncState, const unsigned
 			"linecolor rgb \"#003366\" linetype 4 pointtype 10 pointsize 0.8, \\\n",
 		i, j);
 
-	factorsCHull= &analysisData->graphsData->allFactors[j][i];
+	factorsCHull= &analysisData->graphsData->allFactors->pairFactors[j][i];
 	if (factorsCHull->type == EXACT)
 	{
 		fprintf(syncState->graphsStream,
@@ -1566,7 +1161,7 @@ void writeAnalysisGraphsPlotsCHull(SyncState* const syncState, const unsigned
 				"linecolor rgb \"black\" linetype 1, \\\n",
 				factorsCHull->approx->offset, factorsCHull->approx->drift);
 	}
-	else if (factorsCHull->type == MIDDLE)
+	else if (factorsCHull->type == ACCURATE)
 	{
 		fprintf(syncState->graphsStream,
 			"\t%.2f + %.10f * x "
@@ -1584,7 +1179,7 @@ void writeAnalysisGraphsPlotsCHull(SyncState* const syncState, const unsigned
 				"linecolor rgb \"black\" linetype 1, \\\n",
 				factorsCHull->approx->offset, factorsCHull->approx->drift);
 	}
-	else if (factorsCHull->type == FALLBACK)
+	else if (factorsCHull->type == APPROXIMATE)
 	{
 		fprintf(syncState->graphsStream,
 			"\t%.2f + %.10f * x "
