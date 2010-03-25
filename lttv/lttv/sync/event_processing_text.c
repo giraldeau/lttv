@@ -120,7 +120,7 @@ static void destroyProcessingText(SyncState* const syncState)
 
 	if (syncState->stats && processingData->factors)
 	{
-		freeAllFactors(processingData->factors);
+		freeAllFactors(processingData->factors, syncState->traceNb);
 	}
 
 	free(syncState->processingData);

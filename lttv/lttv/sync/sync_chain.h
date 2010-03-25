@@ -24,6 +24,7 @@
 #include "event_processing.h"
 #include "event_matching.h"
 #include "event_analysis.h"
+#include "factor_reduction.h"
 
 typedef struct _SyncState
 {
@@ -38,6 +39,8 @@ typedef struct _SyncState
 	void* matchingData;
 	const AnalysisModule* analysisModule;
 	void* analysisData;
+	const ReductionModule* reductionModule;
+	void* reductionData;
 } SyncState;
 
 typedef struct
@@ -62,17 +65,19 @@ typedef struct
 extern GQueue processingModules;
 extern GQueue matchingModules;
 extern GQueue analysisModules;
+extern GQueue reductionModules;
+
 extern GQueue moduleOptions;
 
 void printStats(SyncState* const syncState);
 
 void timeDiff(struct timeval* const end, const struct timeval* const start);
 
-GArray* reduceFactors(AllFactors* allFactors);
-
 gint gcfCompareProcessing(gconstpointer a, gconstpointer b);
 gint gcfCompareMatching(gconstpointer a, gconstpointer b);
 gint gcfCompareAnalysis(gconstpointer a, gconstpointer b);
+gint gcfCompareReduction(gconstpointer a, gconstpointer b);
 void gfAppendAnalysisName(gpointer data, gpointer user_data);
+void gfAppendReductionName(gpointer data, gpointer user_data);
 
 #endif

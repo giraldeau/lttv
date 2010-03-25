@@ -41,6 +41,7 @@
 #include "event_analysis_chull.h"
 #include "event_analysis_linreg.h"
 #include "event_analysis_eval.h"
+#include "factor_reduction_accuracy.h"
 #include "sync_chain.h"
 
 
@@ -82,6 +83,12 @@ static ModuleOption optionSyncAnalysis= {
 	.hasArg= REQUIRED_ARG,
 	.optionHelp= "Specify which algorithm to use for event analysis",
 };
+static ModuleOption optionSyncReduction= {
+	.shortName= 'r',
+	.longName= "sync-reduction",
+	.hasArg= REQUIRED_ARG,
+	.optionHelp= "Specify which algorithm to use for factor reduction",
+};
 
 
 /*
@@ -105,6 +112,7 @@ int main(const int argc, char* const argv[])
 	bool stats;
 	const char* testCaseName;
 	GString* analysisModulesNames;
+	GString* reductionModulesNames;
 	unsigned int id;
 	AllFactors* allFactors;
 
@@ -125,6 +133,8 @@ int main(const int argc, char* const argv[])
 	registerAnalysisLinReg();
 	registerAnalysisEval();
 
+	registerReductionAccuracy();
+
 	// Initialize data structures
 	syncState= malloc(sizeof(SyncState));
 
@@ -139,6 +149,16 @@ int main(const int argc, char* const argv[])
 	g_string_truncate(analysisModulesNames, analysisModulesNames->len - 2);
 	optionSyncAnalysis.argHelp= analysisModulesNames->str;
 
+	g_assert(g_queue_get_length(&reductionModules) > 0);
+	optionSyncReduction.arg= ((ReductionModule*)
+		g_queue_peek_head(&reductionModules))->name;
+	reductionModulesNames= g_string_new("Available modules: ");
+	g_queue_foreach(&reductionModules, &gfAppendReductionName,
+		reductionModulesNames);
+	// remove the last ", "
+	g_string_truncate(reductionModulesNames, reductionModulesNames->len - 2);
+	optionSyncReduction.argHelp= reductionModulesNames->str;
+
 	retval= snprintf(graphsDir, sizeof(graphsDir), "graphs-%d", getpid());
 	if (retval > sizeof(graphsDir) - 1)
 	{
@@ -146,6 +166,7 @@ int main(const int argc, char* const argv[])
 	}
 	optionSyncGraphs.arg= graphsDir;
 
+	g_queue_push_head(&moduleOptions, &optionSyncReduction);
 	g_queue_push_head(&moduleOptions, &optionSyncAnalysis);
 	g_queue_push_head(&moduleOptions, &optionSyncGraphs);
 	g_queue_push_head(&moduleOptions, &optionSyncStats);
@@ -153,6 +174,7 @@ int main(const int argc, char* const argv[])
 	testCaseName= processOptions(argc, argv);
 
 	g_string_free(analysisModulesNames, TRUE);
+	g_string_free(reductionModulesNames, TRUE);
 
 	if (optionSyncStats.present)
 	{
@@ -203,15 +225,29 @@ int main(const int argc, char* const argv[])
 		g_error("Analysis module '%s' not found", optionSyncAnalysis.arg);
 	}
 
+	syncState->reductionData= NULL;
+	result= g_queue_find_custom(&reductionModules, optionSyncReduction.arg,
+		&gcfCompareReduction);
+	if (result != NULL)
+	{
+		syncState->reductionModule= (ReductionModule*) result->data;
+	}
+	else
+	{
+		g_error("Reduction module '%s' not found", optionSyncReduction.arg);
+	}
+
 	// Initialize modules
 	syncState->processingModule->initProcessing(syncState, testCaseName);
 	syncState->matchingModule->initMatching(syncState);
 	syncState->analysisModule->initAnalysis(syncState);
+	syncState->reductionModule->initReduction(syncState);
 
 	// Process traceset
 	allFactors= syncState->processingModule->finalizeProcessing(syncState);
-	factors= reduceFactors(allFactors);
-	freeAllFactors(allFactors);
+	factors= syncState->reductionModule->finalizeReduction(syncState,
+		allFactors);
+	freeAllFactors(allFactors, syncState->traceNb);
 
 	// Write graphs file
 	if (syncState->graphsStream)
@@ -244,6 +280,7 @@ int main(const int argc, char* const argv[])
 	syncState->processingModule->destroyProcessing(syncState);
 	syncState->matchingModule->destroyMatching(syncState);
 	syncState->analysisModule->destroyAnalysis(syncState);
+	syncState->reductionModule->destroyReduction(syncState);
 
 	stats= syncState->stats;
 	free(syncState);

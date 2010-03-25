@@ -394,7 +394,8 @@ void gfFinalize(gpointer data, gpointer user_data)
 {
 	SyncState* parallelSS= data;
 
-	freeAllFactors(parallelSS->matchingModule->finalizeMatching(parallelSS));
+	freeAllFactors(parallelSS->matchingModule->finalizeMatching(parallelSS),
+		parallelSS->traceNb);
 }
 
 

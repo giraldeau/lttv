@@ -306,6 +306,9 @@ void setupSyncChain(LttvTracesetContext* const traceSetContext)
 		syncState->graphsDir= NULL;
 	}
 
+	syncState->reductionData= NULL;
+	syncState->reductionModule= NULL;
+
 	syncState->analysisData= NULL;
 	result= g_queue_find_custom(&analysisModules, "eval",
 		&gcfCompareAnalysis);
@@ -343,7 +346,8 @@ void teardownSyncChain(LttvTracesetContext* const traceSetContext)
 	tracesetChainState= g_hash_table_lookup(tracesetChainStates, traceSetContext);
 	syncState= tracesetChainState->syncState;
 
-	freeAllFactors(syncState->processingModule->finalizeProcessing(syncState));
+	freeAllFactors(syncState->processingModule->finalizeProcessing(syncState),
+		syncState->traceNb);
 
 	// Write graphs file
 	if (optionEvalGraphs)
@@ -366,6 +370,10 @@ void teardownSyncChain(LttvTracesetContext* const traceSetContext)
 	if (syncState->analysisModule != NULL)
 	{
 		syncState->analysisModule->destroyAnalysis(syncState);
+	}
+	if (syncState->reductionModule != NULL)
+	{
+		syncState->reductionModule->destroyReduction(syncState);
 	}
 
 	free(syncState);

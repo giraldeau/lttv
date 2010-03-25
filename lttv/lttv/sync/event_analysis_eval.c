@@ -557,8 +557,8 @@ static void destroyAnalysisEval(SyncState* const syncState)
 		g_hash_table_destroy(stats->exchangeRtt);
 
 #ifdef HAVE_LIBGLPK
-		freeAllFactors(stats->chFactorsArray);
-		freeAllFactors(stats->lpFactorsArray);
+		freeAllFactors(stats->chFactorsArray, syncState->traceNb);
+		freeAllFactors(stats->lpFactorsArray, syncState->traceNb);
 #endif
 
 		free(stats);
@@ -596,7 +596,7 @@ static void destroyAnalysisEval(SyncState* const syncState)
 
 		if (!syncState->stats)
 		{
-			freeAllFactors(graphs->lpFactorsArray);
+			freeAllFactors(graphs->lpFactorsArray, syncState->traceNb);
 		}
 #endif
 
@@ -1860,7 +1860,8 @@ static void finalizeAnalysisEvalLP(SyncState* const syncState)
 	}
 #endif
 
-	freeAllFactors(analysisData->chullSS->analysisModule->finalizeAnalysis(analysisData->chullSS));
+	freeAllFactors(analysisData->chullSS->analysisModule->finalizeAnalysis(analysisData->chullSS),
+		analysisData->chullSS->traceNb);
 }
 
 

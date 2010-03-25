@@ -54,7 +54,10 @@ as seen with "-h":
 					 is mostly for performance evaluation
 --sync-analysis  -  argument: chull, linreg, eval
 					 specify the algorithm to use for event analysis. See the
-					 section "Alogrithms".
+					 section "Synchronization Alogrithms".
+--sync-reduction  -  argument: accuracy
+					 specify the algorithm to use for factor reduction. See
+					 the section "Reduction Algorithms".
 --sync-graphs
                      output gnuplot graph showing synchronization points
 --sync-graphs-dir  -  argument: DIRECTORY
@@ -103,10 +106,11 @@ successful chull (one of the synchronization algorithms) run of two traces:
 		user time: 0.112007
 		system time: 0.000000
 
-++ Algorithms
+++ Synchronization Algorithms
 The synchronization framework is extensible and already includes two
-algorithms: chull and linreg. You can choose which analysis algorithm to use
-with the --sync-analysis option.
+algorithms: chull and linreg. (There is also a special "eval" module
+available.) You can choose which analysis algorithm to use with the
+--sync-analysis option.
 
 +++ Convex Hull
 chull, the default analysis module, can provide a garantee that there are no
@@ -182,6 +186,19 @@ To see the output of this mode, run:
 lttv -m sync_chain_batch --eval-graphs [usual options, ex: -t traces/node1 -t
 traces/node2 --sync ...]
 
++ Reduction Algorithms
+Event analysis yields time correction factors between trace pairs. For groups
+of more than two traces, an extra step is necessary to identify a reference
+trace and calculate correction factors for each trace relative to this
+reference. There are usually many possibilities and so this step is called
+"factor reduction".
+
+++ Accuracy
+At the moment, only one algorithm is available to do this, the "accuracy"
+algorithm. This algorithm tries to choose the reference and the factors that
+yield the best accuracy. See the function header comments in
+factor_reduction_accuracy.c for more details.
+
 + Design
 This part describes the design of the synchronization framework. This is to
 help programmers interested in:
@@ -198,11 +215,11 @@ This part is specific to the framework in use: the program doing
 synchronization, the executable linking to the event_*.o
 eg. LTTV, unittest
 
-This reads parameters, creates SyncState and calls the processing init
-function. The "sync chain" is the set of event-* modules. At the moment there
-is only one module at each stage. However, as more module are added, it will
-become relevant to have many modules at the same stage simultaneously. This
-will require some modifications. It is already partly supported at the
+This reads parameters, creates SyncState and calls the init functions of the
+modules to be used. The "sync chain" is this set of modules. At the moment
+there is only one module at each stage. However, as more modules are added, it
+will become relevant to have many modules at the same stage simultaneously.
+This will require some modifications. It is already partly supported at the
 matching stage through encapsulation of other matching modules.
 
 sync_chain_unitest:main() provides a fairly simple example of sync chain
@@ -285,12 +302,13 @@ I chose this approach because:
 Data from traces flows "down" from processing to matching to analysis. Factors
 come back up.
 
-++ Evolution and adaptation
-It is possible to change/add another sync chain and to add other event_*
-modules. It has been done. New types of events may need to be added to
-data_structures.h. This is only to link between Event-* modules. If the data
-does not have to be shared, data_structures.h does not have to be modified.
+++ Stage 4: Factor reduction
+This stage reduces the pair-wise synchronization factors to time correction
+factors for each trace. It is most useful when synchronizing more than two
+traces.
 
-At the moment there is some code duplication in the last steps of linreg and
-chull analysis: the code to propagate the factors when there are more than two
-nodes. Maybe there could be a Stage 4 that does that?
+++ Evolution and adaptation
+It is possible to change/add another sync chain and to add other modules. It
+has been done. New types of events may need to be added to data_structures.h.
+This is only to link between Event-* modules. If the data does not have to be
+shared, data_structures.h does not have to be modified.

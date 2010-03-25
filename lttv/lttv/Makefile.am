@@ -84,6 +84,9 @@ lttv_real_SOURCES = \
 	sync/event_analysis_eval.h\
 	sync/event_analysis_linreg.c\
 	sync/event_analysis_linreg.h\
+	sync/factor_reduction.h\
+	sync/factor_reduction_accuracy.c\
+	sync/factor_reduction_accuracy.h\
 	sync/lookup3.h
 
 lttvinclude_HEADERS = \

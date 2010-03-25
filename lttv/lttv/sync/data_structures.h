@@ -22,6 +22,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
+
 
 enum Direction
 {
@@ -179,7 +181,6 @@ typedef struct
 typedef struct
 {
 	unsigned int refCount;
-	unsigned int traceNb;
 	PairFactors** pairFactors;
 } AllFactors;
 
@@ -236,6 +237,6 @@ void destroyBroadcast(Broadcast* const broadcast);
 void destroyPairFactors(PairFactors* factorsCHull);
 
 AllFactors* createAllFactors(const unsigned int traceNb);
-void freeAllFactors(AllFactors* const allFactors);
+void freeAllFactors(AllFactors* const allFactors, const unsigned int traceNb);
 
 #endif

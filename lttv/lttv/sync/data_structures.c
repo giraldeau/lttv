@@ -699,7 +699,6 @@ AllFactors* createAllFactors(const unsigned int traceNb)
 	unsigned int i, j;
 
 	allFactors= malloc(sizeof(AllFactors));
-	allFactors->traceNb= traceNb;
 	allFactors->refCount= 1;
 	allFactors->pairFactors= malloc(traceNb * sizeof(PairFactors*));
 	factorsArray=allFactors->pairFactors;
@@ -731,13 +730,12 @@ AllFactors* createAllFactors(const unsigned int traceNb)
  * Free a container of PairFactors
  *
  * Args:
- *   traceNb:      number of traces
  *   allFactors:   container of PairFactors
+ *   traceNb:      number of traces
  */
-void freeAllFactors(AllFactors* const allFactors)
+void freeAllFactors(AllFactors* const allFactors, const unsigned int traceNb)
 {
 	unsigned int i, j;
-	const unsigned int traceNb= allFactors->traceNb;
 
 	allFactors->refCount--;
 

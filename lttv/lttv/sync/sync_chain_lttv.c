@@ -44,6 +44,7 @@
 #include "event_analysis_chull.h"
 #include "event_analysis_linreg.h"
 #include "event_analysis_eval.h"
+#include "factor_reduction_accuracy.h"
 #include "sync_chain.h"
 #include "sync_chain_lttv.h"
 
@@ -75,6 +76,12 @@ static ModuleOption optionSyncAnalysis= {
 	.hasArg= REQUIRED_ARG,
 	.optionHelp= "specify the algorithm to use for event analysis",
 };
+static GString* reductionModulesNames;
+static ModuleOption optionSyncReduction= {
+	.longName= "sync-reduction",
+	.hasArg= REQUIRED_ARG,
+	.optionHelp= "specify the algorithm to use for factor reduction",
+};
 static ModuleOption optionSyncGraphs= {
 	.longName= "sync-graphs",
 	.hasArg= NO_ARG,
@@ -96,6 +103,20 @@ static ModuleOption optionSyncGraphsDir= {
 static void init()
 {
 	int retval;
+	unsigned int i;
+	const struct
+	{
+		GQueue* modules;
+		ModuleOption* option;
+		size_t nameOffset;
+		GString** names;
+		void (*gfAppendName)(gpointer data, gpointer user_data);
+	} loopValues[]= {
+		{&analysisModules, &optionSyncAnalysis, offsetof(AnalysisModule,
+				name), &analysisModulesNames, &gfAppendAnalysisName},
+		{&reductionModules, &optionSyncReduction, offsetof(ReductionModule,
+				name), &reductionModulesNames, &gfAppendReductionName},
+	};
 
 	g_debug("Sync init");
 
@@ -117,15 +138,23 @@ static void init()
 	registerAnalysisLinReg();
 	registerAnalysisEval();
 
-	g_assert(g_queue_get_length(&analysisModules) > 0);
-	optionSyncAnalysis.arg= ((AnalysisModule*)
-		g_queue_peek_head(&analysisModules))->name;
-	analysisModulesNames= g_string_new("");
-	g_queue_foreach(&analysisModules, &gfAppendAnalysisName,
-		analysisModulesNames);
-	// remove the last ", "
-	g_string_truncate(analysisModulesNames, analysisModulesNames->len - 2);
-	optionSyncAnalysis.argHelp= analysisModulesNames->str;
+	registerReductionAccuracy();
+
+	// Build module names lists for option and help string
+	for (i= 0; i < ARRAY_SIZE(loopValues); i++)
+	{
+		g_assert(g_queue_get_length(loopValues[i].modules) > 0);
+		loopValues[i].option->arg= (char*)(*(void**)
+			g_queue_peek_head(loopValues[i].modules) +
+			loopValues[i].nameOffset);
+		*loopValues[i].names= g_string_new("");
+		g_queue_foreach(loopValues[i].modules, loopValues[i].gfAppendName,
+			*loopValues[i].names);
+		// remove the last ", "
+		g_string_truncate(*loopValues[i].names, (*loopValues[i].names)->len -
+			2);
+		loopValues[i].option->argHelp= (*loopValues[i].names)->str;
+	}
 
 	retval= snprintf(graphsDir, sizeof(graphsDir), "graphs-%d", getpid());
 	if (retval > sizeof(graphsDir) - 1)
@@ -137,6 +166,7 @@ static void init()
 
 	g_queue_push_head(&moduleOptions, &optionSyncGraphsDir);
 	g_queue_push_head(&moduleOptions, &optionSyncGraphs);
+	g_queue_push_head(&moduleOptions, &optionSyncReduction);
 	g_queue_push_head(&moduleOptions, &optionSyncAnalysis);
 	g_queue_push_head(&moduleOptions, &optionSyncNull);
 	g_queue_push_head(&moduleOptions, &optionSyncStats);
@@ -155,10 +185,12 @@ static void destroy()
 
 	g_queue_foreach(&moduleOptions, &gfRemoveModuleOption, NULL);
 	g_string_free(analysisModulesNames, TRUE);
+	g_string_free(reductionModulesNames, TRUE);
 
 	g_queue_clear(&processingModules);
 	g_queue_clear(&matchingModules);
 	g_queue_clear(&analysisModules);
+	g_queue_clear(&reductionModules);
 	g_queue_clear(&moduleOptions);
 }
 
@@ -256,11 +288,24 @@ bool syncTraceset(LttvTracesetContext* const traceSetContext)
 		g_error("Analysis module '%s' not found", optionSyncAnalysis.arg);
 	}
 
+	syncState->reductionData= NULL;
+	result= g_queue_find_custom(&reductionModules, optionSyncReduction.arg,
+		&gcfCompareReduction);
+	if (result != NULL)
+	{
+		syncState->reductionModule= (ReductionModule*) result->data;
+	}
+	else
+	{
+		g_error("Reduction module '%s' not found", optionSyncReduction.arg);
+	}
+
 	syncState->processingModule->initProcessing(syncState, traceSetContext);
 	if (!optionSyncNull.present)
 	{
 		syncState->matchingModule->initMatching(syncState);
 		syncState->analysisModule->initAnalysis(syncState);
+		syncState->reductionModule->initReduction(syncState);
 	}
 
 	// Process traceset
@@ -271,8 +316,9 @@ bool syncTraceset(LttvTracesetContext* const traceSetContext)
 
 	// Obtain, reduce, adjust and set correction factors
 	allFactors= syncState->processingModule->finalizeProcessing(syncState);
-	factors= reduceFactors(allFactors);
-	freeAllFactors(allFactors);
+	factors= syncState->reductionModule->finalizeReduction(syncState,
+		allFactors);
+	freeAllFactors(allFactors, syncState->traceNb);
 
 	/* The offsets are adjusted so the lowest one is 0. This is done because
 	 * of a Lttv specific limitation: events cannot have negative times. By
@@ -373,6 +419,10 @@ bool syncTraceset(LttvTracesetContext* const traceSetContext)
 	if (syncState->analysisModule != NULL)
 	{
 		syncState->analysisModule->destroyAnalysis(syncState);
+	}
+	if (syncState->reductionModule != NULL)
+	{
+		syncState->reductionModule->destroyReduction(syncState);
 	}
 
 	free(syncState);
