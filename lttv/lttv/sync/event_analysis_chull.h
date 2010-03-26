@@ -22,6 +22,9 @@
 
 #include "data_structures.h"
 
+#ifdef HAVE_LIBGLPK
+#include <glpk.h>
+#endif
 
 typedef struct
 {
@@ -33,8 +36,8 @@ typedef struct
 {
 	unsigned int dropped;
 
-	/* allFactors is divided into three parts depending on the position of an
-	 * element allFactors->pairFactors[i][j]:
+	/* geoFactors is divided into three parts depending on the position of an
+	 * element geoFactors->pairFactors[i][j]:
 	 *   Lower triangular part of the matrix
 	 *     i > j
 	 *     This contains the factors between nodes i and j. These factors
@@ -69,9 +72,38 @@ typedef struct
 	 * even no communication at all). Also used for factors in the upper
 	 * triangular matrix.
 	 *
-	 * SCREWED,
-	 * min and max are not available because the algorithms are screwed. One
+	 * FAIL,
+	 * min and max are not available because the algorithms are defective. One
 	 * of min or max (but not both) is NULL. The other is initialized.
+	 */
+	AllFactors* geoFactors;
+
+#ifdef HAVE_LIBGLPK
+	/* Synchronization factors, as calculated via LP, for comparison. Same
+	 * structure as geoFactors.
+	 *
+	 * Factor types are used as follows:
+	 * EXACT,
+	 * Used for identity factors (a0= 0, a1= 1) that map a trace to itself. In
+	 * this case, min, max and accuracy are not initialized.
+	 *
+	 * ACCURATE,
+	 * The approximation is the middle of the min and max limits.
+	 *
+	 * INCOMPLETE,
+	 * min or max is available but not both. The hulls respected assumptions
+	 * but all receives took place after all sends or vice versa.
+	 *
+	 * ABSENT,
+	 * The pair of trace did not have communications in both directions (maybe
+	 * even no communication at all). Also used when the hulls do not respect
+	 * assumptions. Also used for factors in the upper triangular matrix.
+	 */
+	AllFactors* lpFactors;
+#endif
+
+	/* This is AnalysisStatsCHull.lpFactors if it is available or else
+	 * AnalysisStatsCHull.geoFactors.
 	 */
 	AllFactors* allFactors;
 } AnalysisStatsCHull;
@@ -90,9 +122,16 @@ typedef struct
 	 */
 	FILE*** hullPoints;
 
-	/* This is the same array as AnalysisStatsCHull.allFactors.
+	/* This is AnalysisStatsCHull.lpFactors if it is available or else
+	 * AnalysisStatsCHull.geoFactors.
 	 */
 	AllFactors* allFactors;
+
+#ifdef HAVE_LIBGLPK
+	/* This is the same array as AnalysisStatsCHull.lpFactors.
+	 */
+	AllFactors* lpFactors;
+#endif
 } AnalysisGraphsDataCHull;
 
 
@@ -139,14 +178,18 @@ typedef struct
 	 */
 	GQueue*** hullArray;
 
+#ifdef HAVE_LIBGLPK
+	/* glp_prob* lps[traceNum][traceNum]
+	 *
+	 * Only the lower triangular part of the matrix is allocated, that is
+	 * lps[i][j] where i > j */
+	glp_prob*** lps;
+#endif
+
 	AnalysisStatsCHull* stats;
 	AnalysisGraphsDataCHull* graphsData;
 } AnalysisDataCHull;
 
 void registerAnalysisCHull();
-
-AllFactors* calculateAllFactors(struct _SyncState* const syncState);
-
-void calculateFactorsMiddle(PairFactors* const factors);
 
 #endif

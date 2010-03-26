@@ -46,7 +46,7 @@ const char* const approxNames[]= {
 	[APPROXIMATE]= "Approximate",
 	[INCOMPLETE]= "Incomplete",
 	[ABSENT]= "Absent",
-	[SCREWED]= "Screwed",
+	[FAIL]= "Fail",
 };
 
 
@@ -736,6 +736,11 @@ AllFactors* createAllFactors(const unsigned int traceNb)
 void freeAllFactors(AllFactors* const allFactors, const unsigned int traceNb)
 {
 	unsigned int i, j;
+
+	if (allFactors == NULL)
+	{
+		return;
+	}
 
 	allFactors->refCount--;
 

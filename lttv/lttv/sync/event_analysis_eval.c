@@ -35,7 +35,6 @@
 
 #include "lookup3.h"
 #include "sync_chain.h"
-#include "event_analysis_chull.h"
 
 #include "event_analysis_eval.h"
 
@@ -45,15 +44,6 @@ struct WriteHistogramInfo
 	GHashTable* rttInfo;
 	FILE* graphsStream;
 };
-
-#ifdef HAVE_LIBGLPK
-struct LPAddRowInfo
-{
-	glp_prob* lp;
-	int boundType;
-	GArray* iArray, * jArray, * aArray;
-};
-#endif
 
 // Functions common to all analysis modules
 static void initAnalysisEval(SyncState* const syncState);
@@ -67,14 +57,6 @@ static void analyzeBroadcastEval(SyncState* const syncState, Broadcast* const
 	broadcast);
 static AllFactors* finalizeAnalysisEval(SyncState* const syncState);
 static void printAnalysisStatsEval(SyncState* const syncState);
-static void writeAnalysisTraceTimeBackPlotsEval(SyncState* const syncState,
-	const unsigned int i, const unsigned int j);
-static void writeAnalysisTraceTimeForePlotsEval(SyncState* const syncState,
-	const unsigned int i, const unsigned int j);
-static void writeAnalysisTraceTraceBackPlotsEval(SyncState* const syncState,
-	const unsigned int i, const unsigned int j);
-static void writeAnalysisTraceTraceForePlotsEval(SyncState* const syncState,
-	const unsigned int i, const unsigned int j);
 
 // Functions specific to this module
 static guint ghfRttKeyHash(gconstpointer key);
@@ -109,23 +91,6 @@ static void writeHistogram(FILE* graphsStream, const struct RttKey* rttKey,
 static void updateBounds(Bounds** const bounds, Event* const e1, Event* const
 	e2);
 
-static void finalizeAnalysisEvalLP(SyncState* const syncState);
-// The next group of functions is only needed when computing synchronization
-// accuracy.
-#ifdef HAVE_LIBGLPK
-static glp_prob* lpCreateProblem(GQueue* const lowerHull, GQueue* const
-	upperHull);
-static void gfLPAddRow(gpointer data, gpointer user_data);
-static Factors* calculateFactors(glp_prob* const lp, const int direction);
-static void calculateCompleteFactors(glp_prob* const lp, PairFactors*
-	factors);
-static inline void finalizeAnalysisEvalLP(SyncState* const syncState);
-static void gfAddAbsiscaToArray(gpointer data, gpointer user_data);
-static gint gcfCompareDouble(gconstpointer a, gconstpointer b);
-#else
-static void finalizeAnalysisEvalLP(SyncState* const syncState);
-#endif
-
 
 // initialized in registerAnalysisEval()
 double binBase;
@@ -139,12 +104,7 @@ static AnalysisModule analysisModuleEval= {
 	.analyzeBroadcast= &analyzeBroadcastEval,
 	.finalizeAnalysis= &finalizeAnalysisEval,
 	.printAnalysisStats= &printAnalysisStatsEval,
-	.graphFunctions= {
-		.writeTraceTimeBackPlots= &writeAnalysisTraceTimeBackPlotsEval,
-		.writeTraceTimeForePlots= &writeAnalysisTraceTimeForePlotsEval,
-		.writeTraceTraceBackPlots= &writeAnalysisTraceTraceBackPlotsEval,
-		.writeTraceTraceForePlots= &writeAnalysisTraceTraceForePlotsEval,
-	}
+	.graphFunctions= {}
 };
 
 static ModuleOption optionEvalRttFile= {
@@ -223,11 +183,6 @@ static void initAnalysisEval(SyncState* const syncState)
 		analysisData->stats->exchangeRtt=
 			g_hash_table_new_full(&ghfRttKeyHash, &gefRttKeyEqual,
 				&gdnDestroyRttKey, &gdnDestroyDouble);
-
-#ifdef HAVE_LIBGLPK
-		analysisData->stats->chFactorsArray= NULL;
-		analysisData->stats->lpFactorsArray= NULL;
-#endif
 	}
 
 	if (syncState->graphsStream)
@@ -250,25 +205,6 @@ static void initAnalysisEval(SyncState* const syncState)
 				graphs->bounds[i][j].max= 0;
 			}
 		}
-
-#ifdef HAVE_LIBGLPK
-		graphs->lps= NULL;
-		graphs->lpFactorsArray= NULL;
-#endif
-	}
-
-	if (syncState->stats || syncState->graphsStream)
-	{
-		GList* result;
-
-		analysisData->chullSS= malloc(sizeof(SyncState));
-		memcpy(analysisData->chullSS, syncState, sizeof(SyncState));
-		analysisData->chullSS->stats= false;
-		analysisData->chullSS->analysisData= NULL;
-		result= g_queue_find_custom(&analysisModules, "chull",
-			&gcfCompareAnalysis);
-		analysisData->chullSS->analysisModule= (AnalysisModule*) result->data;
-		analysisData->chullSS->analysisModule->initAnalysis(analysisData->chullSS);
 	}
 }
 
@@ -556,11 +492,6 @@ static void destroyAnalysisEval(SyncState* const syncState)
 
 		g_hash_table_destroy(stats->exchangeRtt);
 
-#ifdef HAVE_LIBGLPK
-		freeAllFactors(stats->chFactorsArray, syncState->traceNb);
-		freeAllFactors(stats->lpFactorsArray, syncState->traceNb);
-#endif
-
 		free(stats);
 	}
 
@@ -579,34 +510,7 @@ static void destroyAnalysisEval(SyncState* const syncState)
 		}
 		free(graphs->bounds);
 
-#ifdef HAVE_LIBGLPK
-		for (i= 0; i < syncState->traceNb; i++)
-		{
-			unsigned int j;
-
-			for (j= 0; j < i; j++)
-			{
-				// There seems to be a memory leak in glpk, valgrind reports a
-				// loss (reachable) even if the problem is deleted
-				glp_delete_prob(graphs->lps[i][j]);
-			}
-			free(graphs->lps[i]);
-		}
-		free(graphs->lps);
-
-		if (!syncState->stats)
-		{
-			freeAllFactors(graphs->lpFactorsArray, syncState->traceNb);
-		}
-#endif
-
 		free(graphs);
-	}
-
-	if (syncState->stats || syncState->graphsStream)
-	{
-		analysisData->chullSS->analysisModule->destroyAnalysis(analysisData->chullSS);
-		free(analysisData->chullSS);
 	}
 
 	free(syncState->analysisData);
@@ -708,12 +612,6 @@ static void analyzeMessageEval(SyncState* const syncState, Message* const
 	{
 		updateBounds(analysisData->graphs->bounds, message->inE,
 			message->outE);
-	}
-
-	if (syncState->stats || syncState->graphsStream)
-	{
-		analysisData->chullSS->analysisModule->analyzeMessage(analysisData->chullSS,
-			message);
 	}
 }
 
@@ -917,8 +815,6 @@ static AllFactors* finalizeAnalysisEval(SyncState* const syncState)
 		analysisData->graphs->histograms= NULL;
 	}
 
-	finalizeAnalysisEvalLP(syncState);
-
 	return createAllFactors(syncState->traceNb);
 }
 
@@ -1022,47 +918,6 @@ static void printAnalysisStatsEval(SyncState* const syncState)
 		"\t\tHost pair                          RTT from exchanges  RTTs from file (ms)\n");
 	g_hash_table_foreach(analysisData->stats->exchangeRtt,
 		&ghfPrintExchangeRtt, analysisData->rttInfo);
-
-#ifdef HAVE_LIBGLPK
-	printf("\tConvex hull factors comparisons:\n"
-		"\t\tTrace pair  Factors type  Differences (lp - chull)\n"
-		"\t\t                          a0                    a1\n"
-		"\t\t                          Min        Max        Min        Max\n");
-
-	for (i= 0; i < syncState->traceNb; i++)
-	{
-		for (j= 0; j < i; j++)
-		{
-			PairFactors* chFactors=
-				&analysisData->stats->chFactorsArray->pairFactors[i][j];
-			PairFactors* lpFactors=
-				&analysisData->stats->lpFactorsArray->pairFactors[i][j];
-
-			printf("\t\t%3d - %-3d   ", i, j);
-			if (lpFactors->type == chFactors->type)
-			{
-				if (lpFactors->type == ACCURATE)
-				{
-					printf("%-13s %-10.4g %-10.4g %-10.4g %.4g\n",
-						approxNames[lpFactors->type],
-						lpFactors->min->offset - chFactors->min->offset,
-						lpFactors->max->offset - chFactors->max->offset,
-						lpFactors->min->drift - chFactors->min->drift,
-						lpFactors->max->drift - chFactors->max->drift);
-				}
-				else if (lpFactors->type == ABSENT)
-				{
-					printf("%s\n", approxNames[lpFactors->type]);
-				}
-			}
-			else
-			{
-				printf("Different! %s and %s\n", approxNames[lpFactors->type],
-					approxNames[chFactors->type]);
-			}
-		}
-	}
-#endif
 }
 
 
@@ -1536,506 +1391,4 @@ static void updateBounds(Bounds** const bounds, Event* const e1, Event* const
 	{
 		tpBounds->max= messageTime;
 	}
-}
-
-
-#ifdef HAVE_LIBGLPK
-/*
- * Create the linear programming problem containing the constraints defined by
- * two half-hulls. The objective function and optimization directions are not
- * written.
- *
- * Args:
- *   syncState:    container for synchronization data
- *   i:            first trace number
- *   j:            second trace number, garanteed to be larger than i
- * Returns:
- *   A new glp_prob*, this problem must be freed by the caller with
- *   glp_delete_prob()
- */
-static glp_prob* lpCreateProblem(GQueue* const lowerHull, GQueue* const
-	upperHull)
-{
-	unsigned int it;
-	const int zero= 0;
-	const double zeroD= 0.;
-	glp_prob* lp= glp_create_prob();
-	unsigned int hullPointNb= g_queue_get_length(lowerHull) +
-		g_queue_get_length(upperHull);
-	GArray* iArray= g_array_sized_new(FALSE, FALSE, sizeof(int), hullPointNb +
-		1);
-	GArray* jArray= g_array_sized_new(FALSE, FALSE, sizeof(int), hullPointNb +
-		1);
-	GArray* aArray= g_array_sized_new(FALSE, FALSE, sizeof(double),
-		hullPointNb + 1);
-	struct {
-		GQueue* hull;
-		struct LPAddRowInfo rowInfo;
-	} loopValues[2]= {
-		{lowerHull, {lp, GLP_UP, iArray, jArray, aArray}},
-		{upperHull, {lp, GLP_LO, iArray, jArray, aArray}},
-	};
-
-	// Create the LP problem
-	glp_term_out(GLP_OFF);
-	if (hullPointNb > 0)
-	{
-		glp_add_rows(lp, hullPointNb);
-	}
-	glp_add_cols(lp, 2);
-
-	glp_set_col_name(lp, 1, "a0");
-	glp_set_col_bnds(lp, 1, GLP_FR, 0., 0.);
-	glp_set_col_name(lp, 2, "a1");
-	glp_set_col_bnds(lp, 2, GLP_LO, 0., 0.);
-
-	// Add row constraints
-	g_array_append_val(iArray, zero);
-	g_array_append_val(jArray, zero);
-	g_array_append_val(aArray, zeroD);
-
-	for (it= 0; it < sizeof(loopValues) / sizeof(*loopValues); it++)
-	{
-		g_queue_foreach(loopValues[it].hull, &gfLPAddRow,
-			&loopValues[it].rowInfo);
-	}
-
-	g_assert_cmpuint(iArray->len, ==, jArray->len);
-	g_assert_cmpuint(jArray->len, ==, aArray->len);
-	g_assert_cmpuint(aArray->len - 1, ==, hullPointNb * 2);
-
-	glp_load_matrix(lp, aArray->len - 1, &g_array_index(iArray, int, 0),
-		&g_array_index(jArray, int, 0), &g_array_index(aArray, double, 0));
-
-	glp_scale_prob(lp, GLP_SF_AUTO);
-
-	g_array_free(iArray, TRUE);
-	g_array_free(jArray, TRUE);
-	g_array_free(aArray, TRUE);
-
-	return lp;
-}
-
-
-/*
- * A GFunc for g_queue_foreach(). Add constraints and bounds for one row.
- *
- * Args:
- *   data          Point*, synchronization point for which to add an LP row
- *                 (a constraint)
- *   user_data     LPAddRowInfo*
- */
-static void gfLPAddRow(gpointer data, gpointer user_data)
-{
-	Point* p= data;
-	struct LPAddRowInfo* rowInfo= user_data;
-	int indexes[2];
-	double constraints[2];
-
-	indexes[0]= g_array_index(rowInfo->iArray, int, rowInfo->iArray->len - 1) + 1;
-	indexes[1]= indexes[0];
-
-	if (rowInfo->boundType == GLP_UP)
-	{
-		glp_set_row_bnds(rowInfo->lp, indexes[0], GLP_UP, 0., p->y);
-	}
-	else if (rowInfo->boundType == GLP_LO)
-	{
-		glp_set_row_bnds(rowInfo->lp, indexes[0], GLP_LO, p->y, 0.);
-	}
-	else
-	{
-		g_assert_not_reached();
-	}
-
-	g_array_append_vals(rowInfo->iArray, indexes, 2);
-	indexes[0]= 1;
-	indexes[1]= 2;
-	g_array_append_vals(rowInfo->jArray, indexes, 2);
-	constraints[0]= 1.;
-	constraints[1]= p->x;
-	g_array_append_vals(rowInfo->aArray, constraints, 2);
-}
-
-
-/*
- * Calculate min or max correction factors (as possible) using an LP problem.
- *
- * Args:
- *   lp:           A linear programming problem with constraints and bounds
- *                 initialized.
- *   direction:    The type of factors desired. Use GLP_MAX for max
- *                 approximation factors (a1, the drift or slope is the
- *                 largest) and GLP_MIN in the other case.
- *
- * Returns:
- *   If the calculation was successful, a new Factors struct. Otherwise, NULL.
- *   The calculation will fail if the hull assumptions are not respected.
- */
-static Factors* calculateFactors(glp_prob* const lp, const int direction)
-{
-	int retval, status;
-	Factors* factors;
-
-	glp_set_obj_coef(lp, 1, 0.);
-	glp_set_obj_coef(lp, 2, 1.);
-
-	glp_set_obj_dir(lp, direction);
-	retval= glp_simplex(lp, NULL);
-	status= glp_get_status(lp);
-
-	if (retval == 0 && status == GLP_OPT)
-	{
-		factors= malloc(sizeof(Factors));
-		factors->offset= glp_get_col_prim(lp, 1);
-		factors->drift= glp_get_col_prim(lp, 2);
-	}
-	else
-	{
-		factors= NULL;
-	}
-
-	return factors;
-}
-
-
-/*
- * Calculate min, max and approx correction factors (as possible) using an LP
- * problem.
- *
- * Args:
- *   lp:           A linear programming problem with constraints and bounds
- *                 initialized.
- *
- * Returns:
- *   Please note that the approximation type may be ACCURATE, INCOMPLETE or
- *   ABSENT. Unlike in analysis_chull, ABSENT is also used when the hulls do
- *   not respect assumptions.
- */
-static void calculateCompleteFactors(glp_prob* const lp, PairFactors* factors)
-{
-	factors->min= calculateFactors(lp, GLP_MIN);
-	factors->max= calculateFactors(lp, GLP_MAX);
-
-	if (factors->min && factors->max)
-	{
-		factors->type= ACCURATE;
-		calculateFactorsMiddle(factors);
-	}
-	else if (factors->min || factors->max)
-	{
-		factors->type= INCOMPLETE;
-		factors->approx= NULL;
-	}
-	else
-	{
-		factors->type= ABSENT;
-		factors->approx= NULL;
-	}
-}
-
-
-/*
- * A GFunc for g_queue_foreach()
- *
- * Args:
- *   data          Point*, a convex hull point
- *   user_data     GArray*, an array of convex hull point absisca values, as
- *                 double
- */
-static void gfAddAbsiscaToArray(gpointer data, gpointer user_data)
-{
-	Point* p= data;
-	GArray* a= user_data;
-	double v= p->x;
-
-	g_array_append_val(a, v);
-}
-
-
-/*
- * A GCompareFunc for g_array_sort()
- *
- * Args:
- *   a, b          double*, absisca values
- *
- * Returns:
- *   "returns less than zero for first arg is less than second arg, zero for
- *   equal, greater zero if first arg is greater than second arg"
- *   - the great glib documentation
- */
-static gint gcfCompareDouble(gconstpointer a, gconstpointer b)
-{
-	if (*(double*) a < *(double*) b)
-	{
-		return -1;
-	}
-	else if (*(double*) a > *(double*) b)
-	{
-		return 1;
-	}
-	else
-	{
-		return 0;
-	}
-}
-#endif
-
-
-/*
- * Compute synchronization factors using a linear programming approach.
- * Compute the factors using analysis_chull. Compare the two.
- *
- * When the solver library, glpk, is not available at build time, only compute
- * the factors using analysis_chull. This is to make sure that module runs its
- * finalize function so that its graph functions can be called later.
- *
- * Args:
- *   syncState:    container for synchronization data
- */
-static void finalizeAnalysisEvalLP(SyncState* const syncState)
-{
-	AnalysisDataEval* analysisData= syncState->analysisData;
-#ifdef HAVE_LIBGLPK
-	unsigned int i, j;
-	AnalysisDataCHull* chAnalysisData= analysisData->chullSS->analysisData;
-	AllFactors* lpFactorsArray;
-
-	if (!syncState->stats && !syncState->graphsStream)
-	{
-		return;
-	}
-
-	/* Because of matching_distributor, this analysis may be called twice.
-	 * Only run it once */
-	if ((syncState->graphsStream && analysisData->graphs->lps != NULL) ||
-		(syncState->stats && analysisData->stats->chFactorsArray != NULL))
-	{
-		return;
-	}
-
-	lpFactorsArray= createAllFactors(syncState->traceNb);
-
-	if (syncState->stats)
-	{
-		analysisData->stats->chFactorsArray=
-			calculateAllFactors(analysisData->chullSS);
-		analysisData->stats->lpFactorsArray= lpFactorsArray;
-	}
-
-	if (syncState->graphsStream)
-	{
-		analysisData->graphs->lps= malloc(syncState->traceNb *
-			sizeof(glp_prob**));
-		for (i= 0; i < syncState->traceNb; i++)
-		{
-			analysisData->graphs->lps[i]= malloc(i * sizeof(glp_prob*));
-		}
-		analysisData->graphs->lpFactorsArray= lpFactorsArray;
-	}
-
-	for (i= 0; i < syncState->traceNb; i++)
-	{
-		for (j= 0; j < i; j++)
-		{
-			glp_prob* lp;
-
-			// Create the LP problem
-			lp= lpCreateProblem(chAnalysisData->hullArray[i][j],
-				chAnalysisData->hullArray[j][i]);
-
-			// Use the LP problem to find the correction factors for this pair of
-			// traces
-			calculateCompleteFactors(lp, &lpFactorsArray->pairFactors[i][j]);
-
-			if (syncState->graphsStream)
-			{
-				analysisData->graphs->lps[i][j]= lp;
-			}
-			else
-			{
-				glp_delete_prob(lp);
-			}
-		}
-	}
-#endif
-
-	freeAllFactors(analysisData->chullSS->analysisModule->finalizeAnalysis(analysisData->chullSS),
-		analysisData->chullSS->traceNb);
-}
-
-
-/*
- * Compute synchronization accuracy information using a linear programming
- * approach. Write the neccessary data files and plot lines in the gnuplot
- * script.
- *
- * When the solver library, glpk, is not available at build time nothing is
- * actually produced.
- *
- * Args:
- *   syncState:    container for synchronization data
- *   i:            first trace number
- *   j:            second trace number, garanteed to be larger than i
- */
-static void writeAnalysisTraceTimeBackPlotsEval(SyncState* const syncState,
-	const unsigned int i, const unsigned int j)
-{
-#ifdef HAVE_LIBGLPK
-	unsigned int it;
-	AnalysisDataEval* analysisData= syncState->analysisData;
-	AnalysisGraphsEval* graphs= analysisData->graphs;
-	GQueue*** hullArray= ((AnalysisDataCHull*)
-		analysisData->chullSS->analysisData)->hullArray;
-	PairFactors* lpFactors= &graphs->lpFactorsArray->pairFactors[j][i];
-	glp_prob* lp= graphs->lps[j][i];
-
-	if (lpFactors->type == ACCURATE)
-	{
-		int retval;
-		char* cwd;
-		char fileName[40];
-		FILE* fp;
-		GArray* xValues;
-
-		// Open the data file
-		snprintf(fileName, 40, "analysis_eval_accuracy-%03u_and_%03u.data", i, j);
-		fileName[sizeof(fileName) - 1]= '\0';
-
-		cwd= changeToGraphsDir(syncState->graphsDir);
-
-		if ((fp= fopen(fileName, "w")) == NULL)
-		{
-			g_error(strerror(errno));
-		}
-		fprintf(fp, "#%-24s %-25s %-25s %-25s\n", "x", "middle", "min", "max");
-
-		retval= chdir(cwd);
-		if (retval == -1)
-		{
-			g_error(strerror(errno));
-		}
-		free(cwd);
-
-		// Build the list of absisca values for the points in the accuracy graph
-		xValues= g_array_sized_new(FALSE, FALSE, sizeof(double),
-			g_queue_get_length(hullArray[i][j]) +
-			g_queue_get_length(hullArray[j][i]));
-
-		g_queue_foreach(hullArray[i][j], &gfAddAbsiscaToArray, xValues);
-		g_queue_foreach(hullArray[j][i], &gfAddAbsiscaToArray, xValues);
-
-		g_array_sort(xValues, &gcfCompareDouble);
-
-		/* For each absisca value and each optimisation direction, solve the LP
-		 * and write a line in the data file */
-		for (it= 0; it < xValues->len; it++)
-		{
-			unsigned int it2;
-			int directions[]= {GLP_MIN, GLP_MAX};
-			glp_set_obj_coef(lp, 1, 1.);
-			glp_set_obj_coef(lp, 2, g_array_index(xValues, double, it));
-
-			fprintf(fp, "%25.9f %25.9f", g_array_index(xValues, double, it),
-				lpFactors->approx->offset + lpFactors->approx->drift *
-				g_array_index(xValues, double, it));
-			for (it2= 0; it2 < sizeof(directions) / sizeof(*directions); it2++)
-			{
-				int status;
-
-				glp_set_obj_dir(lp, directions[it2]);
-				retval= glp_simplex(lp, NULL);
-				status= glp_get_status(lp);
-
-				g_assert(retval == 0 && status == GLP_OPT);
-				fprintf(fp, " %25.9f", glp_get_obj_val(lp));
-			}
-			fprintf(fp, "\n");
-		}
-
-		g_array_free(xValues, TRUE);
-		fclose(fp);
-
-		fprintf(syncState->graphsStream,
-			"\t\"analysis_eval_accuracy-%1$03u_and_%2$03u.data\" "
-				"using 1:(($3 - $2) / clock_freq_%2$u):(($4 - $2) / clock_freq_%2$u) "
-				"title \"Synchronization accuracy\" "
-				"with filledcurves linewidth 2 linetype 1 "
-				"linecolor rgb \"black\" fill solid 0.25 noborder, \\\n", i,
-				j);
-	}
-#endif
-}
-
-
-/*
- * Write the analysis-specific graph lines in the gnuplot script.
- *
- * When the solver library, glpk, is not available at build time nothing is
- * actually produced.
- *
- * Args:
- *   syncState:    container for synchronization data
- *   i:            first trace number
- *   j:            second trace number, garanteed to be larger than i
- */
-static void writeAnalysisTraceTimeForePlotsEval(SyncState* const syncState,
-	const unsigned int i, const unsigned int j)
-{
-#ifdef HAVE_LIBGLPK
-	if (((AnalysisDataEval*)
-			syncState->analysisData)->graphs->lpFactorsArray->pairFactors[j][i].type
-		== ACCURATE)
-	{
-		fprintf(syncState->graphsStream,
-			"\t\"analysis_eval_accuracy-%1$03u_and_%2$03u.data\" "
-				"using 1:(($3 - $2) / clock_freq_%2$u) notitle "
-				"with lines linewidth 2 linetype 1 "
-				"linecolor rgb \"gray60\", \\\n"
-			"\t\"analysis_eval_accuracy-%1$03u_and_%2$03u.data\" "
-				"using 1:(($4 - $2) / clock_freq_%2$u) notitle "
-				"with lines linewidth 2 linetype 1 "
-				"linecolor rgb \"gray60\", \\\n", i, j);
-	}
-#endif
-}
-
-
-/*
- * Write the analysis-specific graph lines in the gnuplot script.
- *
- * Args:
- *   syncState:    container for synchronization data
- *   i:            first trace number
- *   j:            second trace number, garanteed to be larger than i
- */
-static void writeAnalysisTraceTraceBackPlotsEval(SyncState* const syncState,
-	const unsigned int i, const unsigned int j)
-{
-#ifdef HAVE_LIBGLPK
-	fprintf(syncState->graphsStream,
-		"\t\"analysis_eval_accuracy-%1$03u_and_%2$03u.data\" "
-		"using 1:3:4 "
-		"title \"Synchronization accuracy\" "
-		"with filledcurves linewidth 2 linetype 1 "
-		"linecolor rgb \"black\" fill solid 0.25 noborder, \\\n", i, j);
-#endif
-}
-
-
-/*
- * Write the analysis-specific graph lines in the gnuplot script.
- *
- * Args:
- *   syncState:    container for synchronization data
- *   i:            first trace number
- *   j:            second trace number, garanteed to be larger than i
- */
-static void writeAnalysisTraceTraceForePlotsEval(SyncState* const syncState,
-	const unsigned int i, const unsigned int j)
-{
-	AnalysisDataEval* analysisData= syncState->analysisData;
-
-	analysisData->chullSS->analysisModule->graphFunctions.writeTraceTraceForePlots(analysisData->chullSS,
-		i, j);
 }

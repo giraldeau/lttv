@@ -162,8 +162,8 @@ typedef enum
 	 * even no communication at all). approx and accuracy are NULL.
 	 */
 
-	SCREWED,
-	/* The algorithms are screwed. All fields may be NULL.
+	FAIL,
+	/* The algorithms are defective. All fields may be NULL.
 	 */
 
 	APPROX_NB, // This must be the last member
@@ -183,6 +183,14 @@ typedef struct
 	unsigned int refCount;
 	PairFactors** pairFactors;
 } AllFactors;
+
+
+// This structure is used to return a corrected time value with accuracy
+// bounds
+typedef struct
+{
+	uint64_t time, min, max;
+} CorrectedTime;
 
 
 // ConnectionKey-related functions

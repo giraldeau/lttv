@@ -23,9 +23,6 @@
 #endif
 
 #include <glib.h>
-#ifdef HAVE_LIBGLPK
-#include <glpk.h>
-#endif
 
 #include "data_structures.h"
 
@@ -61,12 +58,6 @@ typedef struct
 	 * For this table, saddr and daddr are swapped as necessary such that
 	 * saddr < daddr */
 	GHashTable* exchangeRtt;
-
-#ifdef HAVE_LIBGLPK
-	// Only the lower triangular part of theses matrixes is used
-	AllFactors* chFactorsArray;
-	AllFactors* lpFactorsArray;
-#endif
 } AnalysisStatsEval;
 
 #define BIN_NB 1001
@@ -124,29 +115,12 @@ typedef struct
 	 * Only the lower triangular part of the matrix is allocated, that is
 	 * bounds[i][j] where i > j */
 	Bounds** bounds;
-
-#ifdef HAVE_LIBGLPK
-	/* glp_prob* lps[traceNum][traceNum]
-	 *
-	 * Only the lower triangular part of the matrix is allocated, that is
-	 * lps[i][j] where i > j */
-	glp_prob*** lps;
-
-	/* Only the lower triangular part of the matrix is allocated, that is
-	 * lpFactorsArray[i][j] where i > j */
-	AllFactors* lpFactorsArray;
-#endif
 } AnalysisGraphsEval;
 
 typedef struct
 {
 	// double* rttInfo[RttKey]
 	GHashTable* rttInfo;
-
-	/* The convex hull analysis is encapsulated and messages are passed to it
-	 * so that it builds the convex hulls. These are reused in the linear
-	 * program. */
-	struct _SyncState* chullSS;
 
 	AnalysisStatsEval* stats;
 	AnalysisGraphsEval* graphs;
