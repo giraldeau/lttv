@@ -240,6 +240,7 @@ void unregisterHooks(GArray* hookListList, LttvTracesetContext* const
 			}
 		}
 
+		lttv_trace_hook_remove_all(&hookList);
 		g_array_free(hookList, TRUE);
 	}
 	g_array_free(hookListList, TRUE);

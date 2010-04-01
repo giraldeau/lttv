@@ -384,13 +384,15 @@ static void destroyAnalysisCHull(SyncState* const syncState)
 
 			for (j= 0; j < i; j++)
 			{
-				// There seems to be a memory leak in glpk, valgrind reports a
-				// loss (reachable) even if the problem is deleted
 				glp_delete_prob(analysisData->lps[i][j]);
 			}
 			free(analysisData->lps[i]);
 		}
 		free(analysisData->lps);
+
+		/* Be careful, this invalidates all problem objects which still exist.
+		 * Don't keep copies of lps past this point. */
+		glp_free_env();
 	}
 #endif
 
