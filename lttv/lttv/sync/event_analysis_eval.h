@@ -115,6 +115,9 @@ typedef struct
 	 * Only the lower triangular part of the matrix is allocated, that is
 	 * bounds[i][j] where i > j */
 	Bounds** bounds;
+
+	// Extra SyncState used to overlay the chull-calculated accuracy region
+	SyncState* chullSS;
 } AnalysisGraphsEval;
 
 typedef struct

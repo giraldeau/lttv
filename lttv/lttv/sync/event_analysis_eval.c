@@ -57,6 +57,10 @@ static void analyzeBroadcastEval(SyncState* const syncState, Broadcast* const
 	broadcast);
 static AllFactors* finalizeAnalysisEval(SyncState* const syncState);
 static void printAnalysisStatsEval(SyncState* const syncState);
+static void writeAnalysisTraceTimeBackPlotsEval(SyncState* const syncState,
+	const unsigned int i, const unsigned int j);
+static void writeAnalysisTraceTimeForePlotsEval(SyncState* const syncState,
+	const unsigned int i, const unsigned int j);
 
 // Functions specific to this module
 static guint ghfRttKeyHash(gconstpointer key);
@@ -104,7 +108,10 @@ static AnalysisModule analysisModuleEval= {
 	.analyzeBroadcast= &analyzeBroadcastEval,
 	.finalizeAnalysis= &finalizeAnalysisEval,
 	.printAnalysisStats= &printAnalysisStatsEval,
-	.graphFunctions= {}
+	.graphFunctions= {
+		.writeTraceTimeBackPlots= &writeAnalysisTraceTimeBackPlotsEval,
+		.writeTraceTimeForePlots= &writeAnalysisTraceTimeForePlotsEval,
+	}
 };
 
 static ModuleOption optionEvalRttFile= {
@@ -188,6 +195,7 @@ static void initAnalysisEval(SyncState* const syncState)
 	if (syncState->graphsStream)
 	{
 		AnalysisGraphsEval* graphs= malloc(sizeof(AnalysisGraphsEval));
+		GList* result;
 
 		analysisData->graphs= graphs;
 
@@ -205,6 +213,14 @@ static void initAnalysisEval(SyncState* const syncState)
 				graphs->bounds[i][j].max= 0;
 			}
 		}
+
+		graphs->chullSS= (SyncState*) malloc(sizeof(SyncState));
+		memcpy(graphs->chullSS, syncState, sizeof(SyncState));
+		graphs->chullSS->analysisData= NULL;
+		result= g_queue_find_custom(&analysisModules, "chull", &gcfCompareAnalysis);
+		g_assert(result != NULL);
+		graphs->chullSS->analysisModule= (AnalysisModule*) result->data;
+		graphs->chullSS->analysisModule->initAnalysis(graphs->chullSS);
 	}
 }
 
@@ -510,6 +526,9 @@ static void destroyAnalysisEval(SyncState* const syncState)
 		}
 		free(graphs->bounds);
 
+		graphs->chullSS->analysisModule->destroyAnalysis(graphs->chullSS);
+		free(graphs->chullSS);
+
 		free(graphs);
 	}
 
@@ -612,6 +631,9 @@ static void analyzeMessageEval(SyncState* const syncState, Message* const
 	{
 		updateBounds(analysisData->graphs->bounds, message->inE,
 			message->outE);
+
+		analysisData->graphs->chullSS->analysisModule->analyzeMessage(analysisData->graphs->chullSS,
+			message);
 	}
 }
 
@@ -806,6 +828,9 @@ static AllFactors* finalizeAnalysisEval(SyncState* const syncState)
 {
 	AnalysisDataEval* analysisData= syncState->analysisData;
 
+	/* This function may be run twice because of matching_distributor. This
+	 * check is there to make sure the next block is run only once.
+	 */
 	if (syncState->graphsStream && analysisData->graphs->histograms)
 	{
 		g_hash_table_foreach(analysisData->graphs->histograms,
@@ -813,6 +838,14 @@ static AllFactors* finalizeAnalysisEval(SyncState* const syncState)
 			analysisData->rttInfo, .graphsStream= syncState->graphsStream});
 		g_hash_table_destroy(analysisData->graphs->histograms);
 		analysisData->graphs->histograms= NULL;
+
+		if (syncState->graphsStream)
+		{
+			SyncState* chullSS= analysisData->graphs->chullSS;
+
+			freeAllFactors(chullSS->analysisModule->finalizeAnalysis(chullSS),
+				chullSS->traceNb);
+		}
 	}
 
 	return createAllFactors(syncState->traceNb);
@@ -1390,5 +1423,51 @@ static void updateBounds(Bounds** const bounds, Event* const e1, Event* const
 	if (messageTime > tpBounds->max)
 	{
 		tpBounds->max= messageTime;
+	}
+}
+
+
+/*
+ * Write the analysis-specific graph lines in the gnuplot script.
+ *
+ * Args:
+ *   syncState:    container for synchronization data
+ *   i:            first trace number
+ *   j:            second trace number, garanteed to be larger than i
+ */
+static void writeAnalysisTraceTimeBackPlotsEval(SyncState* const syncState,
+	const unsigned int i, const unsigned int j)
+{
+	SyncState* chullSS= ((AnalysisDataEval*)
+				syncState->analysisData)->graphs->chullSS;
+	const GraphFunctions* graphFunctions=
+		&chullSS->analysisModule->graphFunctions;
+
+	if (graphFunctions->writeTraceTimeBackPlots != NULL)
+	{
+			graphFunctions->writeTraceTimeBackPlots(chullSS, i, j);
+		}
+}
+
+
+/*
+ * Write the analysis-specific graph lines in the gnuplot script.
+ *
+ * Args:
+ *   syncState:    container for synchronization data
+ *   i:            first trace number
+ *   j:            second trace number, garanteed to be larger than i
+ */
+static void writeAnalysisTraceTimeForePlotsEval(SyncState* const syncState,
+	const unsigned int i, const unsigned int j)
+{
+	SyncState* chullSS= ((AnalysisDataEval*)
+		syncState->analysisData)->graphs->chullSS;
+	const GraphFunctions* graphFunctions=
+		&chullSS->analysisModule->graphFunctions;
+
+	if (graphFunctions->writeTraceTimeForePlots != NULL)
+	{
+		graphFunctions->writeTraceTimeForePlots(chullSS, i, j);
 	}
 }
