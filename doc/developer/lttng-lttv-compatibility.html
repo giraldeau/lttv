@@ -3823,6 +3823,7 @@ powerpc64, s390, sparc, sparc64.<br>
 0.203<br>
 0.204<br>
 0.205<br>
+0.206<br>
 </td>
 <td style="vertical-align: top;">
 0.76<br>
@@ -3890,6 +3891,9 @@ LTTng 0.205 fixes a kref race in channel teardown vs lttd file open.<br>
 ltt-control 0.82 ensures lttctl waits for lttd to complete when called at trace
 destruction in overwrite mode. Failure to do so can result in unread channels in
 flight recorder mode.<br>
+LTTng 0.206 marks Immediate Values as BROKEN for PowerPC. Will be replaced by
+asm goto from mainline eventually anyway, so don't bother looking for the cause
+of the bug.<br>
 </td>
 <td style="vertical-align: top;">
 </td>
