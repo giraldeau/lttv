@@ -3821,6 +3821,8 @@ powerpc64, s390, sparc, sparc64.<br>
 0.201<br>
 0.202<br>
 0.203<br>
+0.204<br>
+0.205<br>
 </td>
 <td style="vertical-align: top;">
 0.76<br>
@@ -3829,6 +3831,7 @@ powerpc64, s390, sparc, sparc64.<br>
 0.79<br>
 0.80<br>
 0.81<br>
+0.82<br>
 </td>
 <td style="vertical-align: top;">
 obsolete<br>
@@ -3883,6 +3886,10 @@ ltt-control 0.81 divides the lttd daemon in a LGPLv2.1 library and GPLv2 program
 parts. It makes it possible to spawn a daemon instance from a program without
 requiring to fork a new process.<br>
 LTTng 0.204 supports kernel 2.6.33.2<br>
+LTTng 0.205 fixes a kref race in channel teardown vs lttd file open.<br>
+ltt-control 0.82 ensures lttctl waits for lttd to complete when called at trace
+destruction in overwrite mode. Failure to do so can result in unread channels in
+flight recorder mode.<br>
 </td>
 <td style="vertical-align: top;">
 </td>
