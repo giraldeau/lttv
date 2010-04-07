@@ -3313,6 +3313,25 @@ static gboolean fs_open(void *hook_data, void *call_data)
   return FALSE;
 }
 
+static void print_stack(LttvProcessState *process)
+{
+	LttvExecutionState *es;
+	int i;
+
+	g_debug("Execution stack for process %u %s:\n",
+		process->pid, g_quark_to_string(process->name));
+
+	for (i = 0; i < process->execution_stack->len; i++) {
+		es = &g_array_index(process->execution_stack,
+				    LttvExecutionState, i);
+		g_debug("Depth %d mode %s submode %s status %s\n",
+			i, g_quark_to_string(es->t),
+			g_quark_to_string(es->n),
+			g_quark_to_string(es->s));
+	}
+
+}
+
 static void fix_process(gpointer key, gpointer value,
    gpointer user_data)
 {
@@ -3320,6 +3339,8 @@ static void fix_process(gpointer key, gpointer value,
   LttvExecutionState *es;
   process = (LttvProcessState *)value;
   LttTime *timestamp = (LttTime*)user_data;
+
+  print_stack(process);
 
   if(process->type == LTTV_STATE_KERNEL_THREAD) {
     es = &g_array_index(process->execution_stack, LttvExecutionState, 0);
@@ -3345,21 +3366,28 @@ static void fix_process(gpointer key, gpointer value,
         es->s = LTTV_STATE_RUN;
 
       if(process->execution_stack->len == 1) {
-        /* Still in bottom unknown mode, means never did a system call
+        /* Still in bottom unknown mode, means we either:
+	 * - never did a system call
+	 * - are scheduled out from user mode.
 	 * May be either in user mode, syscall mode, running or waiting.*/
-	/* FIXME : we may be tagging syscall mode when being user mode */
-        process->execution_stack =
-          g_array_set_size(process->execution_stack, 2);
-        es = process->state = &g_array_index(process->execution_stack, 
-          LttvExecutionState, 1);
-        es->t = LTTV_STATE_SYSCALL;
-        es->n = LTTV_STATE_SUBMODE_NONE;
-        es->entry = *timestamp;
-        //g_assert(timestamp->tv_sec != 0);
-        es->change = *timestamp;
-        es->cum_cpu_time = ltt_time_zero;
-	if(es->s == LTTV_STATE_WAIT_FORK)
-          es->s = LTTV_STATE_WAIT;
+	/* CHECK : we may be tagging syscall mode when being user mode
+	 * (should be fixed now) */
+	if (es->s == LTTV_STATE_WAIT_CPU) {
+		/* nothing to do: scheduled out from userspace */
+	} else {
+		process->execution_stack =
+		  g_array_set_size(process->execution_stack, 2);
+		es = process->state = &g_array_index(process->execution_stack, 
+		  LttvExecutionState, 1);
+		es->t = LTTV_STATE_SYSCALL;
+		es->n = LTTV_STATE_SUBMODE_NONE;
+		es->entry = *timestamp;
+		//g_assert(timestamp->tv_sec != 0);
+		es->change = *timestamp;
+		es->cum_cpu_time = ltt_time_zero;
+		if(es->s == LTTV_STATE_WAIT_FORK)
+		  es->s = LTTV_STATE_WAIT;
+	}
       }
     }
   }
