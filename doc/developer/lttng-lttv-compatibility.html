@@ -3806,6 +3806,7 @@ powerpc64, s390, sparc, sparc64.<br>
 <tr>
 <td style="vertical-align: top;">
 0.12.30<br>
+0.12.31<br>
 </td>
 <td style="vertical-align: top;">
 0.191<br>
@@ -3901,6 +3902,9 @@ LTTng 0.208 uses msleep() rather than cpu_relax() for better !PREEMPT UP support
 for the kref teardown.<br>
 ltt-control 0.83 does a temporary fix to ensure lttd grabs file handles at the
 end of overwrite mode tracing.<br>
+LTTV 0.12.31 fixes the statedump end state handler to correctly deal with
+threads scheduled out from userspace (waiting for CPU) when the statedump end
+event happen.<br>
 </td>
 <td style="vertical-align: top;">
 </td>
