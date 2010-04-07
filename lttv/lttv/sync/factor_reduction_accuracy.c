@@ -86,7 +86,7 @@ static void initReductionAccuracy(SyncState* const syncState)
 /*
  * Reduction destroy function
  *
- * Free the analysis specific data structures
+ * Free the reduction specific data structures
  *
  * Args:
  *   syncState     container for synchronization data.

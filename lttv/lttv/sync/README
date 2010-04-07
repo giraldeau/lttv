@@ -279,6 +279,10 @@ This stage and its modules are specific to the algorithm that analyzes events
 to deduce synchronization factors.
 eg. convex hull, linear regression, broadcast Maximum Likelihood Estimator
 
+This module should return a set of synchronization factors for each trace
+pair. Some trace pairs may have no factors, their approxType should be set to
+ABSENT.
+
 Instead of having one analyzeEvents() function that can receive any sort of
 grouping of events, there are three prototypes: analyzeMessage(),
 analyzeExchange() and analyzeBroadcast(). A module implements only the
@@ -298,14 +302,10 @@ I chose this approach because:
 3) we'll see which one of the two approaches works best and we can adapt
    later.
 
-++ Data flow
-Data from traces flows "down" from processing to matching to analysis. Factors
-come back up.
-
 ++ Stage 4: Factor reduction
-This stage reduces the pair-wise synchronization factors to time correction
-factors for each trace. It is most useful when synchronizing more than two
-traces.
+This stage reduces the pair-wise synchronization factors obtained in step 3 to
+time correction factors for each trace. It is most useful when synchronizing
+more than two traces.
 
 ++ Evolution and adaptation
 It is possible to change/add another sync chain and to add other modules. It

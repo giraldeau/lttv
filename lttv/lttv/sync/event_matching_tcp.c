@@ -250,7 +250,7 @@ static void matchEventTCP(SyncState* const syncState, Event* const event)
 
 
 /*
- * Call the partial matching destroyer and Obtain the factors from downstream
+ * Call the partial matching destroyer and obtain the factors from downstream
  *
  * Args:
  *   syncState     container for synchronization data.

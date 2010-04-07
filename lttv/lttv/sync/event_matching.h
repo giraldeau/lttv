@@ -30,14 +30,40 @@ typedef struct
 	char* name;
 	bool canMatch[TYPE_COUNT];
 
+	/*
+	 * This function is called at the beginning of a synchronization run for a set
+	 * of traces. Allocate the matching specific data structures.
+	 */
 	void (*initMatching)(struct _SyncState* const syncState);
+
+	/*
+	 * Free the matching specific data structures.
+	 */
 	void (*destroyMatching)(struct _SyncState* const syncState);
 
+	/*
+	 * Try to match one event from a trace with the corresponding event from
+	 * another trace. If it is possible, create a new structure and call the
+	 * analyse{message,exchange,broadcast} function of the analysis module.
+	 */
 	void (*matchEvent)(struct _SyncState* const syncState, Event* const
 		event);
+
+	/*
+	 * Obtain the factors from downstream.
+	 */
 	AllFactors* (*finalizeMatching)(struct _SyncState* const syncState);
 
+	/*
+     * Print statistics related to matching. Is always called after
+     * finalizeMatching.
+     */
 	void (*printMatchingStats)(struct _SyncState* const syncState);
+
+	/*
+	 * Write the matching-specific options and graph commands in the gnuplot
+	 * script. Is always called after finalizeMatching.
+	 */
 	GraphFunctions graphFunctions;
 } MatchingModule;
 

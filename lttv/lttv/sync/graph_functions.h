@@ -27,14 +27,32 @@ typedef void (GraphFunction)(struct _SyncState* const syncState, const
 
 typedef struct
 {
+	/*
+	 * These functions are called at the beginning of the gnuplot script and
+	 * may writes variables that can be reused in the plot or options lines
+	 */
 	GraphVariableFunction* writeVariables;
-	/* This is for graphs where the data on both axis is in the range of
-	 * timestamps */
+
+	/*
+	 * All "Back" functions are called, then all "Fore" functions. They add
+	 * graphs to a gnuplot "plot" command. All "Options" functions are called.
+	 * They can set options via the gnuplot "set" command. Finaly, a replot is
+	 * performed. This is done so that options may be set using dynamic
+	 * gnuplot variables like GPVAL_X_MIN
+	 */
+	/*
+	 * These next three functions ("writeTraceTrace...") are for graphs where
+	 * both axes are in the scale of timestamps.
+	 */
 	GraphFunction* writeTraceTraceForePlots;
 	GraphFunction* writeTraceTraceBackPlots;
 	GraphFunction* writeTraceTraceOptions;
-	/* This is for graphs where the data on the abscissa is in the range of
-	 * timestamps and the ordinates is in the range of timestamp deltas */
+
+	/*
+	 * These next three functions ("writeTraceTime...") are for graphs where
+	 * the abscissa are in the scale of timestamps and the ordinate in the
+	 * scale of seconds.
+	 */
 	GraphFunction* writeTraceTimeForePlots;
 	GraphFunction* writeTraceTimeBackPlots;
 	GraphFunction* writeTraceTimeOptions;

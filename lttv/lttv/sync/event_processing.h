@@ -31,10 +31,33 @@ typedef struct
 {
 	char* name;
 
+	/*
+	 * This function is called at the beginning of a synchronization run for a
+	 * set of traces. Allocate and initialize data structures for
+	 * synchronizing a traceset.
+	 */
 	void (*initProcessing)(struct _SyncState* const syncStateLttv, ...);
+
+	/*
+	 * Obtain the factors from downstream.
+	 */
 	AllFactors* (*finalizeProcessing)(struct _SyncState* const syncState);
+
+	/*
+	 * Print statistics related to processing. Is always called after
+	 * finalizeProcessing.
+	 */
 	void (*printProcessingStats)(struct _SyncState* const syncState);
+
+	/*
+	 * Deallocate processingData. No more functions may be called after this.
+	 */
 	void (*destroyProcessing)(struct _SyncState* const syncState);
+
+	/*
+	 * Write the processing-specific options and graph commands in the gnuplot
+	 * script. Is always called after finalizeProcessing.
+	 */
 	GraphFunctions graphFunctions;
 } ProcessingModule;
 

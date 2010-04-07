@@ -158,7 +158,7 @@ static void initProcessingLTTVStandard(SyncState* const syncState, ...)
 
 
 /*
- * Call the partial processing destroyer, obtain and adjust the factors from
+ * Call the partial processing destroyer, obtain and the factors from
  * downstream
  *
  * Args:
@@ -180,7 +180,7 @@ static AllFactors* finalizeProcessingLTTVStandard(SyncState* const syncState)
 
 
 /*
- * Print statistics related to processing Must be called after
+ * Print statistics related to processing. Must be called after
  * finalizeProcessing.
  *
  * Args:

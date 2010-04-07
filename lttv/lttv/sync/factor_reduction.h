@@ -28,13 +28,34 @@ typedef struct
 {
 	char* name;
 
+	/*
+	 * This function is called at the beginning of a synchronization run for a
+	 * set of traces. Allocate some reduction specific data structures.
+	 */
 	void (*initReduction)(struct _SyncState* const syncState);
+
+	/*
+	 * Free the reduction specific data structures
+	 */
 	void (*destroyReduction)(struct _SyncState* const syncState);
 
+	/*
+	 * Convert trace pair synchronization factors to a resulting offset and
+	 * drift for each trace.
+	 */
 	GArray* (*finalizeReduction)(struct _SyncState* const syncState,
 		AllFactors* allFactors);
 
+	/*
+	 * Print statistics related to reduction. Is always called after
+	 * finalizeReduction.
+	 */
 	void (*printReductionStats)(struct _SyncState* const syncState);
+
+	/*
+	 * Write the reduction-specific options and graph commands in the gnuplot
+	 * script. Is always called after finalizeReduction.
+	 */
 	GraphFunctions graphFunctions;
 } ReductionModule;
 
