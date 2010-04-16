@@ -216,4 +216,13 @@ LttTime ltt_interpolate_time_from_tsc(LttTracefile *tf, guint64 tsc);
 /* Set to enable event debugging output */
 void ltt_event_debug(int state);
 
+/* A structure representing the version number of the trace */
+struct LttTraceVersion {
+  guint8    ltt_major_version;
+  guint8    ltt_minor_version;
+};
+
+/* To get the version number of a trace */
+int ltt_get_trace_version(const gchar *pathname, struct LttTraceVersion * version_number);
+
 #endif // TRACE_H
