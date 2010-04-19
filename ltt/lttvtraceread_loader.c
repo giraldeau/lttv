@@ -138,17 +138,27 @@ JNIEXPORT void JNICALL Java_org_eclipse_linuxtools_lttng_jni_factory_JniTraceVer
 }
 
 void freeAllHandle() {
-        free(version_table);
-        free(version_functions_table);
+        if ( version_table != NULL ) {
+                free(version_table);
+                version_table = NULL;
+        }
+        
+        if ( version_functions_table != NULL ) {
+                free(version_functions_table);
+                version_functions_table = NULL;
+        }
 }
 
 void freeHandle(int handle_id) {
-        if (version_table[handle_id].static_handle != NULL) {
-                /* Memory will be freed by dlclose as well */
-                dlclose(version_table[handle_id].static_handle);
-                version_table[handle_id].static_handle = NULL;
-                free(version_table[handle_id].libname);
-                version_table[handle_id].libname = NULL;
+        
+        if ( handle_id >= nb_id ) {
+                if (version_table[handle_id].static_handle != NULL) {
+                        /* Memory will be freed by dlclose as well */
+                        dlclose(version_table[handle_id].static_handle);
+                        version_table[handle_id].static_handle = NULL;
+                        free(version_table[handle_id].libname);
+                        version_table[handle_id].libname = NULL;
+                }
         }
         
         int isEmpty = 1;
