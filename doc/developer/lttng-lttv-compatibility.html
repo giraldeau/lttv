@@ -3846,6 +3846,7 @@ powerpc64, s390, sparc, sparc64.<br>
 0.83<br>
 0.84<br>
 0.85<br>
+0.86<br>
 </td>
 <td style="vertical-align: top;">
 obsolete<br>
@@ -3930,6 +3931,8 @@ LTTng 0.214 support kernel 2.6.33.4.<br>
 LTTng 0.215 fixes module circular dependendy.<br>
 ltt-control 0.85 contains an update lttd which uses fadvise and sync_file_range
 to ensure that the page cache is not filled by trace buffers.<br>
+ltt-control 0.86 puts fadvise after sync writeback to use sync writeback rather
+than dirty page writeback. (should improve streaming)<br>
 </td>
 <td style="vertical-align: top;">
 </td>
