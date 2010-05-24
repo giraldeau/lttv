@@ -3834,6 +3834,7 @@ powerpc64, s390, sparc, sparc64.<br>
 0.213<br>
 0.214<br>
 0.215<br>
+0.216<br>
 </td>
 <td style="vertical-align: top;">
 0.76<br>
@@ -3933,6 +3934,8 @@ ltt-control 0.85 contains an update lttd which uses fadvise and sync_file_range
 to ensure that the page cache is not filled by trace buffers.<br>
 ltt-control 0.86 puts fadvise after sync writeback to use sync writeback rather
 than dirty page writeback. (should improve streaming)<br>
+LTTng 0.216 fixes a trace-clock-32-to-64 teardown bug recently introcuced. Only
+affects ARM and MIPS SMP systems.<br>
 </td>
 <td style="vertical-align: top;">
 </td>
