@@ -500,9 +500,10 @@ static LttvHooksByIdChannel *lttv_hooks_by_id_channel_find_channel(
 
   for (i = 0; i < h->array->len; i++) {
     hid = &g_array_index(h->array, LttvHooksByIdChannel, i);
-    if (hid->channel == channel)
+    if (hid->channel == channel) {
       found = 1;
       break;
+    }
   }
   if (!found) {
     g_array_set_size(h->array, h->array->len + 1);
