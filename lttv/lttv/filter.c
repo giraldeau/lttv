@@ -343,6 +343,7 @@ lttv_simple_expression_assign_operator(LttvSimpleExpression* se, LttvExpressionO
            g_warning("Error encountered in operator assignment = or != expected");
            return FALSE;
        }
+       break;
      /* 
       * integer
       */
