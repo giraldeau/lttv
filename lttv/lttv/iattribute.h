@@ -26,9 +26,9 @@
 #include <ltt/time.h>
 
 /* The content of a data structure may be seen as an array of pairs of
-   attribute name and value. This simple model allows generic navigation 
-   and access functions over a wide range of structures. The names are 
-   represented by unique integer identifiers, GQuarks. */
+ * attribute name and value. This simple model allows generic navigation
+ * and access functions over a wide range of structures. The names are
+ * represented by unique integer identifiers, GQuarks. */
 
 /* Please note that adding a value of type gobject that is non null does not
  * increment the reference count of this object : the actual reference to
@@ -40,21 +40,21 @@
 typedef GQuark LttvAttributeName;
 
 typedef enum _LttvAttributeType {
-  LTTV_INT, LTTV_UINT, LTTV_LONG, LTTV_ULONG, LTTV_FLOAT, LTTV_DOUBLE, 
-  LTTV_TIME, LTTV_POINTER, LTTV_STRING, LTTV_GOBJECT, LTTV_NONE
+	LTTV_INT, LTTV_UINT, LTTV_LONG, LTTV_ULONG, LTTV_FLOAT, LTTV_DOUBLE,
+	LTTV_TIME, LTTV_POINTER, LTTV_STRING, LTTV_GOBJECT, LTTV_NONE
 } LttvAttributeType;
 
 typedef union LttvAttributeValue {
-  int *v_int;
-  unsigned *v_uint;
-  long *v_long;
-  unsigned long *v_ulong;
-  float *v_float;
-  double *v_double;
-  LttTime *v_time;
-  gpointer *v_pointer;
-  char **v_string;
-  GObject **v_gobject;
+	int *v_int;
+	unsigned *v_uint;
+	long *v_long;
+	unsigned long *v_ulong;
+	float *v_float;
+	double *v_double;
+	LttTime *v_time;
+	gpointer *v_pointer;
+	char **v_string;
+	GObject **v_gobject;
 } LttvAttributeValue;
 
 
@@ -73,37 +73,37 @@ typedef struct _LttvIAttributeClass LttvIAttributeClass;
 
 
 struct _LttvIAttributeClass {
-  GTypeInterface parent;
+	GTypeInterface parent;
 
-  LttvIAttribute* (*new_attribute) (LttvIAttribute *self);
+	LttvIAttribute* (*new_attribute) (LttvIAttribute *self);
 
-  unsigned int (*get_number) (LttvIAttribute *self);
+	unsigned int (*get_number) (LttvIAttribute *self);
 
-  gboolean (*named) (LttvIAttribute *self, gboolean *homogeneous);
+	gboolean (*named) (LttvIAttribute *self, gboolean *homogeneous);
 
-  LttvAttributeType (*get) (LttvIAttribute *self, unsigned i, 
-      LttvAttributeName *name, LttvAttributeValue *v, gboolean *is_named);
+	LttvAttributeType (*get) (LttvIAttribute *self, unsigned i,
+			LttvAttributeName *name, LttvAttributeValue *v, gboolean *is_named);
 
-  LttvAttributeType (*get_by_name) (LttvIAttribute *self,
-      LttvAttributeName name, LttvAttributeValue *v);
+	LttvAttributeType (*get_by_name) (LttvIAttribute *self,
+			LttvAttributeName name, LttvAttributeValue *v);
 
-  LttvAttributeValue (*add) (LttvIAttribute *self, LttvAttributeName name, 
-      LttvAttributeType t);
+	LttvAttributeValue (*add) (LttvIAttribute *self, LttvAttributeName name,
+			LttvAttributeType t);
 
-  LttvAttributeValue (*add_unnamed) (LttvIAttribute *self,
+	LttvAttributeValue (*add_unnamed) (LttvIAttribute *self,
 			LttvAttributeName name,
-      LttvAttributeType t);
+			LttvAttributeType t);
 
-  void (*remove) (LttvIAttribute *self, unsigned i);
+	void (*remove) (LttvIAttribute *self, unsigned i);
 
-  void (*remove_by_name) (LttvIAttribute *self,
-      LttvAttributeName name);
+	void (*remove_by_name) (LttvIAttribute *self,
+			LttvAttributeName name);
 
-  LttvIAttribute* (*find_subdir) (LttvIAttribute *self, 
-      LttvAttributeName name);
+	LttvIAttribute* (*find_subdir) (LttvIAttribute *self,
+			LttvAttributeName name);
 
-  LttvIAttribute* (*find_subdir_unnamed) (LttvIAttribute *self, 
-      LttvAttributeName name);
+	LttvIAttribute* (*find_subdir_unnamed) (LttvIAttribute *self,
+			LttvAttributeName name);
 
 };
 
@@ -125,14 +125,14 @@ gboolean lttv_iattribute_named(LttvIAttribute *self, gboolean *homogeneous);
 /* Get the i th attribute along with its type and a pointer to its value. */
 
 LttvAttributeType lttv_iattribute_get(LttvIAttribute *self, unsigned i, 
-    LttvAttributeName *name, LttvAttributeValue *v, gboolean *is_named);
+		LttvAttributeName *name, LttvAttributeValue *v, gboolean *is_named);
  
 
 /* Get the named attribute in the table along with its type and a pointer to
    its value. If the named attribute does not exist, the type is LTTV_NONE. */
 
 LttvAttributeType lttv_iattribute_get_by_name(LttvIAttribute *self,
-    LttvAttributeName name, LttvAttributeValue *v);
+		LttvAttributeName name, LttvAttributeValue *v);
 
 
 /* Add an attribute, which must not exist. The name is an empty string for
@@ -140,16 +140,16 @@ LttvAttributeType lttv_iattribute_get_by_name(LttvIAttribute *self,
    and its pointer returned. */
 
 LttvAttributeValue lttv_iattribute_add(LttvIAttribute *self, 
-    LttvAttributeName name, LttvAttributeType t);
+		LttvAttributeName name, LttvAttributeType t);
 
 LttvAttributeValue lttv_iattribute_add_unnamed(LttvIAttribute *self, 
-    LttvAttributeName name, LttvAttributeType t);
+		LttvAttributeName name, LttvAttributeType t);
 /* Remove an attribute */
 
 void lttv_iattribute_remove(LttvIAttribute *self, unsigned i);
 
 void lttv_iattribute_remove_by_name(LttvIAttribute *self,
-    LttvAttributeName name);
+		LttvAttributeName name);
 
 
 /* Create an empty iattribute object and add it as an attribute under the
@@ -158,10 +158,10 @@ void lttv_iattribute_remove_by_name(LttvIAttribute *self,
    iattribute interface, return NULL. */
 
 LttvIAttribute* lttv_iattribute_find_subdir(LttvIAttribute *self, 
-      LttvAttributeName name);
+		LttvAttributeName name);
 
 LttvIAttribute* lttv_iattribute_find_subdir_unnamed(LttvIAttribute *self, 
-      LttvAttributeName name);
+		LttvAttributeName name);
 
 /* The remaining utility functions are not part of the LttvIAttribute
    interface but operate on objects implementing it. */
@@ -173,20 +173,20 @@ LttvIAttribute* lttv_iattribute_find_subdir_unnamed(LttvIAttribute *self,
    exists but is of incorrect type. */
 
 gboolean lttv_iattribute_find(LttvIAttribute *self, LttvAttributeName name, 
-    LttvAttributeType t, LttvAttributeValue *v);
+		LttvAttributeType t, LttvAttributeValue *v);
 
 
 /* Trees of attribute tables may be accessed using a hierarchical path with
    components separated by /, like in filesystems */
 
 gboolean lttv_iattribute_find_by_path(LttvIAttribute *self, const char *path,
-    LttvAttributeType t, LttvAttributeValue *v);
+		LttvAttributeType t, LttvAttributeValue *v);
 
 
 /* Shallow and deep copies */
 
 void lttv_iattribute_copy_value(LttvAttributeType t, LttvAttributeValue dest, 
-    LttvAttributeValue src);
+		LttvAttributeValue src);
 
 LttvIAttribute *lttv_iattribute_shallow_copy(LttvIAttribute *self);
 

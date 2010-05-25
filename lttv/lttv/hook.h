@@ -89,7 +89,7 @@ unsigned lttv_hooks_number(LttvHooks *h);
  * *f and *hook_data are NULL if no hook exists at that position. */
 
 void lttv_hooks_get(LttvHooks *h, unsigned i, LttvHook *f, void **hook_data,
-                                              LttvHookPrio *p);
+		LttvHookPrio *p);
 
 
 /* Remove the specified hook. The position of the following hooks may change */
@@ -115,17 +115,17 @@ gboolean lttv_hooks_call_check(LttvHooks *h, void *call_data);
  * hooks from h1 are called first. */
 
 gboolean lttv_hooks_call_merge(LttvHooks *h1, void *call_data1,
-                               LttvHooks *h2, void *call_data2);
+		LttvHooks *h2, void *call_data2);
 
 gboolean lttv_hooks_call_check_merge(LttvHooks *h1, void *call_data1,
-                                     LttvHooks *h2, void *call_data2);
+		LttvHooks *h2, void *call_data2);
 
 /* Sometimes different hooks need to be called based on the case. The
    case is represented by an unsigned integer id */
 
 typedef struct _LttvHooksById {
-  GPtrArray *index;
-  GArray *array;
+	GPtrArray *index;
+	GArray *array;
 } LttvHooksById;
 
 /* Create and destroy a hooks by id list */
@@ -149,11 +149,11 @@ unsigned lttv_hooks_by_id_max_id(LttvHooksById *h);
 
 static inline LttvHooks *lttv_hooks_by_id_get(LttvHooksById *h, unsigned id)
 {
-  LttvHooks *ret;
-  if(likely(id < h->index->len)) ret = h->index->pdata[id];
-  else ret = NULL;
+	LttvHooks *ret;
+	if(likely(id < h->index->len)) ret = h->index->pdata[id];
+	else ret = NULL;
 
-  return ret;
+	return ret;
 }
 
 /* Remove the list of hooks associated with an id */
@@ -169,12 +169,12 @@ void lttv_hooks_by_id_copy(LttvHooksById *dest, LttvHooksById *src);
 
 /* Internal structure, contained in by the LttvHooksByIdChannelArray */
 typedef struct _LttvHooksByIdChannel {
-  LttvHooksById *hooks_by_id;
-  GQuark channel;
+	LttvHooksById *hooks_by_id;
+	GQuark channel;
 } LttvHooksByIdChannel;
 
 typedef struct _LttvHooksByIdChannelArray {
-  GArray *array;	/* Array of LttvHooksByIdChannel */
+	GArray *array;	/* Array of LttvHooksByIdChannel */
 } LttvHooksByIdChannelArray;
 
 LttvHooksByIdChannelArray *lttv_hooks_by_id_channel_new(void);
@@ -182,6 +182,6 @@ LttvHooksByIdChannelArray *lttv_hooks_by_id_channel_new(void);
 void lttv_hooks_by_id_channel_destroy(LttvHooksByIdChannelArray *h);
 
 LttvHooks *lttv_hooks_by_id_channel_find(LttvHooksByIdChannelArray *h,
-    GQuark channel, guint16 id);
+		GQuark channel, guint16 id);
 
 #endif // HOOK_H

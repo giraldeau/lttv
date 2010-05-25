@@ -143,20 +143,20 @@
 
  
 extern GQuark
-  LTTV_STATS_PROCESS_UNKNOWN,
-  LTTV_STATS_PROCESSES,
-  LTTV_STATS_CPU,
-  LTTV_STATS_MODE_TYPES,
-  LTTV_STATS_SUBMODES,
-  LTTV_STATS_FUNCTIONS,
-  LTTV_STATS_EVENT_TYPES,
-  LTTV_STATS_CPU_TIME,
-  LTTV_STATS_CUMULATIVE_CPU_TIME,
-  LTTV_STATS_ELAPSED_TIME,
-  LTTV_STATS_EVENTS,
-  LTTV_STATS_EVENTS_COUNT,
-  LTTV_STATS_BEFORE_HOOKS,
-  LTTV_STATS_AFTER_HOOKS;
+	LTTV_STATS_PROCESS_UNKNOWN,
+	LTTV_STATS_PROCESSES,
+	LTTV_STATS_CPU,
+	LTTV_STATS_MODE_TYPES,
+	LTTV_STATS_SUBMODES,
+	LTTV_STATS_FUNCTIONS,
+	LTTV_STATS_EVENT_TYPES,
+	LTTV_STATS_CPU_TIME,
+	LTTV_STATS_CUMULATIVE_CPU_TIME,
+	LTTV_STATS_ELAPSED_TIME,
+	LTTV_STATS_EVENTS,
+	LTTV_STATS_EVENTS_COUNT,
+	LTTV_STATS_BEFORE_HOOKS,
+	LTTV_STATS_AFTER_HOOKS;
 
 
 typedef struct _LttvTracesetStats LttvTracesetStats;
@@ -182,7 +182,7 @@ gboolean lttv_stats_sum_traceset_hook(void *hook_data, void *call_data);
 void lttv_stats_sum_traceset(LttvTracesetStats *self, LttTime current_time);
 
 void lttv_stats_sum_trace(LttvTraceStats *self, LttvAttribute *ts_stats,
-  LttTime current_time);
+	LttTime current_time);
 
 /* Reset all statistics containers */
 void lttv_stats_reset(LttvTracesetStats *self);
@@ -199,13 +199,13 @@ void lttv_stats_reset(LttvTracesetStats *self);
 #define LTTV_TRACESET_STATS_GET_CLASS(inst)  (G_TYPE_INSTANCE_GET_CLASS ((inst), LTTV_TRACESET_STATS_TYPE, LttvTracesetStatsClass))
 
 struct _LttvTracesetStats {
-  LttvTracesetState parent;
+	LttvTracesetState parent;
 
-  LttvAttribute *stats;
+	LttvAttribute *stats;
 };
 
 struct _LttvTracesetStatsClass {
-  LttvTracesetStateClass parent;
+	LttvTracesetStateClass parent;
 };
 
 GType lttv_traceset_stats_get_type (void);
@@ -219,13 +219,13 @@ GType lttv_traceset_stats_get_type (void);
 #define LTTV_TRACE_STATS_GET_CLASS(inst)  (G_TYPE_INSTANCE_GET_CLASS ((inst), LTTV_TRACE_STATS_TYPE, LttvTraceStatsClass))
 
 struct _LttvTraceStats {
-  LttvTraceState parent;
+	LttvTraceState parent;
 
-  LttvAttribute *stats;
+	LttvAttribute *stats;
 };
 
 struct _LttvTraceStatsClass {
-  LttvTraceStateClass parent;
+	LttvTraceStateClass parent;
 };
 
 GType lttv_trace_stats_get_type (void);
@@ -239,22 +239,22 @@ GType lttv_trace_stats_get_type (void);
 #define LTTV_TRACEFILE_STATS_GET_CLASS(inst)  (G_TYPE_INSTANCE_GET_CLASS ((inst), LTTV_TRACEFILE_STATS_TYPE, LttvTracefileStatsClass))
 
 struct _LttvTracefileStats {
-  LttvTracefileState parent;
+	LttvTracefileState parent;
 
-  LttvAttribute *stats;
-  LttvAttribute *current_events_tree;
-  LttvAttribute *current_event_types_tree;
+	LttvAttribute *stats;
+	LttvAttribute *current_events_tree;
+	LttvAttribute *current_event_types_tree;
 };
 
 struct _LttvTracefileStatsClass {
-  LttvTracefileStateClass parent;
+	LttvTracefileStateClass parent;
 };
 
 GType lttv_tracefile_stats_get_type (void);
 
 struct sum_traceset_closure {
-  LttvTracesetStats *tss;
-  LttTime current_time;
+	LttvTracesetStats *tss;
+	LttTime current_time;
 };
 
 

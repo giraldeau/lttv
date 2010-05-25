@@ -80,11 +80,11 @@ typedef struct _LttvFilter LttvFilter;
  * lttv core filter
  */
 enum _LttvStructType {
-  LTTV_FILTER_TRACE,                /**< trace (LttTrace) */
-  LTTV_FILTER_TRACESET,             /**< traceset */
-  LTTV_FILTER_TRACEFILE,            /**< tracefile (LttTracefile) */
-  LTTV_FILTER_EVENT,                /**< event (LttEvent) */
-  LTTV_FILTER_STATE                 /**< state (LttvProcessState) */
+	LTTV_FILTER_TRACE,          /**< trace (LttTrace) */
+	LTTV_FILTER_TRACESET,       /**< traceset */
+	LTTV_FILTER_TRACEFILE,      /**< tracefile (LttTracefile) */
+	LTTV_FILTER_EVENT,          /**< event (LttEvent) */
+	LTTV_FILTER_STATE           /**< state (LttvProcessState) */
 };
 
 /**
@@ -97,28 +97,28 @@ enum _LttvStructType {
  * filters can be applied.
  */
 enum _LttvFieldType {
-  LTTV_FILTER_TRACE_NAME,             /**< trace.name (char*) */
-  LTTV_FILTER_TRACEFILE_NAME,         /**< tracefile.name (char*) */
-  LTTV_FILTER_STATE_PID,              /**< state.pid (guint) */
-  LTTV_FILTER_STATE_PPID,             /**< state.ppid (guint) */
-  LTTV_FILTER_STATE_CT,               /**< state.creation_time (double) */
-  LTTV_FILTER_STATE_IT,               /**< state.insertion_time (double) */
-  LTTV_FILTER_STATE_P_NAME,           /**< state.process_name (char*) */
-  LTTV_FILTER_STATE_T_BRAND,          /**< state.thread_brand (char*) */
-  LTTV_FILTER_STATE_EX_MODE,          /**< state.execution_mode (LttvExecutionMode) */
-  LTTV_FILTER_STATE_EX_SUBMODE,       /**< state.execution_submode (LttvExecutionSubmode) */
-  LTTV_FILTER_STATE_P_STATUS,         /**< state.process_status (LttvProcessStatus) */
-  LTTV_FILTER_STATE_CPU,              /**< state.cpu (?last_cpu?) */
-  LTTV_FILTER_EVENT_NAME,             /**< event.name (char*) */
-  LTTV_FILTER_EVENT_SUBNAME,          /**< event.subname (char*) */
-  LTTV_FILTER_EVENT_CATEGORY,         /**< FIXME: not implemented */
-  LTTV_FILTER_EVENT_TIME,             /**< event.time (double) */
-  LTTV_FILTER_EVENT_TSC,              /**< event.tsc (double) */
-  LTTV_FILTER_EVENT_TARGET_PID,       /**< event.target_pid (guint) */
-  LTTV_FILTER_EVENT_FIELD,            /**< dynamic field, specified in facility */
-  LTTV_FILTER_UNDEFINED               /**< undefined field */
+	LTTV_FILTER_TRACE_NAME,         /**< trace.name (char*) */
+	LTTV_FILTER_TRACEFILE_NAME,     /**< tracefile.name (char*) */
+	LTTV_FILTER_STATE_PID,          /**< state.pid (guint) */
+	LTTV_FILTER_STATE_PPID,         /**< state.ppid (guint) */
+	LTTV_FILTER_STATE_CT,           /**< state.creation_time (double) */
+	LTTV_FILTER_STATE_IT,           /**< state.insertion_time (double) */
+	LTTV_FILTER_STATE_P_NAME,       /**< state.process_name (char*) */
+	LTTV_FILTER_STATE_T_BRAND,      /**< state.thread_brand (char*) */
+	LTTV_FILTER_STATE_EX_MODE,      /**< state.execution_mode (LttvExecutionMode) */
+	LTTV_FILTER_STATE_EX_SUBMODE,   /**< state.execution_submode (LttvExecutionSubmode) */
+	LTTV_FILTER_STATE_P_STATUS,     /**< state.process_status (LttvProcessStatus) */
+	LTTV_FILTER_STATE_CPU,          /**< state.cpu (?last_cpu?) */
+	LTTV_FILTER_EVENT_NAME,         /**< event.name (char*) */
+	LTTV_FILTER_EVENT_SUBNAME,      /**< event.subname (char*) */
+	LTTV_FILTER_EVENT_CATEGORY,     /**< FIXME: not implemented */
+	LTTV_FILTER_EVENT_TIME,         /**< event.time (double) */
+	LTTV_FILTER_EVENT_TSC,          /**< event.tsc (double) */
+	LTTV_FILTER_EVENT_TARGET_PID,   /**< event.target_pid (guint) */
+	LTTV_FILTER_EVENT_FIELD,        /**< dynamic field, specified in facility */
+	LTTV_FILTER_UNDEFINED           /**< undefined field */
 };
-  
+
 /**
  *   @enum _LttvExpressionOp
  *  @brief Contains possible operators
@@ -130,12 +130,12 @@ enum _LttvFieldType {
  */
 enum _LttvExpressionOp
 { 
-  LTTV_FIELD_EQ,                      /**< equal */
-  LTTV_FIELD_NE,                      /**< not equal */
-  LTTV_FIELD_LT,                      /**< lower than */
-  LTTV_FIELD_LE,                      /**< lower or equal */
-  LTTV_FIELD_GT,                      /**< greater than */
-  LTTV_FIELD_GE                        /**< greater or equal */
+	LTTV_FIELD_EQ,      /**< equal */
+	LTTV_FIELD_NE,      /**< not equal */
+	LTTV_FIELD_LT,      /**< lower than */
+	LTTV_FIELD_LE,      /**< lower or equal */
+	LTTV_FIELD_GT,      /**< greater than */
+	LTTV_FIELD_GE       /**< greater or equal */
 };
 
 /**
@@ -144,22 +144,22 @@ enum _LttvExpressionOp
  *
  *  This particular union defines the 
  *  possible set of values taken by the 
- *  right member of a simple expression.  
+ *  right member of a simple expression.
  *  It is used for comparison whithin the 
  *  'operators' functions
  */
 union _LttvFieldValue {
-  GQuark  v_quark;                    /**< GQuark */
-  guint64 v_uint64;                   /**< unsigned int of 64 bytes */
-  guint32 v_uint32;                   /**< unsigned int of 32 bytes */
-  guint16 v_uint16;                   /**< unsigned int of 16 bytes */
-  guint16 v_uint;                     /**< unsigned int */
-  double v_double;                    /**< double */
-  char* v_string;                     /**< string */
-  LttTime v_ltttime;                  /**< LttTime */
-  struct {
-    GQuark q[2];
-  } v_quarks;
+	GQuark v_quark;         /**< GQuark */
+	guint64 v_uint64;       /**< unsigned int of 64 bytes */
+	guint32 v_uint32;       /**< unsigned int of 32 bytes */
+	guint16 v_uint16;       /**< unsigned int of 16 bytes */
+	guint16 v_uint;         /**< unsigned int */
+	double v_double;        /**< double */
+	char* v_string;         /**< string */
+	LttTime v_ltttime;      /**< LttTime */
+	struct {
+		GQuark q[2];
+	} v_quarks;
 };
 
 /**
@@ -167,12 +167,12 @@ union _LttvFieldValue {
  * @brief element types for the tree nodes
  *
  * LttvTreeElement defines the possible 
- * types of nodes which build the LttvFilterTree.  
+ * types of nodes which build the LttvFilterTree.
  */
 enum _LttvTreeElement {
-  LTTV_TREE_IDLE,                     /**< this node does nothing */
-  LTTV_TREE_NODE,                     /**< this node contains a logical operator */
-  LTTV_TREE_LEAF                      /**< this node is a leaf and contains a simple expression */
+	LTTV_TREE_IDLE,     /**< this node does nothing */
+	LTTV_TREE_NODE,     /**< this node contains a logical operator */
+	LTTV_TREE_LEAF      /**< this node is a leaf and contains a simple expression */
 };
 
 
@@ -190,10 +190,10 @@ enum _LttvTreeElement {
  */
 struct _LttvSimpleExpression
 { 
-  gint field;                               /**< left member of simple expression */                  
-  gint offset;                              /**< offset used for dynamic fields */
-  gboolean (*op)(gpointer,LttvFieldValue);  /**< operator of simple expression */
-  LttvFieldValue value;                     /**< right member of simple expression */
+	gint field;                                /**< left member of simple expression */
+	gint offset;                               /**< offset used for dynamic fields */
+	gboolean (*op)(gpointer,LttvFieldValue);   /**< operator of simple expression */
+	LttvFieldValue value;                      /**< right member of simple expression */
 };
 
 /**
@@ -206,10 +206,10 @@ struct _LttvSimpleExpression
  * AND, OR, XOR or NOT
  */
 enum _LttvLogicalOp {
-    LTTV_LOGICAL_OR = 1,              /**< OR (1) */
-    LTTV_LOGICAL_AND = 1<<1,          /**< AND (2) */
-    LTTV_LOGICAL_NOT = 1<<2,          /**< NOT (4) */
-    LTTV_LOGICAL_XOR = 1<<3           /**< XOR (8) */
+	LTTV_LOGICAL_OR = 1,            /**< OR (1) */
+	LTTV_LOGICAL_AND = 1<<1,        /**< AND (2) */
+	LTTV_LOGICAL_NOT = 1<<2,        /**< NOT (4) */
+	LTTV_LOGICAL_XOR = 1<<3         /**< XOR (8) */
 };
     
 /**
@@ -222,17 +222,17 @@ enum _LttvLogicalOp {
  *  operators
  */
 struct _LttvFilterTree {
-  int node;                         /**< value of LttvLogicalOp */
-  LttvTreeElement left;             /**< nature of left branch (node/leaf) */
-  LttvTreeElement right;            /**< nature of right branch (node/leaf) */
-  union {
-    LttvFilterTree* t;              
-    LttvSimpleExpression* leaf;     
-  } l_child;                        /**< left branch of tree */
-  union {
-    LttvFilterTree* t;              
-    LttvSimpleExpression* leaf;     
-  } r_child;                        /**< right branch of tree */
+	int node;                       /**< value of LttvLogicalOp */
+	LttvTreeElement left;           /**< nature of left branch (node/leaf) */
+	LttvTreeElement right;          /**< nature of right branch (node/leaf) */
+	union {
+		LttvFilterTree* t;
+		LttvSimpleExpression* leaf;
+	} l_child;                      /**< left branch of tree */
+	union {
+		LttvFilterTree* t;
+		LttvSimpleExpression* leaf;
+	} r_child;                      /**< right branch of tree */
 };
 
 /**
@@ -243,8 +243,8 @@ struct _LttvFilterTree {
  * with the expression itself.
  */
 struct _LttvFilter {
-  char *expression;                 /**< filtering expression string */
-  LttvFilterTree *head;             /**< tree associated to expression */
+	char *expression;                 /**< filtering expression string */
+	LttvFilterTree *head;             /**< tree associated to expression */
 };
 
 /*
@@ -252,11 +252,14 @@ struct _LttvFilter {
  */
 LttvSimpleExpression* lttv_simple_expression_new();
 
-gboolean lttv_simple_expression_assign_field(GPtrArray* fp, LttvSimpleExpression* se);
+gboolean lttv_simple_expression_assign_field(GPtrArray* fp, 
+		LttvSimpleExpression* se);
 
-gboolean lttv_simple_expression_assign_operator(LttvSimpleExpression* se, LttvExpressionOp op);
+gboolean lttv_simple_expression_assign_operator(LttvSimpleExpression* se, 
+		LttvExpressionOp op);
 
-gboolean lttv_simple_expression_assign_value(LttvSimpleExpression* se, char* value);
+gboolean lttv_simple_expression_assign_value(LttvSimpleExpression* se, 
+		char* value);
 
 void lttv_simple_expression_destroy(LttvSimpleExpression* se);
 
@@ -324,13 +327,14 @@ LttvFilter* lttv_filter_clone(const LttvFilter* filter);
 /* 
  * LttvFilter 
  */
-LttvFilter *lttv_filter_new();
+LttvFilter* lttv_filter_new();
 
 gboolean lttv_filter_update(LttvFilter* filter);
 
 void lttv_filter_destroy(LttvFilter* filter);
 
-gboolean lttv_filter_append_expression(LttvFilter* filter, const char *expression);
+gboolean lttv_filter_append_expression(LttvFilter* filter, 
+		const char *expression);
 
 void lttv_filter_clear_expression(LttvFilter* filter);
 
@@ -342,21 +346,21 @@ LttvFilterTree* lttv_filter_tree_new();
 void lttv_filter_tree_destroy(LttvFilterTree* tree);
 
 gboolean lttv_filter_tree_parse(
-        const LttvFilterTree* t,
-        const LttEvent* event,
-        const LttTracefile* tracefile,
-        const LttTrace* trace,
-        const LttvTracefileContext* context,
-	const LttvProcessState* pstate,
-	const LttvTraceContext* tc);
+		const LttvFilterTree* t,
+		const LttEvent* event,
+		const LttTracefile* tracefile,
+		const LttTrace* trace,
+		const LttvTracefileContext* context,
+		const LttvProcessState* pstate,
+		const LttvTraceContext* tc);
 
 gboolean lttv_filter_tree_parse_branch(
-        const LttvSimpleExpression* se,
-        const LttEvent* event,
-        const LttTracefile* tracefile,
-        const LttTrace* trace,
-        const LttvProcessState* state,
-        const LttvTracefileContext* context);
+		const LttvSimpleExpression* se,
+		const LttEvent* event,
+		const LttTracefile* tracefile,
+		const LttTrace* trace,
+		const LttvProcessState* state,
+		const LttvTracefileContext* context);
 
 /*
  *  Debug functions

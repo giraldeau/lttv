@@ -56,95 +56,95 @@
 /* Channel Quarks */
 
 extern GQuark
-    LTT_CHANNEL_FD_STATE,
-    LTT_CHANNEL_GLOBAL_STATE,
-    LTT_CHANNEL_IRQ_STATE,
-    LTT_CHANNEL_MODULE_STATE,
-    LTT_CHANNEL_NETIF_STATE,
-    LTT_CHANNEL_SOFTIRQ_STATE,
-    LTT_CHANNEL_SWAP_STATE,
-    LTT_CHANNEL_SYSCALL_STATE,
-    LTT_CHANNEL_TASK_STATE,
-    LTT_CHANNEL_VM_STATE,
-    LTT_CHANNEL_KPROBE_STATE,
-    LTT_CHANNEL_FS,
-    LTT_CHANNEL_KERNEL,
-    LTT_CHANNEL_MM,
-    LTT_CHANNEL_USERSPACE,
-    LTT_CHANNEL_BLOCK;
+	LTT_CHANNEL_FD_STATE,
+	LTT_CHANNEL_GLOBAL_STATE,
+	LTT_CHANNEL_IRQ_STATE,
+	LTT_CHANNEL_MODULE_STATE,
+	LTT_CHANNEL_NETIF_STATE,
+	LTT_CHANNEL_SOFTIRQ_STATE,
+	LTT_CHANNEL_SWAP_STATE,
+	LTT_CHANNEL_SYSCALL_STATE,
+	LTT_CHANNEL_TASK_STATE,
+	LTT_CHANNEL_VM_STATE,
+	LTT_CHANNEL_KPROBE_STATE,
+	LTT_CHANNEL_FS,
+	LTT_CHANNEL_KERNEL,
+	LTT_CHANNEL_MM,
+	LTT_CHANNEL_USERSPACE,
+	LTT_CHANNEL_BLOCK;
 
 /* Events Quarks */
 
 extern GQuark 
-    LTT_EVENT_SYSCALL_ENTRY,
-    LTT_EVENT_SYSCALL_EXIT,
-    LTT_EVENT_TRAP_ENTRY,
-    LTT_EVENT_TRAP_EXIT,
-    LTT_EVENT_PAGE_FAULT_ENTRY,
-    LTT_EVENT_PAGE_FAULT_EXIT,
-    LTT_EVENT_PAGE_FAULT_NOSEM_ENTRY,
-    LTT_EVENT_PAGE_FAULT_NOSEM_EXIT,
-    LTT_EVENT_IRQ_ENTRY,
-    LTT_EVENT_IRQ_EXIT,
-    LTT_EVENT_SOFT_IRQ_RAISE,
-    LTT_EVENT_SOFT_IRQ_ENTRY,
-    LTT_EVENT_SOFT_IRQ_EXIT,
-    LTT_EVENT_SCHED_SCHEDULE,
-    LTT_EVENT_SCHED_TRY_WAKEUP,
-    LTT_EVENT_PROCESS_FORK,
-    LTT_EVENT_KTHREAD_CREATE,
-    LTT_EVENT_PROCESS_EXIT,
-    LTT_EVENT_PROCESS_FREE,
-    LTT_EVENT_EXEC,
-    LTT_EVENT_PROCESS_STATE,
-    LTT_EVENT_STATEDUMP_END,
-    LTT_EVENT_FUNCTION_ENTRY,
-    LTT_EVENT_FUNCTION_EXIT,
-    LTT_EVENT_THREAD_BRAND,
-    LTT_EVENT_REQUEST_ISSUE,
-    LTT_EVENT_REQUEST_COMPLETE,
-    LTT_EVENT_LIST_INTERRUPT,
-    LTT_EVENT_SYS_CALL_TABLE,
-    LTT_EVENT_SOFTIRQ_VEC,
-    LTT_EVENT_KPROBE_TABLE,
-    LTT_EVENT_KPROBE,
-    LTT_EVENT_OPEN,
-    LTT_EVENT_READ,
-    LTT_EVENT_POLL_EVENT;
+	LTT_EVENT_SYSCALL_ENTRY,
+	LTT_EVENT_SYSCALL_EXIT,
+	LTT_EVENT_TRAP_ENTRY,
+	LTT_EVENT_TRAP_EXIT,
+	LTT_EVENT_PAGE_FAULT_ENTRY,
+	LTT_EVENT_PAGE_FAULT_EXIT,
+	LTT_EVENT_PAGE_FAULT_NOSEM_ENTRY,
+	LTT_EVENT_PAGE_FAULT_NOSEM_EXIT,
+	LTT_EVENT_IRQ_ENTRY,
+	LTT_EVENT_IRQ_EXIT,
+	LTT_EVENT_SOFT_IRQ_RAISE,
+	LTT_EVENT_SOFT_IRQ_ENTRY,
+	LTT_EVENT_SOFT_IRQ_EXIT,
+	LTT_EVENT_SCHED_SCHEDULE,
+	LTT_EVENT_SCHED_TRY_WAKEUP,
+	LTT_EVENT_PROCESS_FORK,
+	LTT_EVENT_KTHREAD_CREATE,
+	LTT_EVENT_PROCESS_EXIT,
+	LTT_EVENT_PROCESS_FREE,
+	LTT_EVENT_EXEC,
+	LTT_EVENT_PROCESS_STATE,
+	LTT_EVENT_STATEDUMP_END,
+	LTT_EVENT_FUNCTION_ENTRY,
+	LTT_EVENT_FUNCTION_EXIT,
+	LTT_EVENT_THREAD_BRAND,
+	LTT_EVENT_REQUEST_ISSUE,
+	LTT_EVENT_REQUEST_COMPLETE,
+	LTT_EVENT_LIST_INTERRUPT,
+	LTT_EVENT_SYS_CALL_TABLE,
+	LTT_EVENT_SOFTIRQ_VEC,
+	LTT_EVENT_KPROBE_TABLE,
+	LTT_EVENT_KPROBE,
+	LTT_EVENT_OPEN,
+	LTT_EVENT_READ,
+	LTT_EVENT_POLL_EVENT;
 
 /* Fields Quarks */
 
 extern GQuark 
-    LTT_FIELD_SYSCALL_ID,
-    LTT_FIELD_TRAP_ID,
-    LTT_FIELD_IRQ_ID,
-    LTT_FIELD_SOFT_IRQ_ID,
-    LTT_FIELD_PREV_PID,
-    LTT_FIELD_NEXT_PID,
-    LTT_FIELD_PREV_STATE,
-    LTT_FIELD_PARENT_PID,
-    LTT_FIELD_CHILD_PID,
-    LTT_FIELD_PID,
-    LTT_FIELD_TGID,
-    LTT_FIELD_FILENAME,
-    LTT_FIELD_NAME,
-    LTT_FIELD_TYPE,
-    LTT_FIELD_MODE,
-    LTT_FIELD_SUBMODE,
-    LTT_FIELD_STATUS,
-    LTT_FIELD_THIS_FN,
-    LTT_FIELD_CALL_SITE,
-    LTT_FIELD_MINOR,
-    LTT_FIELD_MAJOR,
-    LTT_FIELD_OPERATION,
-    LTT_FIELD_ACTION,
-    LTT_FIELD_ID,
-    LTT_FIELD_ADDRESS,
-    LTT_FIELD_SYMBOL,
-    LTT_FIELD_IP,
-    LTT_FIELD_FD,
-    LTT_FIELD_STATE,
-    LTT_FIELD_CPU_ID;
+	LTT_FIELD_SYSCALL_ID,
+	LTT_FIELD_TRAP_ID,
+	LTT_FIELD_IRQ_ID,
+	LTT_FIELD_SOFT_IRQ_ID,
+	LTT_FIELD_PREV_PID,
+	LTT_FIELD_NEXT_PID,
+	LTT_FIELD_PREV_STATE,
+	LTT_FIELD_PARENT_PID,
+	LTT_FIELD_CHILD_PID,
+	LTT_FIELD_PID,
+	LTT_FIELD_TGID,
+	LTT_FIELD_FILENAME,
+	LTT_FIELD_NAME,
+	LTT_FIELD_TYPE,
+	LTT_FIELD_MODE,
+	LTT_FIELD_SUBMODE,
+	LTT_FIELD_STATUS,
+	LTT_FIELD_THIS_FN,
+	LTT_FIELD_CALL_SITE,
+	LTT_FIELD_MINOR,
+	LTT_FIELD_MAJOR,
+	LTT_FIELD_OPERATION,
+	LTT_FIELD_ACTION,
+	LTT_FIELD_ID,
+	LTT_FIELD_ADDRESS,
+	LTT_FIELD_SYMBOL,
+	LTT_FIELD_IP,
+	LTT_FIELD_FD,
+	LTT_FIELD_STATE,
+	LTT_FIELD_CPU_ID;
 
 typedef struct _LttvTracesetState LttvTracesetState;
 typedef struct _LttvTracesetStateClass LttvTracesetStateClass;
@@ -191,12 +191,12 @@ void lttv_state_traceset_seek_time_closest(LttvTracesetState *self, LttTime t);
 typedef GQuark LttvExecutionMode;
 
 extern LttvExecutionMode
-  LTTV_STATE_USER_MODE,
-  LTTV_STATE_SYSCALL,
-  LTTV_STATE_TRAP,
-  LTTV_STATE_IRQ,
-  LTTV_STATE_SOFT_IRQ,
-  LTTV_STATE_MODE_UNKNOWN;
+	LTTV_STATE_USER_MODE,
+	LTTV_STATE_SYSCALL,
+	LTTV_STATE_TRAP,
+	LTTV_STATE_IRQ,
+	LTTV_STATE_SOFT_IRQ,
+	LTTV_STATE_MODE_UNKNOWN;
 
 
 /* The submode number depends on the execution mode. For user mode or kernel
@@ -208,8 +208,8 @@ extern LttvExecutionMode
 typedef GQuark LttvExecutionSubmode;
 
 extern LttvExecutionSubmode
-  LTTV_STATE_SUBMODE_NONE,
-  LTTV_STATE_SUBMODE_UNKNOWN;
+	LTTV_STATE_SUBMODE_NONE,
+	LTTV_STATE_SUBMODE_UNKNOWN;
 
 /* The process status is one of "running", "wait-cpu" (runnable), or "wait-*"
    where "*" describes the resource waited for (e.g. timer, process, 
@@ -218,95 +218,94 @@ extern LttvExecutionSubmode
 typedef GQuark LttvProcessStatus;
 
 extern LttvProcessStatus
-  LTTV_STATE_UNNAMED,
-  LTTV_STATE_WAIT_FORK,
-  LTTV_STATE_WAIT_CPU,
-  LTTV_STATE_EXIT,
-  LTTV_STATE_ZOMBIE,
-  LTTV_STATE_WAIT,
-  LTTV_STATE_RUN,
-  LTTV_STATE_DEAD;
+	LTTV_STATE_UNNAMED,
+	LTTV_STATE_WAIT_FORK,
+	LTTV_STATE_WAIT_CPU,
+	LTTV_STATE_EXIT,
+	LTTV_STATE_ZOMBIE,
+	LTTV_STATE_WAIT,
+	LTTV_STATE_RUN,
+	LTTV_STATE_DEAD;
 
 extern GQuark
-  LTTV_STATE_UNBRANDED;
+	LTTV_STATE_UNBRANDED;
 
 typedef GQuark LttvProcessType;
 
 extern LttvProcessType
-  LTTV_STATE_USER_THREAD,
-  LTTV_STATE_KERNEL_THREAD;
+	LTTV_STATE_USER_THREAD,
+	LTTV_STATE_KERNEL_THREAD;
 
 typedef GQuark LttvCPUMode;
 extern LttvCPUMode
-  LTTV_CPU_UNKNOWN,
-  LTTV_CPU_IDLE,
-  LTTV_CPU_BUSY,
-  LTTV_CPU_IRQ,
-  LTTV_CPU_SOFT_IRQ,
-  LTTV_CPU_TRAP;
+	LTTV_CPU_UNKNOWN,
+	LTTV_CPU_IDLE,
+	LTTV_CPU_BUSY,
+	LTTV_CPU_IRQ,
+	LTTV_CPU_SOFT_IRQ,
+	LTTV_CPU_TRAP;
 
 typedef GQuark LttvIRQMode;
 extern LttvIRQMode
-  LTTV_IRQ_UNKNOWN,
-  LTTV_IRQ_IDLE,
-  LTTV_IRQ_BUSY;
+	LTTV_IRQ_UNKNOWN,
+	LTTV_IRQ_IDLE,
+	LTTV_IRQ_BUSY;
 
 typedef GQuark LttvBdevMode;
 extern LttvBdevMode
-  LTTV_BDEV_UNKNOWN,
-  LTTV_BDEV_IDLE,
-  LTTV_BDEV_BUSY_READING,
-  LTTV_BDEV_BUSY_WRITING;
+	LTTV_BDEV_UNKNOWN,
+	LTTV_BDEV_IDLE,
+	LTTV_BDEV_BUSY_READING,
+	LTTV_BDEV_BUSY_WRITING;
 
 typedef struct _LttvExecutionState {
-  LttvExecutionMode t;
-  LttvExecutionSubmode n;
-  LttTime entry;
-  LttTime change;
-  LttTime cum_cpu_time;
-  LttvProcessStatus s;
+	LttvExecutionMode t;
+	LttvExecutionSubmode n;
+	LttTime entry;
+	LttTime change;
+	LttTime cum_cpu_time;
+	LttvProcessStatus s;
 } LttvExecutionState;
 
 typedef struct _LttvProcessState {
-  guint pid;
-  guint tgid;
-  guint ppid;
-  LttTime creation_time;
-  LttTime insertion_time;
-  GQuark name;
-  GQuark brand;
-  GQuark pid_time;
-  GArray *execution_stack;         /* Array of LttvExecutionState */
-  LttvExecutionState *state;       /* Top of interrupt stack */
-      /* WARNING : each time the execution_stack size is modified, the state
-       * must be reget : g_array_set_size can have to move the array.
-       * (Mathieu) */
-  guint cpu;                /* CPU where process is scheduled (being either in
-                               the active or inactive runqueue)*/
-//  guint  last_tracefile_index;    /* index in the trace for cpu tracefile */
-  LttvTracefileState  *usertrace;    /* Associated usertrace */
-  /* opened file descriptors, address map?... */
-  GArray *user_stack;          /* User space function call stack */
-  guint64  current_function;
-  LttvProcessType type;        /* kernel thread or user space ? */
-  guint target_pid; /* target PID of the current event. */
-  guint free_events; /* 0 : none, 1 : free or exit dead, 2 : should delete */
-  GHashTable *fds; /* hash table of int (file descriptor) -> GQuark (file name) */
+	guint pid;
+	guint tgid;
+	guint ppid;
+	LttTime creation_time;
+	LttTime insertion_time;
+	GQuark name;
+	GQuark brand;
+	GQuark pid_time;
+	GArray *execution_stack;         /* Array of LttvExecutionState */
+	LttvExecutionState *state;       /* Top of interrupt stack */
+		/* WARNING : each time the execution_stack size is modified, the state
+		 * must be reget : g_array_set_size can have to move the array.
+		 * (Mathieu) */
+	guint cpu;                /* CPU where process is scheduled (being either in
+	                             the active or inactive runqueue)*/
+//	guint last_tracefile_index;    /* index in the trace for cpu tracefile */
+	LttvTracefileState *usertrace;    /* Associated usertrace */
+	/* opened file descriptors, address map?... */
+	GArray *user_stack;          /* User space function call stack */
+	guint64 current_function;
+	LttvProcessType type;        /* kernel thread or user space ? */
+	guint target_pid; /* target PID of the current event. */
+	guint free_events; /* 0 : none, 1 : free or exit dead, 2 : should delete */
+	GHashTable *fds; /* hash table of int (file descriptor) -> GQuark (file name) */
 } LttvProcessState;
 
 #define ANY_CPU 0 /* For clarity sake : a call to lttv_state_find_process for
                      a PID != 0 will search on any cpu automatically. */
 
-LttvProcessState *
-lttv_state_find_process(LttvTraceState *ts, guint cpu, guint pid);
+LttvProcessState *lttv_state_find_process(LttvTraceState *ts, guint cpu,
+		guint pid);
 
-LttvProcessState *
-lttv_state_find_process_or_create(LttvTraceState *ts, guint cpu, guint pid,
-    const LttTime *timestamp);
+LttvProcessState *lttv_state_find_process_or_create(LttvTraceState *ts,
+		guint cpu, guint pid, const LttTime *timestamp);
 
-LttvProcessState *
-lttv_state_create_process(LttvTraceState *tcs, LttvProcessState *parent, 
-    guint cpu, guint pid, guint tgid, GQuark name, const LttTime *timestamp);
+LttvProcessState *lttv_state_create_process(LttvTraceState *tcs,
+		LttvProcessState *parent, guint cpu, guint pid,
+		guint tgid, GQuark name, const LttTime *timestamp);
 
 void lttv_state_write(LttvTraceState *self, LttTime t, FILE *fp);
 void lttv_state_write_raw(LttvTraceState *self, LttTime t, FILE *fp);
@@ -322,11 +321,11 @@ void lttv_state_write_raw(LttvTraceState *self, LttTime t, FILE *fp);
 #define LTTV_TRACESET_STATE_GET_CLASS(inst)  (G_TYPE_INSTANCE_GET_CLASS ((inst), LTTV_TRACESET_STATE_TYPE, LttvTracesetStateClass))
 
 struct _LttvTracesetState {
-  LttvTracesetContext parent;
+	LttvTracesetContext parent;
 };
 
 struct _LttvTracesetStateClass {
-  LttvTracesetContextClass parent;
+	LttvTracesetContextClass parent;
 };
 
 GType lttv_traceset_state_get_type (void);
@@ -340,74 +339,74 @@ GType lttv_traceset_state_get_type (void);
 #define LTTV_TRACE_STATE_GET_CLASS(inst)  (G_TYPE_INSTANCE_GET_CLASS ((inst), LTTV_TRACE_STATE_TYPE, LttvTraceStateClass))
 
 typedef struct _LttvCPUState {
-  GArray *mode_stack;
-  GArray *irq_stack;
-  GArray *softirq_stack;
-  GArray *trap_stack;
+	GArray *mode_stack;
+	GArray *irq_stack;
+	GArray *softirq_stack;
+	GArray *trap_stack;
 } LttvCPUState;
 
 typedef struct _LttvIRQState {
-  GArray *mode_stack;
+	GArray *mode_stack;
 } LttvIRQState;
 
 typedef struct _LttvSoftIRQState {
-  guint pending; /* number of times it is pending */
-  guint running; /* number of times it is currently running (on different processors) */
+	guint pending; /* number of times it is pending */
+	guint running; /* number of times it is currently running (on different processors) */
 } LttvSoftIRQState;
 
 typedef struct _LttvTrapState {
-  guint running; /* number of times it is currently running (on different processors) */
+	guint running; /* number of times it is currently running (on different processors) */
 } LttvTrapState;
 
 typedef struct _LttvBdevState {
-  GArray *mode_stack;
+	GArray *mode_stack;
 } LttvBdevState;
 
 typedef struct _LttvNameTables {
-  GQuark *syscall_names;
-  guint nb_syscalls;
-  GQuark *trap_names;
-  guint nb_traps;
-  GQuark *irq_names;
-  guint nb_irqs;
-  GQuark *soft_irq_names;
-  guint nb_soft_irqs;
-  GHashTable *kprobe_hash;
+	GQuark *syscall_names;
+	guint nb_syscalls;
+	GQuark *trap_names;
+	guint nb_traps;
+	GQuark *irq_names;
+	guint nb_irqs;
+	GQuark *soft_irq_names;
+	guint nb_soft_irqs;
+	GHashTable *kprobe_hash;
 } LttvNameTables;
 
 struct _LttvTraceState {
-  LttvTraceContext parent;
+	LttvTraceContext parent;
 
-  GHashTable *processes;  /* LttvProcessState objects indexed by pid and
-                             last_cpu */
-  GHashTable *usertraces;  /* GPtrArray objects indexed by pid, containing
-                             pointers to LttvTracefileState objects. */
-  guint nb_event, save_interval;
-  /* Block/char devices, locks, memory pages... */
-  GQuark *eventtype_names;
-  LttvNameTables *name_tables;
-  LttTime *max_time_state_recomputed_in_seek;
-  GHashTable *kprobe_hash;
+	GHashTable *processes;  /* LttvProcessState objects indexed by pid and
+	                           last_cpu */
+	GHashTable *usertraces;  /* GPtrArray objects indexed by pid, containing
+	                           pointers to LttvTracefileState objects. */
+	guint nb_event, save_interval;
+	/* Block/char devices, locks, memory pages... */
+	GQuark *eventtype_names;
+	LttvNameTables *name_tables;
+	LttTime *max_time_state_recomputed_in_seek;
+	GHashTable *kprobe_hash;
 
-  /* Array of per cpu running process */
-  LttvProcessState **running_process;
-  gboolean has_precomputed_states;
-  LttvCPUState *cpu_states; /* state of each cpu */
-  /* FIXME should be a g_array to deal with resize and copy. */
-  LttvIRQState *irq_states; /* state of each irq handler */
-  /* FIXME should be a g_array to deal with resize and copy. */
-  LttvSoftIRQState *soft_irq_states; /* state of each softirq */
-  /* FIXME should be a g_array to deal with resize and copy. */
-  LttvTrapState *trap_states; /* state of each trap */
-  GHashTable *bdev_states; /* state of the block devices */
+	/* Array of per cpu running process */
+	LttvProcessState **running_process;
+	gboolean has_precomputed_states;
+	LttvCPUState *cpu_states; /* state of each cpu */
+	/* FIXME should be a g_array to deal with resize and copy. */
+	LttvIRQState *irq_states; /* state of each irq handler */
+	/* FIXME should be a g_array to deal with resize and copy. */
+	LttvSoftIRQState *soft_irq_states; /* state of each softirq */
+	/* FIXME should be a g_array to deal with resize and copy. */
+	LttvTrapState *trap_states; /* state of each trap */
+	GHashTable *bdev_states; /* state of the block devices */
 };
 
 struct _LttvTraceStateClass {
-  LttvTraceContextClass parent;
+	LttvTraceContextClass parent;
 
-  void (*state_save) (LttvTraceState *self, LttvAttribute *container);
-  void (*state_restore) (LttvTraceState *self, LttvAttribute *container);
-  void (*state_saved_free) (LttvTraceState *self, LttvAttribute *container);
+	void (*state_save) (LttvTraceState *self, LttvAttribute *container);
+	void (*state_restore) (LttvTraceState *self, LttvAttribute *container);
+	void (*state_saved_free) (LttvTraceState *self, LttvAttribute *container);
 };
 
 GType lttv_trace_state_get_type (void);
@@ -417,10 +416,10 @@ void lttv_state_save(LttvTraceState *self, LttvAttribute *container);
 void lttv_state_restore(LttvTraceState *self, LttvAttribute *container);
 
 void lttv_state_state_saved_free(LttvTraceState *self, 
-    LttvAttribute *container);
+		LttvAttribute *container);
 
 int lttv_state_pop_state_cleanup(LttvProcessState *process,
-    LttvTracefileState *tfs);
+		LttvTracefileState *tfs);
 
 #define LTTV_TRACEFILE_STATE_TYPE  (lttv_tracefile_state_get_type ())
 #define LTTV_TRACEFILE_STATE(obj)  (G_TYPE_CHECK_INSTANCE_CAST ((obj), LTTV_TRACEFILE_STATE_TYPE, LttvTracefileState))
@@ -430,27 +429,27 @@ int lttv_state_pop_state_cleanup(LttvProcessState *process,
 #define LTTV_TRACEFILE_STATE_GET_CLASS(inst)  (G_TYPE_INSTANCE_GET_CLASS ((inst), LTTV_TRACEFILE_STATE_TYPE, LttvTracefileStateClass))
 
 struct _LttvTracefileState {
-  LttvTracefileContext parent;
+	LttvTracefileContext parent;
 
-  GQuark tracefile_name;
-  guint cpu;  /* Current cpu of the tracefile */ /* perhaps merge in cpu_state */
-  LttvCPUState *cpu_state; /* cpu resource state */
+	GQuark tracefile_name;
+	guint cpu;  /* Current cpu of the tracefile */ /* perhaps merge in cpu_state */
+	LttvCPUState *cpu_state; /* cpu resource state */
 };
 
 struct _LttvTracefileStateClass {
-  LttvTracefileContextClass parent;
+	LttvTracefileContextClass parent;
 };
 
 GType lttv_tracefile_state_get_type (void);
 
 static inline guint lttv_state_get_target_pid(LttvTracefileState *tfs)
 {
-  LttvTraceState *ts = (LttvTraceState*)tfs->parent.t_context;
-  guint cpu = tfs->cpu;
-  LttvProcessState *process = ts->running_process[cpu];
+	LttvTraceState *ts = (LttvTraceState*)tfs->parent.t_context;
+	guint cpu = tfs->cpu;
+	LttvProcessState *process = ts->running_process[cpu];
 
-  if(tfs->parent.target_pid >= 0) return tfs->parent.target_pid;
-  else return process->pid;
+	if(tfs->parent.target_pid >= 0) return tfs->parent.target_pid;
+	else return process->pid;
 }
 
 

@@ -37,19 +37,20 @@ typedef struct _LttvAttribute LttvAttribute;
 typedef struct _LttvAttributeClass LttvAttributeClass;
 
 struct _LttvAttribute {
-  GObject parent;
+	GObject parent;
 
-  /* private members */
-  GHashTable *names;
-  GArray *attributes;
+	/* private members */
+	GHashTable *names;
+	GArray *attributes;
 };
 
 struct _LttvAttributeClass {
-  GObjectClass parent;
+	GObjectClass parent;
 
 };
 
-GType lttv_attribute_get_type (void);
+GType
+lttv_attribute_get_type (void);
 
 
 /* The functions exported in the IAttribute interface are also available
@@ -58,43 +59,50 @@ GType lttv_attribute_get_type (void);
 
 /* Total number of attributes */
 
-unsigned int lttv_attribute_get_number(LttvAttribute *self);
+unsigned int
+lttv_attribute_get_number(LttvAttribute *self);
 
 
 /* Container type. Named (fields in struct or elements in a hash table)
    or unnamed (elements in an array) attributes, homogeneous type or not. */
 
-gboolean lttv_attribute_named(LttvAttribute *self, gboolean *homogeneous);
+gboolean
+lttv_attribute_named(LttvAttribute *self, gboolean *homogeneous);
 
 
 /* Get the i th attribute along with its type and a pointer to its value. */
 
-LttvAttributeType lttv_attribute_get(LttvAttribute *self, unsigned i, 
-    LttvAttributeName *name, LttvAttributeValue *v, gboolean *is_named);
+LttvAttributeType
+lttv_attribute_get(LttvAttribute *self, unsigned i, LttvAttributeName *name,
+		LttvAttributeValue *v, gboolean *is_named);
  
 
 /* Get the named attribute in the table along with its type and a pointer to
    its value. If the named attribute does not exist, the type is LTTV_NONE. */
 
-LttvAttributeType lttv_attribute_get_by_name(LttvAttribute *self,
-    LttvAttributeName name, LttvAttributeValue *v);
+LttvAttributeType
+lttv_attribute_get_by_name(LttvAttribute *self, LttvAttributeName name,
+		LttvAttributeValue *v);
 
 
 /* Add an attribute, which must not exist. The name is an empty string for
    containers with unnamed attributes. */
 
-LttvAttributeValue lttv_attribute_add(LttvAttribute *self, 
-    LttvAttributeName name, LttvAttributeType t);
+LttvAttributeValue
+lttv_attribute_add(LttvAttribute *self, LttvAttributeName name,
+		LttvAttributeType t);
 
-LttvAttributeValue lttv_attribute_add_unnamed(LttvAttribute *self, 
-    LttvAttributeName name, LttvAttributeType t);
+LttvAttributeValue
+lttv_attribute_add_unnamed(LttvAttribute *self, LttvAttributeName name,
+		LttvAttributeType t);
 
 /* Remove an attribute */
 
-void lttv_attribute_remove(LttvAttribute *self, unsigned i);
+void
+lttv_attribute_remove(LttvAttribute *self, unsigned i);
 
-void lttv_attribute_remove_by_name(LttvAttribute *self,
-    LttvAttributeName name);
+void
+lttv_attribute_remove_by_name(LttvAttribute *self, LttvAttributeName name);
 
 
 /* Create an empty iattribute object and add it as an attribute under the
@@ -102,15 +110,16 @@ void lttv_attribute_remove_by_name(LttvAttribute *self,
    attribute of that name already exists but is not a GObject supporting the
    iattribute interface, return NULL. */
 
-LttvAttribute* lttv_attribute_find_subdir(LttvAttribute *self, 
-      LttvAttributeName name);
+LttvAttribute*
+lttv_attribute_find_subdir(LttvAttribute *self, LttvAttributeName name);
 
-LttvAttribute* lttv_attribute_find_subdir_unnamed(LttvAttribute *self, 
-      LttvAttributeName name);
+LttvAttribute*
+lttv_attribute_find_subdir_unnamed(LttvAttribute *self, LttvAttributeName name);
 
 
-gboolean lttv_attribute_find(LttvAttribute *self, LttvAttributeName name, 
-    LttvAttributeType t, LttvAttributeValue *v);
+gboolean
+lttv_attribute_find(LttvAttribute *self, LttvAttributeName name,
+		LttvAttributeType t, LttvAttributeValue *v);
 
 
 /* Free recursively a tree of attributes. All contained gobject of type
@@ -121,11 +130,13 @@ gboolean lttv_attribute_find(LttvAttribute *self, LttvAttributeName name,
 
 /* Add items from a tree of attributes to another tree. */
 
-void lttv_attribute_recursive_add(LttvAttribute *dest, LttvAttribute *src);
+void
+lttv_attribute_recursive_add(LttvAttribute *dest, LttvAttribute *src);
 
 void
 lttv_attribute_write_xml(LttvAttribute *self, FILE *fp, int pos, int indent);
 
-void lttv_attribute_read_xml(LttvAttribute *self, FILE *fp);
+void
+lttv_attribute_read_xml(LttvAttribute *self, FILE *fp);
 
 #endif // ATTRIBUTE_H

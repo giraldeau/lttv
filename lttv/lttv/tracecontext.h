@@ -92,27 +92,27 @@ typedef struct _LttvFilter LttvFilter;
 #define LTTV_TRACESET_CONTEXT_GET_CLASS(inst)  (G_TYPE_INSTANCE_GET_CLASS ((inst), LTTV_TRACESET_CONTEXT_TYPE, LttvTracesetContextClass))
 
 struct _LttvTracesetContext {
-  GObject parent;
+	GObject parent;
 
-  LttvTraceset *ts;
-  LttvTraceContext **traces;
-  LttvAttribute *a;
-  LttvAttribute *ts_a;
-  TimeInterval time_span;
-  GTree *pqueue;
+	LttvTraceset *ts;
+	LttvTraceContext **traces;
+	LttvAttribute *a;
+	LttvAttribute *ts_a;
+	TimeInterval time_span;
+	GTree *pqueue;
 
-  LttvTracesetContextPosition *sync_position;   /* position at which to sync the
-                                                   trace context */
+	LttvTracesetContextPosition *sync_position;   /* position at which to sync the
+	                                                 trace context */
 };
 
 struct _LttvTracesetContextClass {
-  GObjectClass parent;
+	GObjectClass parent;
 
-  void (*init) (LttvTracesetContext *self, LttvTraceset *ts);
-  void (*fini) (LttvTracesetContext *self);
-  LttvTracesetContext* (*new_traceset_context) (LttvTracesetContext *self);
-  LttvTraceContext* (*new_trace_context) (LttvTracesetContext *self);
-  LttvTracefileContext* (*new_tracefile_context) (LttvTracesetContext *self);
+	void (*init) (LttvTracesetContext *self, LttvTraceset *ts);
+	void (*fini) (LttvTracesetContext *self);
+	LttvTracesetContext* (*new_traceset_context) (LttvTracesetContext *self);
+	LttvTraceContext* (*new_trace_context) (LttvTracesetContext *self);
+	LttvTracefileContext* (*new_tracefile_context) (LttvTracesetContext *self);
 };
 
 GType lttv_traceset_context_get_type (void);
@@ -124,7 +124,7 @@ void lttv_context_fini(LttvTracesetContext *self);
 LttvTracesetContext *
 lttv_context_new_traceset_context(LttvTracesetContext *self);
 
-LttvTraceContext * 
+LttvTraceContext *
 lttv_context_new_trace_context(LttvTracesetContext *self);
 
 LttvTracefileContext *
@@ -139,21 +139,21 @@ lttv_context_new_tracefile_context(LttvTracesetContext *self);
 #define LTTV_TRACE_CONTEXT_GET_CLASS(inst)  (G_TYPE_INSTANCE_GET_CLASS ((inst), LTTV_TRACE_CONTEXT_TYPE, LttvTraceContextClass))
 
 struct _LttvTraceContext {
-  GObject parent;
+	GObject parent;
 
-  LttvTracesetContext *ts_context;
-  guint index;                /* in ts_context->traces */
-  LttTrace *t;
-  LttvTrace *vt;
-  //LttvTracefileContext **tracefiles;
-  GArray *tracefiles;
-  LttvAttribute *a;
-  LttvAttribute *t_a;
-  TimeInterval time_span;
+	LttvTracesetContext *ts_context;
+	guint index;                /* in ts_context->traces */
+	LttTrace *t;
+	LttvTrace *vt;
+	//LttvTracefileContext **tracefiles;
+	GArray *tracefiles;
+	LttvAttribute *a;
+	LttvAttribute *t_a;
+	TimeInterval time_span;
 };
 
 struct _LttvTraceContextClass {
-  GObjectClass parent;
+	GObjectClass parent;
 };
 
 GType lttv_trace_context_get_type (void);
@@ -166,33 +166,33 @@ GType lttv_trace_context_get_type (void);
 #define LTTV_TRACEFILE_CONTEXT_GET_CLASS(inst)  (G_TYPE_INSTANCE_GET_CLASS ((inst), LTTV_TRACEFILE_CONTEXT_TYPE, LttvTracefileContextClass))
 
 struct _LttvTracefileContext {
-  GObject parent;
+	GObject parent;
 
-  LttvTraceContext *t_context;
+	LttvTraceContext *t_context;
  // gboolean control;
-  guint index;                /* in ts_context->tracefiles */
-  LttTracefile *tf;
+	guint index;                /* in ts_context->tracefiles */
+	LttTracefile *tf;
  // LttEvent *e;
-  LttvHooks *event;
-  LttvHooksById *event_by_id;
-  LttTime timestamp;
-  LttvAttribute *a;
-  gint target_pid;          /* Target PID of the event.
+	LttvHooks *event;
+	LttvHooksById *event_by_id;
+	LttTime timestamp;
+	LttvAttribute *a;
+	gint target_pid;          /* Target PID of the event.
 				Updated by state.c. -1 means unset. */
 };
 
 struct _LttvTracefileContextClass {
-  GObjectClass parent;
+	GObjectClass parent;
 };
 
 GType lttv_tracefile_context_get_type (void);
 
 /* Run through the events in a traceset in sorted order calling all the
-   hooks appropriately. It starts at the current time and runs until end or
-   nb_events are processed. */
+	 hooks appropriately. It starts at the current time and runs until end or
+	 nb_events are processed. */
 
 void lttv_process_traceset(LttvTracesetContext *self, LttTime end, 
-    unsigned nb_events);
+		unsigned nb_events);
 
 /* Process traceset can also be done in smaller pieces calling begin,
  * then seek and middle repeatedly, and end. The middle function return the
@@ -201,80 +201,80 @@ void lttv_process_traceset(LttvTracesetContext *self, LttTime end,
 
 
 void lttv_process_traceset_begin(LttvTracesetContext *self,
-                             LttvHooks       *before_traceset,
-                             LttvHooks       *before_trace,
-                             LttvHooks       *before_tracefile,
-                             LttvHooks       *event,
-                             LttvHooksByIdChannelArray   *event_by_id_channel);
+		LttvHooks *before_traceset,
+		LttvHooks *before_trace,
+		LttvHooks *before_tracefile,
+		LttvHooks *event,
+		LttvHooksByIdChannelArray *event_by_id_channel);
 
 
 guint lttv_process_traceset_middle(LttvTracesetContext *self,
-                              LttTime end, 
-                              gulong nb_events,
-                              const LttvTracesetContextPosition *end_position);
+		LttTime end,
+		gulong nb_events,
+		const LttvTracesetContextPosition *end_position);
 
 void lttv_process_traceset_end(LttvTracesetContext *self,
-                             LttvHooks           *after_traceset,
-                             LttvHooks           *after_trace,
-                             LttvHooks           *after_tracefile,
-                             LttvHooks           *event,
-                             LttvHooksByIdChannelArray   *event_by_id_channel);
+		LttvHooks *after_traceset,
+		LttvHooks *after_trace,
+		LttvHooks *after_tracefile,
+		LttvHooks *event,
+		LttvHooksByIdChannelArray *event_by_id_channel);
 
 
 void lttv_process_traceset_seek_time(LttvTracesetContext *self, LttTime start);
 
 void lttv_traceset_context_compute_time_span(LttvTracesetContext *self,
-	TimeInterval *time_span);
+		TimeInterval *time_span);
 
 gboolean lttv_process_traceset_seek_position(LttvTracesetContext *self, 
-                                        const LttvTracesetContextPosition *pos);
+		const LttvTracesetContextPosition *pos);
 
 void lttv_process_trace_seek_time(LttvTraceContext *self, LttTime start);
 
 void lttv_traceset_context_add_hooks(LttvTracesetContext *self,
-    LttvHooks *before_traceset,
-    LttvHooks *before_trace, 
-    LttvHooks *before_tracefile,
-    LttvHooks *event,
-    LttvHooksByIdChannelArray *event_by_id_channel);
+		LttvHooks *before_traceset,
+		LttvHooks *before_trace,
+		LttvHooks *before_tracefile,
+		LttvHooks *event,
+		LttvHooksByIdChannelArray *event_by_id_channel);
 
 void lttv_traceset_context_remove_hooks(LttvTracesetContext *self,
-    LttvHooks *after_traceset,
-    LttvHooks *after_trace, 
-    LttvHooks *after_tracefile,
-    LttvHooks *event, 
-    LttvHooksByIdChannelArray *event_by_id_channel);
+		LttvHooks *after_traceset,
+		LttvHooks *after_trace,
+		LttvHooks *after_tracefile,
+		LttvHooks *event,
+		LttvHooksByIdChannelArray *event_by_id_channel);
 
 void lttv_trace_context_add_hooks(LttvTraceContext *self,
-    LttvHooks *before_trace, 
-    LttvHooks *before_tracefile,
-    LttvHooks *event, 
-    LttvHooksByIdChannelArray *event_by_id_channel);
+		LttvHooks *before_trace,
+		LttvHooks *before_tracefile,
+		LttvHooks *event,
+		LttvHooksByIdChannelArray *event_by_id_channel);
 
 void lttv_trace_context_remove_hooks(LttvTraceContext *self,
-    LttvHooks *after_trace, 
-    LttvHooks *after_tracefile,
-    LttvHooks *event, 
-    LttvHooksByIdChannelArray *event_by_id_channel);
+		LttvHooks *after_trace,
+		LttvHooks *after_tracefile,
+		LttvHooks *event,
+		LttvHooksByIdChannelArray *event_by_id_channel);
 
 void lttv_tracefile_context_add_hooks(LttvTracefileContext *self,
-          LttvHooks *before_tracefile,
-          LttvHooks *event, 
-          LttvHooksById *event_by_id);
+		LttvHooks *before_tracefile,
+		LttvHooks *event,
+		LttvHooksById *event_by_id);
 
 
 void lttv_tracefile_context_remove_hooks(LttvTracefileContext *self,
-          LttvHooks *after_tracefile,
-          LttvHooks *event, 
-          LttvHooksById *event_by_id);
+		LttvHooks *after_tracefile,
+		LttvHooks *event,
+		LttvHooksById *event_by_id);
 
 typedef struct _LttvTraceHook {
-  LttvHook h;
-  struct marker_data *mdata;
-  GQuark channel;
-  guint16 id;  /* id of the marker associated with this hook */
-  GPtrArray *fields;  /* struct marker_fields pointers */
-  gpointer hook_data;
+	LttvHook h;
+	struct marker_data *mdata;
+	GQuark channel;
+	guint16 id;  /* id of the marker associated with this hook */
+	GPtrArray *fields;  /* struct marker_fields pointers */
+	gpointer hook_data;
 } LttvTraceHook;
 
 /* Get the head of marker list corresponding to the given trace hook.
@@ -297,7 +297,8 @@ void lttv_trace_hook_remove_all(GArray **th);
  */
 
 int lttv_trace_find_hook(LttTrace *t, GQuark facility_name, GQuark event_name,
-    GQuark fields[], LttvHook h, gpointer hook_data, GArray **trace_hooks);
+		GQuark fields[], LttvHook h, gpointer hook_data,
+		GArray **trace_hooks);
 
 static inline struct marker_field *
 lttv_trace_get_hook_field(LttvTraceHook *hook, unsigned int index)
@@ -308,46 +309,46 @@ lttv_trace_get_hook_field(LttvTraceHook *hook, unsigned int index)
 #if 0
 static inline GQuark lttv_merge_facility_event_name(GQuark fac, GQuark ev)
 {
-  char *tmp;
-  const char *sfac, *sev;
-  GQuark ret;
+	char *tmp;
+	const char *sfac, *sev;
+	GQuark ret;
 
-  sfac = g_quark_to_string(fac);
-  sev = g_quark_to_string(ev);
-  tmp = g_new(char, strlen(sfac) + strlen(sev) + 3); /* 3: _ \0 \0 */
-  strcpy(tmp, sfac);
-  strcat(tmp, "_");
-  strcat(tmp, sev);
-  ret = g_quark_from_string(tmp);
-  g_free(tmp);
-  return ret;
+	sfac = g_quark_to_string(fac);
+	sev = g_quark_to_string(ev);
+	tmp = g_new(char, strlen(sfac) + strlen(sev) + 3); /* 3: _ \0 \0 */
+	strcpy(tmp, sfac);
+	strcat(tmp, "_");
+	strcat(tmp, sev);
+	ret = g_quark_from_string(tmp);
+	g_free(tmp);
+	return ret;
 }
 #endif //0
 
-LttvTracefileContext *lttv_traceset_context_get_current_tfc(
-                             LttvTracesetContext *self);
+LttvTracefileContext *
+lttv_traceset_context_get_current_tfc(LttvTracesetContext *self);
 
 
-LttvTracesetContextPosition *lttv_traceset_context_position_new(
-    const LttvTracesetContext *self);
+LttvTracesetContextPosition *
+lttv_traceset_context_position_new(const LttvTracesetContext *self);
 
 void lttv_traceset_context_position_save(const LttvTracesetContext *self,
-                                    LttvTracesetContextPosition *pos);
+		LttvTracesetContextPosition *pos);
 
 void lttv_traceset_context_position_destroy(LttvTracesetContextPosition *pos);
 
 void lttv_traceset_context_position_copy(LttvTracesetContextPosition *dest,
-                                   const LttvTracesetContextPosition *src);
+		const LttvTracesetContextPosition *src);
 
-gint lttv_traceset_context_pos_pos_compare(
-                          const LttvTracesetContextPosition *pos1,
-                          const LttvTracesetContextPosition *pos2);
+gint
+lttv_traceset_context_pos_pos_compare(const LttvTracesetContextPosition *pos1,
+		const LttvTracesetContextPosition *pos2);
 
 gint lttv_traceset_context_ctx_pos_compare(const LttvTracesetContext *self,
-                                    const LttvTracesetContextPosition *pos2);
+		const LttvTracesetContextPosition *pos2);
 
-LttTime lttv_traceset_context_position_get_time(
-                                      const LttvTracesetContextPosition *pos);
+LttTime
+lttv_traceset_context_position_get_time(const LttvTracesetContextPosition *pos);
 
 gint compare_tracefile(gconstpointer a, gconstpointer b);
 
@@ -369,26 +370,27 @@ static const LttTime seek_back_default_offset = { 1, 0 };
 typedef gboolean check_handler(guint count, gboolean *stop_flag, gpointer data);
 
 guint lttv_process_traceset_seek_n_forward(LttvTracesetContext *self,
-                                           guint n,
-					   check_handler *check,
-					   gboolean *stop_flag,
-					   LttvFilter *filter1,
-					   LttvFilter *filter2,
-					   LttvFilter *filter3,
-					   gpointer data);
+		guint n,
+		check_handler *check,
+		gboolean *stop_flag,
+		LttvFilter *filter1,
+		LttvFilter *filter2,
+		LttvFilter *filter3,
+		gpointer data);
+
 typedef void (*seek_time_fct)(LttvTracesetContext *self, LttTime start);
 
 /* If first_offset is ltt_time_zero, it will choose a default value */
 guint lttv_process_traceset_seek_n_backward(LttvTracesetContext *self,
-                                            guint n,
-                                            LttTime first_offset,
-                                            seek_time_fct,
-	 				    check_handler *check,
-					    gboolean *stop_flag,
-					    LttvFilter *filter1,
-					    LttvFilter *filter2,
-					    LttvFilter *filter3,
-					    gpointer data);
+		guint n,
+		LttTime first_offset,
+		seek_time_fct,
+		check_handler *check,
+		gboolean *stop_flag,
+		LttvFilter *filter1,
+		LttvFilter *filter2,
+		LttvFilter *filter3,
+		gpointer data);
 
 #define FIELD_ARRAY(val...) ((GQuark[]){ val, 0 })
 

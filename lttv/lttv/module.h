@@ -47,30 +47,30 @@ typedef void (*LttvModuleDestroy)();
 
 typedef struct _LttvModuleInfo
 {
-  char *name;
-  char *short_description;
-  char *description;
-  LttvModuleInit init;
-  LttvModuleDestroy destroy;
-  LttvLibrary *library;
-  unsigned require_count;
-  unsigned use_count;
-  unsigned prerequisites_number;
+	char *name;
+	char *short_description;
+	char *description;
+	LttvModuleInit init;
+	LttvModuleDestroy destroy;
+	LttvLibrary *library;
+	unsigned require_count;
+	unsigned use_count;
+	unsigned prerequisites_number;
 } LttvModuleInfo;
 
 
 typedef struct _LttvLibraryInfo
 {
-  char *name;
-  char *path;
-  unsigned load_count;
+	char *name;
+	char *path;
+	unsigned load_count;
 } LttvLibraryInfo;
 
 
 typedef enum _LttvModuleError 
 {
-  LTTV_MODULE_NOT_FOUND,
-  LTTV_MODULE_NO_INIT
+	LTTV_MODULE_NOT_FOUND,
+	LTTV_MODULE_NO_INIT
 } LttvModuleError;
 
 
@@ -162,21 +162,21 @@ char *lttv_library_path_get(unsigned i);
 */
 
 #define LTTV_MODULE(name, short_desc, desc, init, destroy, ...) \
-  \
-  static void _LTTV_MODULE_REGISTER(__LINE__)() \
-      __attribute__((constructor));		 \
-  \
-  static void _LTTV_MODULE_REGISTER(__LINE__)() \
-  { \
-    static char *module_prerequisites[] = { __VA_ARGS__ };	\
-    \
-    static struct _LttvModuleDescription module = { \
-        name, short_desc, desc, init, destroy, \
-        sizeof(module_prerequisites) / sizeof(char *), \
-        module_prerequisites, NULL}; \
-        \
-    lttv_module_register(&module); \
-  }
+	\
+	static void _LTTV_MODULE_REGISTER(__LINE__)() \
+			__attribute__((constructor));		 \
+	\
+	static void _LTTV_MODULE_REGISTER(__LINE__)() \
+	{ \
+		static char *module_prerequisites[] = { __VA_ARGS__ };	\
+		\
+		static struct _LttvModuleDescription module = { \
+				name, short_desc, desc, init, destroy, \
+				sizeof(module_prerequisites) / sizeof(char *), \
+				module_prerequisites, NULL}; \
+				\
+		lttv_module_register(&module); \
+	}
 
 
 /* Internal structure and function used to register modules, called by 
@@ -187,14 +187,14 @@ char *lttv_library_path_get(unsigned i);
 
 struct _LttvModuleDescription
 {
-  char *name;
-  char *short_description;
-  char *description;
-  LttvModuleInit init;
-  LttvModuleDestroy destroy;
-  unsigned prerequisites_number;
-  char **prerequisites;
-  struct _LttvModuleDescription *next;
+	char *name;
+	char *short_description;
+	char *description;
+	LttvModuleInit init;
+	LttvModuleDestroy destroy;
+	unsigned prerequisites_number;
+	char **prerequisites;
+	struct _LttvModuleDescription *next;
 };
 
 void lttv_module_register(struct _LttvModuleDescription *d);

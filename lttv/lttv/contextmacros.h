@@ -35,7 +35,7 @@
  * returns : (LttvTraceContext *)
  */
 #define LTTV_TRACESET_CONTEXT_GET_TRACE_CONTEXT(tsc, trace_num)\
-            (tsc->traces[trace_num])
+		(tsc->traces[trace_num])
 
 /* LTTV_TRACESET_CONTEXT_GET_NUM_TRACES
  *
@@ -43,7 +43,7 @@
  * returns : (guint)     the number of traces
  */
 #define LTTV_TRACESET_CONTEXT_GET_NUM_TRACES(tsc)\
-            (lttv_traceset_number(tsc->ts))
+		(lttv_traceset_number(tsc->ts))
 
 /* LTTV_TRACESET_CONTEXT_GET_TRACESET_STATS
  *
@@ -51,7 +51,7 @@
  * returns : (LttvTracesetStats*)
  */
 #define LTTV_TRACESET_CONTEXT_GET_TRACESET_STATS(tsc)\
-            ((LttvTracesetStats*)tsc)
+		((LttvTracesetStats*)tsc)
 
 
 /************ TraceContext get methods ***************/
@@ -62,7 +62,7 @@
  * returns : (LttvTracesetContext *)
  */
 #define LTTV_TRACE_CONTEXT_GET_TRACESET_CONTEXT(tc)\
-            (tc->ts_context)
+		(tc->ts_context)
 
 /* LTTV_TRACE_CONTEXT_GET_TRACE_INDEX
  *
@@ -70,7 +70,7 @@
  * returns : (guint)      trace context index in its traceset context.
  */
 #define LTTV_TRACE_CONTEXT_GET_TRACE_INDEX(tc)\
-            (tc->index)
+		(tc->index)
 
 
 
@@ -80,7 +80,7 @@
  * returns : (LttvTraceState *)
  */
 #define LTTV_TRACE_CONTEXT_GET_TRACE_STATE(tc)\
-            ((LttvTraceState*)tc)
+		((LttvTraceState*)tc)
 
 /* LTTV_TRACE_CONTEXT_GET_TRACE_STATS
  *
@@ -88,7 +88,7 @@
  * returns : (LttvTraceStats *)
  */
 #define LTTV_TRACE_CONTEXT_GET_TRACE_STATS(tc)\
-            ((LttvTraceStats*)tc)
+		((LttvTraceStats*)tc)
 
 /* LTTV_TRACE_CONTEXT_GET_CPU_TRACEFILE_CONTEXT
  *
@@ -97,7 +97,7 @@
  * returns : (LttvTracefileContext*)
  */
 #define LTTV_TRACE_CONTEXT_GET_CPU_TRACEFILE_CONTEXT(tc, cpu_index)\
-        ( tc->tracefiles[cpu_index + ltt_trace_control_tracefile_number(tc->t)] )
+		( tc->tracefiles[cpu_index + ltt_trace_control_tracefile_number(tc->t)] )
 
 /* LTTV_TRACE_CONTEXT_GET_NUMBER_CPU
  *
@@ -105,7 +105,7 @@
  * returns : (guint)    number_cpu
  */
 #define LTTV_TRACE_CONTEXT_GET_NUMBER_CPU(tc)\
-        ( ltt_trace_per_cpu_tracefile_number(tc->t) )
+		( ltt_trace_per_cpu_tracefile_number(tc->t) )
 
 
 /* LTTV_TRACE_CONTEXT_GET_CONTROL_TRACEFILE_CONTEXT
@@ -115,7 +115,7 @@
  * returns : (LttvTracefileContext*)
  */
 #define LTTV_TRACE_CONTEXT_GET_CONTROL_TRACEFILE_CONTEXT(tc, control_index)\
-            (tc->tracefiles[control_index])
+		(tc->tracefiles[control_index])
 
 /* LTTV_TRACE_CONTEXT_GET_NUMBER_CONTROL
  *
@@ -123,7 +123,7 @@
  * returns : (guint)    number_control
  */
 #define LTTV_TRACE_CONTEXT_GET_NUMBER_CONTROL(tc)\
-        ( ltt_trace_control_tracefile_number(tc->t) )
+		( ltt_trace_control_tracefile_number(tc->t) )
 
 /* LTTV_TRACE_CONTEXT_GET_TRACE
  *
@@ -133,7 +133,7 @@
  * NOTE : see traceset.h for LttvTrace methods
  */
 #define LTTV_TRACE_CONTEXT_GET_TRACE(tc)\
-            (tc->vt)
+		(tc->vt)
 
 
 
@@ -147,7 +147,7 @@
  * returns : (LttvTraceContext*)
  */
 #define LTTV_TRACEFILE_CONTEXT_GET_TRACE_CONTEXT(tfc)\
-            (tfc->t_context)
+		(tfc->t_context)
 
 /* LTTV_TRACEFILE_CONTEXT_GET_EVENT
  *
@@ -155,7 +155,7 @@
  * returns : (LttEvent *)
  */
 #define LTTV_TRACEFILE_CONTEXT_GET_EVENT(tfc)\
-            (tfc->e)
+		(tfc->e)
 
 /* LTTV_TRACEFILE_CONTEXT_GET_TRACEFILE_STATE
  *
@@ -163,7 +163,7 @@
  * returns : (LttvTracefileState *)
  */
 #define LTTV_TRACEFILE_CONTEXT_GET_TRACEFILE_STATE(tfc)\
-            ((LttvTracefileState*)tfc)
+		((LttvTracefileState*)tfc)
 
 /* LTTV_TRACEFILE_CONTEXT_GET_TRACEFILE_STATS
  *
@@ -171,7 +171,7 @@
  * returns : (LttvTracefileStats *)
  */
 #define LTTV_TRACEFILE_CONTEXT_GET_TRACEFILE_STATS(tfc)\
-            ((LttvTracefileStats*)tfc)
+		((LttvTracefileStats*)tfc)
 
 /* LTTV_TRACEFILE_CONTEXT_GET_TRACEFILE_INDEX
  * 
@@ -184,9 +184,9 @@
  * returns : (guint)     cpu_index or control_index.
  */
 #define LTTV_TRACEFILE_CONTEXT_GET_TRACEFILE_INDEX(tfc)\
-            (tfc->control?\
-               tfc->index:\
-               tfc->index-ltt_trace_control_tracefile_number(tfc->t_context->t))
+		(tfc->control?\
+			tfc->index:\
+			tfc->index-ltt_trace_control_tracefile_number(tfc->t_context->t))
 
 
 
@@ -199,7 +199,7 @@
  *
  */
 #define LTTV_TRACE_STATE_GET_TRACE_CONTEXT(tse)\
-            ((LttvTraceContext*)tse)
+		((LttvTraceContext*)tse)
 
 /* LTTV_TRACE_STATE_GET_EVENTTYPE_NAME
  *
@@ -210,7 +210,7 @@
  * NOTE : use g_quark_to_string to convert a GQuark into a static char *
  */
 #define LTTV_TRACE_STATE_GET_EVENTTYPE_NAME(tse, eventtype_number)\
-            (tse->eventtype_names[eventtype_number])
+		(tse->eventtype_names[eventtype_number])
 
 /* LTTV_TRACE_STATE_GET_SYSCALL_NAME
  *
@@ -221,7 +221,7 @@
  * NOTE : use g_quark_to_string to convert a GQuark into a static char *
  */
 #define LTTV_TRACE_STATE_GET_SYSCALL_NAME(tse, syscall_number)\
-            (tse->syscall_names[syscall_number])
+		(tse->syscall_names[syscall_number])
 
 /* LTTV_TRACE_STATE_GET_TRAP_NAME
  *
@@ -232,7 +232,7 @@
  * NOTE : use g_quark_to_string to convert a GQuark into a static char *
  */
 #define LTTV_TRACE_STATE_GET_TRAP_NAME(tse, trap_number)\
-            (tse->trap_names[trap_number])
+		(tse->trap_names[trap_number])
 
 /* LTTV_TRACE_STATE_GET_IRQ_NAME
  *
@@ -243,7 +243,7 @@
  * NOTE : use g_quark_to_string to convert a GQuark into a static char *
  */
 #define LTTV_TRACE_STATE_GET_IRQ_NAME(tse, irq_number)\
-            (tse->irq_names[irq_number])
+		(tse->irq_names[irq_number])
 
 
 /* LTTV_TRACE_STATE_GET_PROCESS_STATE
@@ -259,10 +259,10 @@
  *                     on any cpu of the trace.
  */
 #define LTTV_TRACE_STATE_GET_PROCESS_STATE(tse, pid, cpu_index)\
-          (lttv_state_find_process( \
-            (LttvTraceFileState*)tse->parent->tracefiles[\
-             cpu_index+\
-             ltt_trace_control_tracefile_number((LttvTraceContext*)tse->t)], pid))
+		(lttv_state_find_process( \
+			(LttvTraceFileState*)tse->parent->tracefiles[\
+				cpu_index+\
+				ltt_trace_control_tracefile_number((LttvTraceContext*)tse->t)], pid))
 
 
 /* LTTV_TRACE_STATE_GET_NUMBER_CPU
@@ -271,7 +271,7 @@
  * returns : (guint)    number_cpu
  */
 #define LTTV_TRACE_STATE_GET_NUMBER_CPU(tse)\
-        ( ltt_trace_per_cpu_tracefile_number((LttvTraceState*)tse->t) )
+		( ltt_trace_per_cpu_tracefile_number((LttvTraceState*)tse->t) )
 
 
 
@@ -285,7 +285,7 @@
  *
  */
 #define LTTV_TRACEFILE_STATE_GET_TRACEFILE_CONTEXT(tfse)\
-            ((LttvTracefileContext*)tfse)
+		((LttvTracefileContext*)tfse)
 
 
 /* LTTV_TRACEFILE_STATE_GET_CURRENT_PROCESS_STATE
@@ -296,7 +296,7 @@
  * returns : (LttvProcessState *)
  */
 #define LTTV_TRACEFILE_STATE_GET_CURRENT_PROCESS_STATE(tfse)\
-            (tfse->process)
+		(tfse->process)
 
 /* LTTV_TRACEFILE_STATE_GET_CPU_NAME
  *
@@ -306,7 +306,7 @@
  * NOTE : use g_quark_to_string to convert a GQuark into a static char *
  */
 #define LTTV_TRACEFILE_STATE_GET_CPU_NAME(tfse)\
-            (tfse->cpu_name)
+		(tfse->cpu_name)
 
 
 /* LTTV_TRACEFILE_STATE_GET_PROCESS_STATE
@@ -321,7 +321,7 @@
  *                     on any cpu of the trace.
  */
 #define LTTV_TRACEFILE_STATE_GET_PROCESS_STATE(tfse, pid)\
-            (lttv_state_find_process(tfse, pid))
+		(lttv_state_find_process(tfse, pid))
 
 
 
@@ -337,7 +337,7 @@
  * returns : (LttvExecutionState*)
  */
 #define LTTV_PROCESS_STATE_GET_EXECUTION_STATE(pse)\
-            (pse->state)
+		(pse->state)
 
 /* LTTV_PROCESS_STATE_GET_NESTED_EXECUTION_STATE
  *
@@ -346,7 +346,7 @@
  * returns : (LttvExecutionState*)
  */
 #define LTTV_PROCESS_STATE_GET_NESTED_EXECUTION_STATE(pse, num_nest)\
-       (&g_array_index(pse->execution_stack,LttvExecutionState,num_nest))
+		(&g_array_index(pse->execution_stack,LttvExecutionState,num_nest))
 
 
 /* LTTV_PROCESS_STATE_GET_NUM_NESTED_EXECUTION_STATES
@@ -357,7 +357,7 @@
  * returns : (guint)
  */
 #define LTTV_PROCESS_STATE_GET_NUM_NESTED_EXECUTION_STATES(pse)\
-            (pse->execution_stack->len)
+		(pse->execution_stack->len)
 
 
 /************ ExecutionState get methods ***************/
