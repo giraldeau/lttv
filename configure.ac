@@ -200,7 +200,6 @@ lttvwindowincludedir="${includedir}/lttvwindow"
 lttctlincludedir="${includedir}/liblttctl"
 
 AC_SUBST([POPT_LIBS])
-AC_SUBST([M_LIBS])
 AC_SUBST([UTIL_LIBS])
 AC_SUBST(lttvlibdir)
 AC_SUBST(lttvplugindir)
