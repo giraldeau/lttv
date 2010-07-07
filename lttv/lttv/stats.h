@@ -168,7 +168,7 @@ typedef struct _LttvTraceStatsClass LttvTraceStatsClass;
 typedef struct _LttvTracefileStats LttvTracefileStats;
 typedef struct _LttvTracefileStatsClass LttvTracefileStatsClass;
 
-
+typedef struct _LttvCPUStats LttvCPUStats;
 
 // Hook wrapper. call_data is a trace context.
 gboolean lttv_stats_hook_add_event_hooks(void *hook_data, void *call_data);
@@ -210,6 +210,12 @@ struct _LttvTracesetStatsClass {
 
 GType lttv_traceset_stats_get_type (void);
 
+struct _LttvCPUStats {
+	LttvAttribute *current_events_tree;
+	LttvAttribute *current_event_types_tree;
+	LttvTraceStats *tcs;
+	guint cpu;
+};
 
 #define LTTV_TRACE_STATS_TYPE  (lttv_trace_stats_get_type ())
 #define LTTV_TRACE_STATS(obj)  (G_TYPE_CHECK_INSTANCE_CAST ((obj), LTTV_TRACE_STATS_TYPE, LttvTraceStats))
@@ -222,6 +228,7 @@ struct _LttvTraceStats {
 	LttvTraceState parent;
 
 	LttvAttribute *stats;
+	LttvCPUStats *cpu_stats;	/* Array indexed by CPU */
 };
 
 struct _LttvTraceStatsClass {
@@ -241,9 +248,7 @@ GType lttv_trace_stats_get_type (void);
 struct _LttvTracefileStats {
 	LttvTracefileState parent;
 
-	LttvAttribute *stats;
-	LttvAttribute *current_events_tree;
-	LttvAttribute *current_event_types_tree;
+	LttvCPUStats *cpu_stats;	/* "weak" reference */
 };
 
 struct _LttvTracefileStatsClass {
