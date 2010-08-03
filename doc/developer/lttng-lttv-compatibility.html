@@ -3839,6 +3839,8 @@ powerpc64, s390, sparc, sparc64.<br>
 0.216<br>
 0.217<br>
 0.218<br>
+0.219<br>
+0.220<br>
 </td>
 <td style="vertical-align: top;">
 0.76<br>
@@ -3950,6 +3952,10 @@ sparse irq configurations.<br>
 LTTV 0.12.33 fixes statistics handling. Use per-cpu rather than per-tracefile
 event tree head. This bug was introduced when LTTng started supporting multiple
 channels.<br>
+LTTng 0.219 fixes an out-of-bound array use in marker.c.<br>
+LTTng 0.220 forces alignment on 128 bytes (larger than structure) to ensure that
+the section alignment in the linker script matches that of overly enthusiastic
+compilers.<br>
 </td>
 <td style="vertical-align: top;">
 </td>
