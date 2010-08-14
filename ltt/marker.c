@@ -421,21 +421,16 @@ int marker_parse_format(const char *format, struct marker_info *info)
   return 0;
 }
 
-int marker_format_event(LttTrace *trace, GQuark channel, GQuark name,
-  const char *format)
+static
+int marker_format_tf_event(LttTrace *trace, LttTracefile *tf,
+  GQuark channel, GQuark name, const char *format)
 {
   struct marker_info *info;
   struct marker_data *mdata;
   char *fquery;
   char *fcopy;
-  GArray *group;
 
-  group = g_datalist_id_get_data(&trace->tracefiles, channel);
-  if (!group)
-    return -ENOENT;
-  g_assert(group->len > 0);
-  mdata = g_array_index (group, LttTracefile, 0).mdata;
-
+  mdata = tf->mdata;
   fquery = marker_get_format_from_name(mdata, name);
   if (fquery) {
     if (strcmp(fquery, format) != 0)
@@ -460,23 +455,36 @@ int marker_format_event(LttTrace *trace, GQuark channel, GQuark name,
   return 0;
 }
 
-int marker_id_event(LttTrace *trace, GQuark channel, GQuark name, guint16 id,
+int marker_format_event(LttTrace *trace, GQuark channel, GQuark name,
+  const char *format)
+{
+  GArray *group;
+  int i, ret;
+  LttTracefile *tf;
+
+  group = g_datalist_id_get_data(&trace->tracefiles, channel);
+  if (!group)
+    return -ENOENT;
+  g_assert(group->len > 0);
+  for (i = 0; i < group->len; i++) {
+    tf = &g_array_index (group, LttTracefile, i);
+    ret = marker_format_tf_event(trace, tf, channel, name, format);
+    if (ret)
+      g_error("Error in marker_format_event");
+  }
+  return 0;
+}
+
+int marker_id_tf_event(LttTrace *trace, LttTracefile *tf,
+  GQuark channel, GQuark name, guint16 id,
   uint8_t int_size, uint8_t long_size, uint8_t pointer_size,
   uint8_t size_t_size, uint8_t alignment)
 {
   struct marker_data *mdata;
   struct marker_info *info, *head;
   int found = 0;
-  GArray *group;
 
-  g_debug("Add channel %s event %s %hu\n", g_quark_to_string(channel),
-    g_quark_to_string(name), id);
-
-  group = g_datalist_id_get_data(&trace->tracefiles, channel);
-  if (!group)
-    return -ENOENT;
-  g_assert(group->len > 0);
-  mdata = g_array_index (group, LttTracefile, 0).mdata;
+  mdata = tf->mdata;
 
   if (mdata->markers->len <= id)
     mdata->markers = g_array_set_size(mdata->markers,
@@ -509,6 +517,31 @@ int marker_id_event(LttTrace *trace, GQuark channel, GQuark name, guint16 id,
         (gpointer)(gulong)id);
       info->next = head;
     }
+  }
+  return 0;
+}
+
+int marker_id_event(LttTrace *trace, GQuark channel, GQuark name, guint16 id,
+  uint8_t int_size, uint8_t long_size, uint8_t pointer_size,
+  uint8_t size_t_size, uint8_t alignment)
+{
+  GArray *group;
+  int i, ret;
+  LttTracefile *tf;
+
+  g_debug("Add channel %s event %s %hu\n", g_quark_to_string(channel),
+    g_quark_to_string(name), id);
+
+  group = g_datalist_id_get_data(&trace->tracefiles, channel);
+  if (!group)
+    return -ENOENT;
+  g_assert(group->len > 0);
+  for (i = 0; i < group->len; i++) {
+    tf = &g_array_index (group, LttTracefile, i);
+    ret = marker_id_tf_event(trace, tf, channel, name, id, int_size, long_size,
+                             pointer_size, size_t_size, alignment);
+    if (ret)
+      g_error("Error in marker_id_event");
   }
   return 0;
 }
