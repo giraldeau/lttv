@@ -3842,6 +3842,7 @@ powerpc64, s390, sparc, sparc64.<br>
 0.218<br>
 0.219<br>
 0.220<br>
+0.221<br>
 </td>
 <td style="vertical-align: top;">
 0.76<br>
@@ -3960,6 +3961,9 @@ compilers.<br>
 LTTV 0.12.34 fixes a bug in string handling in libltttraceread. Caused incorrect
 string length calculation when a string appeared in many per-cpu tracefiles of
 the same channel.<br>
+LTTng 0.221 is now supports writing strings into the buffer when string input is
+being modified concurrently. Such a race should not render the trace
+unreadable.<br>
 </td>
 <td style="vertical-align: top;">
 </td>
