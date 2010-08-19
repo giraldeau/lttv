@@ -544,12 +544,12 @@ static void ltt_tracefile_group_destroy(gpointer data)
   unsigned int i;
   LttTracefile *tf;
 
+  if (group->len > 0)
+    destroy_marker_data(g_array_index (group, LttTracefile, 0).mdata);
   for(i=0; i<group->len; i++) {
     tf = &g_array_index (group, LttTracefile, i);
-    if(tf->cpu_online) {
-      destroy_marker_data(tf->mdata);
+    if(tf->cpu_online)
       ltt_tracefile_close(tf);
-    }
   }
   g_array_free(group, TRUE);
 }
@@ -585,7 +585,8 @@ static int open_tracefiles(LttTrace *trace, gchar *root_path, gchar *relative_pa
   DIR *dir = opendir(root_path);
   struct dirent *entry;
   struct stat stat_buf;
-  int ret;
+  int ret, i;
+  struct marker_data *mdata;
   
   gchar path[PATH_MAX];
   int path_len;
@@ -595,7 +596,6 @@ static int open_tracefiles(LttTrace *trace, gchar *root_path, gchar *relative_pa
   gchar rel_path[PATH_MAX];
   gchar *rel_path_ptr;
   LttTracefile tmp_tf;
-  struct marker_data **mdata;
 
   if(dir == NULL) {
     perror(root_path);
@@ -658,6 +658,7 @@ static int open_tracefiles(LttTrace *trace, gchar *root_path, gchar *relative_pa
       g_debug("Tracefile name is %s and number is %u", 
           g_quark_to_string(name), num);
 
+      mdata = NULL;
       tmp_tf.cpu_online = 1;
       tmp_tf.cpu_num = num;
       tmp_tf.name = name;
@@ -672,6 +673,9 @@ static int open_tracefiles(LttTrace *trace, gchar *root_path, gchar *relative_pa
         group = g_array_sized_new (FALSE, TRUE, sizeof(LttTracefile), 10);
         g_datalist_id_set_data_full(&trace->tracefiles, name,
                                  group, ltt_tracefile_group_destroy);
+        mdata = allocate_marker_data();
+        if (!mdata)
+          g_error("Error in allocating marker data");
       }
 
       /* Add the per cpu tracefile to the named group */
@@ -679,13 +683,15 @@ static int open_tracefiles(LttTrace *trace, gchar *root_path, gchar *relative_pa
       if(num+1 > old_len)
         group = g_array_set_size(group, num+1);
 
+      g_assert(group->len > 0);
+      if (!mdata)
+        mdata = g_array_index (group, LttTracefile, 0).mdata;
+
       g_array_index (group, LttTracefile, num) = tmp_tf;
       g_array_index (group, LttTracefile, num).event.tracefile = 
         &g_array_index (group, LttTracefile, num);
-      mdata = &g_array_index (group, LttTracefile, num).mdata;
-      *mdata = allocate_marker_data();
-      if (!*mdata)
-        g_error("Error in allocating marker data");
+      for (i = 0; i < group->len; i++)
+        g_array_index (group, LttTracefile, i).mdata = mdata;
     }
   }
   
