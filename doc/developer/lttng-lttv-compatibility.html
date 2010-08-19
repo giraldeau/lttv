@@ -3966,7 +3966,9 @@ the same channel.<br>
 LTTng 0.221 now supports writing strings into the buffer when string input is
 being modified concurrently. Such a race should not render the trace
 unreadable.<br>
-LTTng 0.222 supports kernel 2.6.34.4.<br>
+LTTng 0.222 supports kernel 2.6.34.4. It includes a lttng splice actor
+adjustment to match a splice.c change in 2.6.34.2 which changed the checks for
+seekable files.<br>
 </td>
 <td style="vertical-align: top;">
 </td>
