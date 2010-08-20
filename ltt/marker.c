@@ -250,30 +250,31 @@ static inline long add_type(struct marker_info *info,
     field->name = g_quark_from_string(tmpname);
   }
   field->type = trace_type;
+  field->index = info->fields->len-1;
   field->fmt = g_string_new(field_fmt->str);
 
   switch (trace_type) {
   case LTT_TYPE_SIGNED_INT:
   case LTT_TYPE_UNSIGNED_INT:
   case LTT_TYPE_POINTER:
-    field->size = trace_size;
+    field->_size = trace_size;
     field->alignment = trace_size;
     info->largest_align = max((guint8)field->alignment,
                               (guint8)info->largest_align);
     field->attributes = attributes;
     if (offset == -1) {
-      field->offset = -1;
+      field->_offset = -1;
       field->static_offset = 0;
       return -1;
     } else {
-      field->offset = offset + ltt_align(offset, field->alignment,
+      field->_offset = offset + ltt_align(offset, field->alignment,
                                          info->alignment);
       field->static_offset = 1;
-      return field->offset + trace_size;
+      return field->_offset + trace_size;
     }
   case LTT_TYPE_STRING:
-    field->offset = offset;
-    field->size = 0;  /* Variable length, size is 0 */
+    field->_offset = offset;
+    field->_size = 0;  /* Variable length, size is 0 */
     field->alignment = 1;
     if (offset == -1)
       field->static_offset = 0;
@@ -296,7 +297,7 @@ long marker_update_fields_offsets(struct marker_info *info, const char *data)
   for (i = info->fields->len - 1; i >= 0; i--) {
     field = &g_array_index(info->fields, struct marker_field, i);
     if (field->static_offset) {
-      offset = field->offset;
+      offset = field->_offset;
       break;
     }
   }
@@ -308,12 +309,12 @@ long marker_update_fields_offsets(struct marker_info *info, const char *data)
     case LTT_TYPE_SIGNED_INT:
     case LTT_TYPE_UNSIGNED_INT:
     case LTT_TYPE_POINTER:
-      field->offset = offset + ltt_align(offset, field->alignment,
+      field->_offset = offset + ltt_align(offset, field->alignment,
                                           info->alignment);
-      offset = field->offset + field->size;
+      offset = field->_offset + field->_size;
       break;
     case LTT_TYPE_STRING:
-      field->offset = offset;
+      field->_offset = offset;
       offset = offset + strlen(&data[offset]) + 1;
       // not aligning on pointer size, breaking genevent backward compatibility.
       break;
@@ -323,6 +324,24 @@ long marker_update_fields_offsets(struct marker_info *info, const char *data)
     }
   }
   return offset;
+}
+
+void marker_update_event_fields_offsets(GArray *fields_offsets,
+					struct marker_info *info)
+{
+  unsigned int i;
+
+  g_array_set_size(fields_offsets, info->fields->len);
+  for (i = 0; i < info->fields->len; i++) {
+    struct marker_field *mfield =
+      &g_array_index(info->fields, struct marker_field, i);
+    struct LttField *eventfield =
+      &g_array_index(fields_offsets, struct LttField, i);
+    eventfield->offset = mfield->_offset;
+    eventfield->size = mfield->_size;
+    g_assert(eventfield->offset != -1);
+    g_assert(eventfield->size != -1);
+  }
 }
 
 static void format_parse(const char *fmt, struct marker_info *info)

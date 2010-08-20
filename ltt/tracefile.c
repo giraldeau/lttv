@@ -55,6 +55,8 @@
 
 /* from marker.c */
 extern long marker_update_fields_offsets(struct marker_info *info, const char *data);
+extern void marker_update_event_fields_offsets(GArray *fields_offsets,
+					       struct marker_info *info);
 
 /* Tracefile names used in this file */
 
@@ -333,7 +335,13 @@ static gint ltt_tracefile_open(LttTrace *t, gchar * fileName, LttTracefile *tf)
     perror("Cannot map block for tracefile");
     goto close_file;
   }
-  
+ 
+  /* Create fields offset table */
+  tf->event.fields_offsets = g_array_sized_new(FALSE, FALSE,
+                                               sizeof(struct LttField), 1);
+  if (!tf->event.fields_offsets)
+    goto close_file;
+
   return 0;
 
   /* Error */
@@ -376,6 +384,7 @@ static void ltt_tracefile_close(LttTracefile *t)
   close(t->fd);
   if (t->buf_index)
     g_array_free(t->buf_index, TRUE);
+  g_array_free(t->event.fields_offsets, TRUE);
 }
 
 /****************************************************************************
@@ -1593,8 +1602,9 @@ void ltt_update_event_size(LttTracefile *tf)
     if (info->size != -1)
       size = info->size;
     else
-      size = marker_update_fields_offsets(marker_get_info_from_id(tf->mdata,
-                                   tf->event.event_id), tf->event.data);
+      size = marker_update_fields_offsets(info, tf->event.data);
+    /* Update per-tracefile offsets */
+    marker_update_event_fields_offsets(tf->event.fields_offsets, info);
   }
 
   tf->event.data_size = size;

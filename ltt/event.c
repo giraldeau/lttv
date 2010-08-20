@@ -153,6 +153,8 @@ LttTracefile *ltt_event_position_tracefile(LttEventPosition *ep)
 guint32 ltt_event_get_unsigned(LttEvent *e, struct marker_field *f)
 {
   gboolean reverse_byte_order;
+  struct LttField *eventfield;
+  int offset, size;
 
   if(unlikely(f->attributes & LTT_ATTRIBUTE_NETWORK_BYTE_ORDER)) {
     reverse_byte_order = (g_ntohs(0x1) != 0x1);
@@ -160,22 +162,25 @@ guint32 ltt_event_get_unsigned(LttEvent *e, struct marker_field *f)
     reverse_byte_order = LTT_GET_BO(e->tracefile);
   }
 
-  switch(f->size) {
+  eventfield = ltt_event_field(e, marker_field_get_index(f));
+  offset = eventfield->offset;
+  size = eventfield->size;
+  switch(size) {
   case 1:
     {
-      guint8 x = *(guint8 *)(e->data + f->offset);
-      return (guint32) x;    
+      guint8 x = *(guint8 *)(e->data + offset);
+      return (guint32) x;
     }
     break;
   case 2:
-    return (guint32)ltt_get_uint16(reverse_byte_order, e->data + f->offset);
+    return (guint32)ltt_get_uint16(reverse_byte_order, e->data + offset);
     break;
   case 4:
-    return (guint32)ltt_get_uint32(reverse_byte_order, e->data + f->offset);
+    return (guint32)ltt_get_uint32(reverse_byte_order, e->data + offset);
     break;
   case 8:
   default:
-    g_critical("ltt_event_get_unsigned : field size %li unknown", f->size);
+    g_critical("ltt_event_get_unsigned : field size %i unknown", size);
     return 0;
     break;
   }
@@ -184,28 +189,34 @@ guint32 ltt_event_get_unsigned(LttEvent *e, struct marker_field *f)
 gint32 ltt_event_get_int(LttEvent *e, struct marker_field *f)
 {
   gboolean reverse_byte_order;
+  struct LttField *eventfield;
+  int offset, size;
+
   if(unlikely(f->attributes & LTT_ATTRIBUTE_NETWORK_BYTE_ORDER)) {
     reverse_byte_order = (g_ntohs(0x1) != 0x1);
   } else {
     reverse_byte_order = LTT_GET_BO(e->tracefile);
   }
 
-  switch(f->size) {
+  eventfield = ltt_event_field(e, marker_field_get_index(f));
+  offset = eventfield->offset;
+  size = eventfield->size;
+  switch(size) {
   case 1:
     {
-      gint8 x = *(gint8 *)(e->data + f->offset);
-      return (gint32) x;    
+      gint8 x = *(gint8 *)(e->data + offset);
+      return (gint32) x;
     }
     break;
   case 2:
-    return (gint32)ltt_get_int16(reverse_byte_order, e->data + f->offset);
+    return (gint32)ltt_get_int16(reverse_byte_order, e->data + offset);
     break;
   case 4:
-    return (gint32)ltt_get_int32(reverse_byte_order, e->data + f->offset);
+    return (gint32)ltt_get_int32(reverse_byte_order, e->data + offset);
     break;
   case 8:
   default:
-    g_critical("ltt_event_get_int : field size %li unknown", f->size);
+    g_critical("ltt_event_get_int : field size %i unknown", size);
     return 0;
     break;
   }
@@ -214,30 +225,36 @@ gint32 ltt_event_get_int(LttEvent *e, struct marker_field *f)
 guint64 ltt_event_get_long_unsigned(LttEvent *e, struct marker_field *f)
 {
   gboolean reverse_byte_order;
+  struct LttField *eventfield;
+  int offset, size;
+
   if(unlikely(f->attributes & LTT_ATTRIBUTE_NETWORK_BYTE_ORDER)) {
     reverse_byte_order = (g_ntohs(0x1) != 0x1);
   } else {
     reverse_byte_order = LTT_GET_BO(e->tracefile);
   }
   
-  switch(f->size) {
+  eventfield = ltt_event_field(e, marker_field_get_index(f));
+  offset = eventfield->offset;
+  size = eventfield->size;
+  switch(size) {
   case 1:
     {
-      guint8 x = *(guint8 *)(e->data + f->offset);
-      return (guint64) x;    
+      guint8 x = *(guint8 *)(e->data + offset);
+      return (guint64) x;
     }
     break;
   case 2:
-    return (guint64)ltt_get_uint16(reverse_byte_order, e->data + f->offset);
+    return (guint64)ltt_get_uint16(reverse_byte_order, e->data + offset);
     break;
   case 4:
-    return (guint64)ltt_get_uint32(reverse_byte_order, e->data + f->offset);
+    return (guint64)ltt_get_uint32(reverse_byte_order, e->data + offset);
     break;
   case 8:
-    return ltt_get_uint64(reverse_byte_order, e->data + f->offset);
+    return ltt_get_uint64(reverse_byte_order, e->data + offset);
     break;
   default:
-    g_critical("ltt_event_get_long_unsigned : field size %li unknown", f->size);
+    g_critical("ltt_event_get_long_unsigned : field size %i unknown", size);
     return 0;
     break;
   }
@@ -246,30 +263,36 @@ guint64 ltt_event_get_long_unsigned(LttEvent *e, struct marker_field *f)
 gint64 ltt_event_get_long_int(LttEvent *e, struct marker_field *f)
 {
   gboolean reverse_byte_order;
+  struct LttField *eventfield;
+  int offset, size;
+
   if(unlikely(f->attributes & LTT_ATTRIBUTE_NETWORK_BYTE_ORDER)) {
     reverse_byte_order = (g_ntohs(0x1) != 0x1);
   } else {
     reverse_byte_order = LTT_GET_BO(e->tracefile);
   }
   
-  switch(f->size) {
+  eventfield = ltt_event_field(e, marker_field_get_index(f));
+  offset = eventfield->offset;
+  size = eventfield->size;
+  switch(size) {
   case 1:
     {
-      gint8 x = *(gint8 *)(e->data + f->offset);
+      gint8 x = *(gint8 *)(e->data + offset);
       return (gint64) x;    
     }
     break;
   case 2:
-    return (gint64)ltt_get_int16(reverse_byte_order, e->data + f->offset);
+    return (gint64)ltt_get_int16(reverse_byte_order, e->data + offset);
     break;
   case 4:
-    return (gint64)ltt_get_int32(reverse_byte_order, e->data + f->offset);
+    return (gint64)ltt_get_int32(reverse_byte_order, e->data + offset);
     break;
   case 8:
-    return ltt_get_int64(reverse_byte_order, e->data + f->offset);
+    return ltt_get_int64(reverse_byte_order, e->data + offset);
     break;
   default:
-    g_critical("ltt_event_get_long_int : field size %li unknown", f->size);
+    g_critical("ltt_event_get_long_int : field size %i unknown", size);
     return 0;
     break;
   }
@@ -279,6 +302,9 @@ gint64 ltt_event_get_long_int(LttEvent *e, struct marker_field *f)
 float ltt_event_get_float(LttEvent *e, struct marker_field *f)
 {
   gboolean reverse_byte_order;
+  struct LttField *eventfield;
+  int offset, size;
+
   if(unlikely(f->attributes & LTT_ATTRIBUTE_NETWORK_BYTE_ORDER)) {
     reverse_byte_order = (g_ntohs(0x1) != 0x1);
   } else {
@@ -286,11 +312,14 @@ float ltt_event_get_float(LttEvent *e, struct marker_field *f)
     reverse_byte_order = LTT_GET_FLOAT_BO(e->tracefile);
   }
 
-  g_assert(f->field_type.type_class == LTT_FLOAT && f->size == 4);
+  eventfield = ltt_event_field(e, marker_field_get_index(f));
+  offset = eventfield->offset;
+  size = eventfield->size;
+  g_assert(f->field_type.type_class == LTT_FLOAT && size == 4);
 
-  if(reverse_byte_order == 0) return *(float *)(e->data + f->offset);
+  if(reverse_byte_order == 0) return *(float *)(e->data + offset);
   else{
-    void *ptr = e->data + f->offset;
+    void *ptr = e->data + offset;
     guint32 value = bswap_32(*(guint32*)ptr);
     return *(float*)&value;
   }
@@ -299,6 +328,9 @@ float ltt_event_get_float(LttEvent *e, struct marker_field *f)
 double ltt_event_get_double(LttEvent *e, struct marker_field *f)
 {
   gboolean reverse_byte_order;
+  struct LttField *eventfield;
+  int offset, size;
+
   if(unlikely(f->attributes & LTT_ATTRIBUTE_NETWORK_BYTE_ORDER)) {
     reverse_byte_order = (g_ntohs(0x1) != 0x1);
   } else {
@@ -306,14 +338,17 @@ double ltt_event_get_double(LttEvent *e, struct marker_field *f)
     reverse_byte_order = LTT_GET_FLOAT_BO(e->tracefile);
   }
 
-  if(f->size == 4)
+  eventfield = ltt_event_field(e, marker_field_get_index(f));
+  offset = eventfield->offset;
+  size = eventfield->size;
+  if(size == 4)
     return ltt_event_get_float(e, f);
     
-  g_assert(f->field_type.type_class == LTT_FLOAT && f->size == 8);
+  g_assert(f->field_type.type_class == LTT_FLOAT && size == 8);
 
-  if(reverse_byte_order == 0) return *(double *)(e->data + f->offset);
+  if(reverse_byte_order == 0) return *(double *)(e->data + offset);
   else {
-    void *ptr = e->data + f->offset;
+    void *ptr = e->data + offset;
     guint64 value = bswap_64(*(guint64*)ptr);
     return *(double*)&value;
   }
@@ -326,11 +361,16 @@ double ltt_event_get_double(LttEvent *e, struct marker_field *f)
  ****************************************************************************/
 gchar *ltt_event_get_string(LttEvent *e, struct marker_field *f)
 {
+  struct LttField *eventfield;
+  int offset;
+
   g_assert(f->type == LTT_TYPE_STRING);
 
   //caused memory leaks
   //return (gchar*)g_strdup((gchar*)(e->data + f->offset));
-  return (gchar*)(e->data + f->offset);
+  eventfield = ltt_event_field(e, marker_field_get_index(f));
+  offset = eventfield->offset;
+  return (gchar*)(e->data + offset);
 }
 
 

@@ -19,11 +19,18 @@ enum ltt_type {
 	LTT_TYPE_NONE,
 };
 
+/*
+ * Fields "offset" and "size" below are only valid while the event is being
+ * read. They are also being shared with events of the same type coming from
+ * other per-cpu tracefiles. Therefore, the "LttEvent" fields_offsets offset and
+ * size should be used rather than these.
+ */
 struct marker_field {
   GQuark name;
   enum ltt_type type;
-  unsigned long offset; /* offset in the event data */
-  unsigned long size;
+  unsigned int index;	/* Field index within the event */
+  unsigned long _offset; /* offset in the event data, USED ONLY INTERNALLY BY LIB */
+  unsigned long _size;	/* size of field. USED ONLY INTERNALLY BY LIB */
   unsigned long alignment;
   unsigned long attributes;
   int static_offset;	/* boolean - private - is the field offset statically
@@ -41,9 +48,17 @@ static inline enum ltt_type marker_field_get_type(struct marker_field *field)
 	return field->type;
 }
 
-static inline unsigned long marker_field_get_size(struct marker_field *field)
+/*
+ * Returns 0 if size is not known statically.
+ */
+static inline long marker_field_get_size(struct marker_field *field)
 {
-	return field->size;
+	return field->_size;
+}
+
+static inline unsigned int marker_field_get_index(struct marker_field *field)
+{
+	return field->index;
 }
 
 #endif //_LTT_MARKERS_FIELD_H

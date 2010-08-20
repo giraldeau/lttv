@@ -10,6 +10,11 @@
 
 struct marker_field;
 
+struct LttField {
+  int offset;
+  int size;
+};
+
 /*
  * Structure LttEvent and LttEventPosition must begin with the _exact_ same
  * fields in the exact same order. LttEventPosition is a parent of LttEvent.
@@ -31,6 +36,7 @@ struct LttEvent {
 	LttTime event_time;
 
 	void *data;		/* event data */
+	GArray *fields_offsets; /* current field offsets table */
 	guint data_size;
 	guint event_size;	/* event_size field of the header :
 				   used to verify data_size from marker. */
@@ -106,6 +112,11 @@ gchar *ltt_event_get_string(LttEvent *e, struct marker_field *f);
 static inline LttCycleCount ltt_event_cycle_count(const LttEvent *e)
 {
   return e->tsc;
+}
+
+static inline struct LttField *ltt_event_field(const LttEvent *e, int index)
+{
+	return &g_array_index(e->fields_offsets, struct LttField, index);
 }
 
 #endif //_LTT_EVENT_H
