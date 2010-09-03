@@ -8,7 +8,7 @@
 <h1>Linux Trace Toolkit Next Generation Manual</h1>
 
 Author : Mathieu Desnoyers, September 2005<br>
-Last update : January 30, 2010<br>
+Last update : September 3, 2010<br>
 (originally known as the LTTng QUICKSTART guide)
 
 <h2>Table of Contents</h2>
@@ -76,8 +76,8 @@ packages from the LTTng and LTTV sources.
 These operations are made for installing the LTTng 0.86 tracer on a linux 2.6.X
 kernel. You will also find instructions for installation of LTTV 0.12.x : the
 Linux Trace Toolkit Viewer. 
-To see the list of compatibilities between LTTng, ltt-control, LTTV, please
-refer to :
+To see the list of compatibilities between the LTTng kernel patchset, LTTng
+modules, ltt-control, LTTV, please refer to :
 <a
 href="http://lttng.org/cgi-bin/gitweb.cgi?p=lttv.git;a=blob_plain;f=doc/developer/lttng-lttv-compatibility.html;hb=HEAD">LTTng+LTTV versions compatibility</a>
 
@@ -203,9 +203,11 @@ href="http://lttng.org/cgi-bin/gitweb.cgi?p=lttv.git;a=blob_plain;f=doc/develope
 su -
 mkdir /usr/src/lttng
 cd /usr/src/lttng
-(see http://ltt.polymtl.ca/lttng for package listing)
-wget http://ltt.polymtl.ca/lttng/patch-2.6.X-lttng-0.x.xx.tar.bz2
+(see http://lttng.org/files/lttng for package listing)
+wget http://lttng.org/files/lttng/patch-2.6.X-lttng-0.x.xx.tar.bz2
+wget http://lttng.org/files/lttng/lttng-modules-0.x.tar.bz2
 bzip2 -cd patch-2.6.X-lttng-0.x.xx.tar.bz2 | tar xvof -
+bzip2 -cd lttng-modules-0.x.tar.bz2 | tar xvof -
 </PRE>
 
 
@@ -240,20 +242,7 @@ make menuconfig (or make xconfig or make config)
     Select the following options :
     [*] Prompt for development and/or incomplete code/drivers
     [*] Activate markers
-    [*] Activate userspace markers ABI (experimental, optional)
     [*] Immediate value optimization (optional)
-    [*] Linux Trace Toolkit Next Generation (LTTng) ---&gt;
-    &lt;M&gt; or &lt;*&gt; Compile lttng tracing probes
-    &lt;M&gt; or &lt;*&gt; Linux Trace Toolkit High-speed Lockless Data Relay
-    &lt;M&gt; or &lt;*&gt; Linux Trace Toolkit Lock-Protected Data Relay
-    &lt;M&gt; or &lt;*&gt; Linux Trace Toolkit Serializer
-    &lt;M&gt; or &lt;*&gt;   Linux Trace Toolkit Marker Control
-    &lt;M&gt; or &lt;*&gt;     Linux Trace Toolkit Tracer
-    [*] Align Linux Trace Toolkit Traces
-    &lt;M&gt; or &lt;*&gt; Support logging events from userspace
-    [*] Support trace extraction from crash dump
-    &lt;M&gt; or &lt;*&gt; Linux Trace Toolkit Trace Controller
-    &lt;M&gt; or &lt;*&gt; Linux Trace Toolkit State Dump
   Select &lt;Exit&gt;
   Select &lt;Exit&gt;
   Select &lt;Yes&gt;
@@ -280,6 +269,16 @@ select the right entry at the yaboot prompt (see choices : tab, select : type
 the kernel name followed by enter)
 Select the Linux 2.6.X-lttng-0.x.xx kernel in your boot loader.
 --
+</PRE>
+
+
+<h3><a href="#TOCinstalllttng" name="installlttng">Installing the LTTng modules</a></h3>
+
+<PRE>
+su -
+cd /usr/src/lttng/lttng-modules-0.x
+KERNELDIR=/usr/src/linux-2.6.X-lttng-0.x.xx make
+KERNELDIR=/usr/src/linux-2.6.X-lttng-0.x.xx make modules_install
 </PRE>
 
 <h3><a href="#TOCeditconfig" name="editconfig">Editing the system wide
