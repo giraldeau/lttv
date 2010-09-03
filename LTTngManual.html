@@ -279,6 +279,12 @@ su -
 cd /usr/src/lttng/lttng-modules-0.x
 KERNELDIR=/usr/src/linux-2.6.X-lttng-0.x.xx make
 KERNELDIR=/usr/src/linux-2.6.X-lttng-0.x.xx make modules_install
+
+Optionally, make can be prefixed with tracer options:
+
+EXTRA_CFLAGS="-DLTT_DEBUG_EVENT_SIZE" make
+EXTRA_CFLAGS="-DLTT_VMCORE" make
+EXTRA_CFLAGS="-DLTT_DEBUG_EVENT_SIZE -DLTT_VMCORE" make
 </PRE>
 
 <h3><a href="#TOCeditconfig" name="editconfig">Editing the system wide
