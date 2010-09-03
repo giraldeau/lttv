@@ -311,7 +311,6 @@ compile statically, you may not need to issue all these commands.
 modprobe ltt-trace-control
 modprobe ltt-marker-control
 modprobe ltt-tracer
-modprobe ltt-serialize
 modprobe ltt-relay
 modprobe ipc-trace
 modprobe kernel-trace
@@ -343,7 +342,6 @@ cp /etc/modules /etc/modules.bkp
 echo ltt-trace-control >> /etc/modules
 echo ltt-marker-control >> /etc/modules
 echo ltt-tracer >> /etc/modules
-echo ltt-serialize >> /etc/modules
 echo ltt-relay >> /etc/modules
 echo ipc-trace >> /etc/modules
 echo kernel-trace >> /etc/modules
