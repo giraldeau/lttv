@@ -998,20 +998,6 @@ JNIEXPORT jint JNICALL Java_org_eclipse_linuxtools_lttng_jni_JniMarkerField_ltt_
         return (jint)newPtr->type;
 }
 
-/* Get of offset */
-JNIEXPORT jlong JNICALL Java_org_eclipse_linuxtools_lttng_jni_JniMarkerField_ltt_1getOffset(JNIEnv *env, jobject jobj, jlong marker_field_ptr) {
-        struct marker_field *newPtr = (struct marker_field*)CONVERT_JLONG_TO_PTR(marker_field_ptr);
-        
-        return CONVERT_UINT64_TO_JLONG(newPtr->offset);
-}
-
-/* Get of size */
-JNIEXPORT jlong JNICALL Java_org_eclipse_linuxtools_lttng_jni_JniMarkerField_ltt_1getSize(JNIEnv *env, jobject jobj, jlong marker_field_ptr) {
-        struct marker_field *newPtr = (struct marker_field*)CONVERT_JLONG_TO_PTR(marker_field_ptr);
-        
-        return CONVERT_UINT64_TO_JLONG(newPtr->size);
-}
-
 /* Get of alignment */
 JNIEXPORT jlong JNICALL Java_org_eclipse_linuxtools_lttng_jni_JniMarkerField_ltt_1getAlignment(JNIEnv *env, jobject jobj, jlong marker_field_ptr) {
         struct marker_field *newPtr = (struct marker_field*)CONVERT_JLONG_TO_PTR(marker_field_ptr);
@@ -1046,8 +1032,6 @@ JNIEXPORT void JNICALL Java_org_eclipse_linuxtools_lttng_jni_JniMarkerField_ltt_
         
         printf("name          : %s\n"  ,g_quark_to_string(newPtr->name) );
         printf("type          : %i\n"  ,(int)newPtr->type );
-        printf("offset        : %lu\n" ,(long unsigned int)newPtr->offset );
-        printf("size          : %lu\n" ,(long unsigned int)newPtr->size );
         printf("alignment     : %lu\n" ,(long unsigned int)newPtr->alignment );
         printf("attributes    : %lu\n" ,(long unsigned int)newPtr->attributes );
         printf("static_offset : %i\n"  ,(int)newPtr->static_offset );
@@ -1068,6 +1052,7 @@ JNIEXPORT void JNICALL Java_org_eclipse_linuxtools_lttng_jni_JniMarkerField_ltt_
 JNIEXPORT void JNICALL Java_org_eclipse_linuxtools_lttng_jni_JniParser_ltt_1getParsedData(JNIEnv *env, jclass accessClass, jobject javaObj, jlong event_ptr, jlong marker_field_ptr) {
         LttEvent newEventPtr = *(LttEvent*)(CONVERT_JLONG_TO_PTR(event_ptr));
         struct marker_field *newMarkerFieldPtr = (struct marker_field*)CONVERT_JLONG_TO_PTR(marker_field_ptr);
+        struct LttField *newLttFieldPtr = ltt_event_field(&newEventPtr, marker_field_get_index(newMarkerFieldPtr));
         
         jmethodID accessFunction = NULL;
         
@@ -1131,7 +1116,7 @@ JNIEXPORT void JNICALL Java_org_eclipse_linuxtools_lttng_jni_JniParser_ltt_1getP
                                                         accessClass, 
                                                         accessFunction, 
                                                         javaObj, 
-                                                        CONVERT_PTR_TO_JLONG(*(GINT_TYPE_FOR_PTR*)(newEventPtr.data + newMarkerFieldPtr->offset))
+                                                        CONVERT_PTR_TO_JLONG(*(GINT_TYPE_FOR_PTR*)(newEventPtr.data + newLttFieldPtr->offset))
                                                      );
                         break;
                         
