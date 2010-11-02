@@ -1494,7 +1494,6 @@ static void lttv_state_free_trap_states(LttvTrapState *states, guint n)
 static LttvBdevState *get_hashed_bdevstate(LttvTraceState *ts, guint32 devcode)
 {
 	gint devcode_gint = devcode;
-	printf("get_hashed_bdevstate devcode %d\n", devcode_gint);
 	gpointer bdev = g_hash_table_lookup(ts->bdev_states, &devcode_gint);
 	if(bdev == NULL) {
 		LttvBdevState *bdevstate = g_new(LttvBdevState, 1);
@@ -2766,7 +2765,6 @@ static gboolean bdev_request_issue(void *hook_data, void *call_data)
 	guint oper = ltt_event_get_long_unsigned(e,
 			lttv_trace_get_hook_field(th, 2));
 	guint32 devcode = MKDEV(major,minor);
-	printf("major %d minor %d oper %d devcode %d\n", major, minor, oper, devcode);
 
 	/* have we seen this block device before? */
 	gpointer bdev = get_hashed_bdevstate(ts, devcode);
