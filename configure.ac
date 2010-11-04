@@ -229,6 +229,7 @@ AC_CONFIG_FILES([Makefile
 	lttv/modules/gui/detailedevents/Makefile
 	lttv/modules/gui/statistics/Makefile
 	lttv/modules/gui/histogram/Makefile
+	lttv/modules/gui/cpuview/Makefile
 	lttv/modules/gui/filter/Makefile
 	lttv/modules/gui/tracecontrol/Makefile
 	lttv/modules/gui/resourceview/Makefile

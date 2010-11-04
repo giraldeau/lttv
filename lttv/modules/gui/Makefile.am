@@ -6,7 +6,8 @@
 
 # WARNING : subdirs order is important : mainWin depends on API
 
-SUBDIRS = lttvwindow controlflow detailedevents statistics filter tracecontrol histogram interrupts resourceview
+SUBDIRS = lttvwindow controlflow detailedevents statistics filter \
+		tracecontrol histogram interrupts resourceview cpuview
 
 # TODO: PORT for 0.10
 #diskperformance tutorial

@@ -23,6 +23,7 @@ GRAPHLIBS="-L ${BUILDPATH}/lttv/modules/gui/lttvwindow/lttvwindow/.libs -m lttvw
 "-L ${BUILDPATH}/lttv/modules/gui/resourceview/.libs -m resourceview "\
 "-L ${BUILDPATH}/lttv/modules/gui/filter/.libs -m guifilter "\
 "-L ${BUILDPATH}/lttv/modules/gui/interrupts/.libs -m interrupts "\
+"-L ${BUILDPATH}/lttv/modules/gui/cpuview/.libs -m guicpuview "\
 "-L ${BUILDPATH}/lttv/modules/gui/histogram/.libs -m guihistogram"
 DEFAULTMODE="gui"
 
