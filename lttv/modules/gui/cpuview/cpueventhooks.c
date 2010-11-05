@@ -282,7 +282,32 @@ void cpu_request_event( CpuControlFlowData *cpucontrol_flow_data, guint x, guint
                      cpu_after_chunk,
                      cpu_events_request,
                      LTTV_PRIO_DEFAULT);
+
+    GArray *hooks;
+    hooks = g_array_sized_new(FALSE, FALSE, sizeof(LttvTraceHook), 1);
   	ts = (LttvTraceState *)tsc->traces[i];
+
+  	LttvTraceHook *th;
+
+  	LttvHooksByIdChannelArray *event_by_id_channel =
+  	        lttv_hooks_by_id_channel_new();
+
+    lttv_trace_find_hook(ts->parent.t,
+        LTT_CHANNEL_KERNEL,
+        LTT_EVENT_SCHED_SCHEDULE,
+        FIELD_ARRAY(LTT_FIELD_PREV_PID, LTT_FIELD_NEXT_PID, LTT_FIELD_PREV_STATE),
+        cpu_after_schedchange_hook,
+        cpu_events_request,
+        &hooks);
+
+    int k;
+    for (k = 0; k < hooks->len; k++) {
+        th = &g_array_index(hooks, LttvTraceHook, i);
+        lttv_hooks_add(lttv_hooks_by_id_channel_find(event_by_id_channel,
+                th->channel, th->id),
+                th->h, th, LTTV_PRIO_DEFAULT);
+    }
+
       // Fill the events request
   	cpu_events_request->owner       	    = cpucontrol_flow_data;
   	cpu_events_request->viewer_data	    = cpucontrol_flow_data;
@@ -296,7 +321,7 @@ void cpu_request_event( CpuControlFlowData *cpucontrol_flow_data, guint x, guint
   	cpu_events_request->num_events  	    = G_MAXUINT;
   	cpu_events_request->end_position          = NULL;
   	cpu_events_request->trace 	   	    = i;
-  	cpu_events_request->hooks 	   	    = NULL;
+  	cpu_events_request->hooks 	   	    = hooks;
   	cpu_events_request->before_chunk_traceset = cpu_before_chunk_traceset;//NULL;
   	cpu_events_request->before_chunk_trace    = NULL;
   	cpu_events_request->before_chunk_tracefile= NULL;
@@ -307,7 +332,7 @@ void cpu_request_event( CpuControlFlowData *cpucontrol_flow_data, guint x, guint
   	cpu_events_request->after_chunk_traceset  = cpu_after_chunk_traceset;//NULL;
   	cpu_events_request->before_request	    = cpu_before_trace_hooks;
   	cpu_events_request->after_request	    = cpu_after_trace_hooks;
-  
+
   	lttvwindow_events_request(cpucontrol_flow_data->tab, cpu_events_request);
   }
 return;
@@ -1143,3 +1168,16 @@ int cpu_after_chunk(void *hook_data, void *call_data)
   return 0;
 }
 
+int cpu_after_schedchange_hook(void *hook_data, void *call_data)
+{
+    EventsRequest *events_request = (EventsRequest*)hook_data;
+    CpuControlFlowData *cpu_control_flow_data = events_request->viewer_data;
+    LttvTracesetState *tss = (LttvTracesetState*)call_data;
+    LttvTracesetContext *tsc = (LttvTracesetContext*)call_data;
+    LttvTracefileContext *tfc = lttv_traceset_context_get_current_tfc(tsc);
+    LttEvent *e;
+
+    g_debug("after_schedchange_hook");
+    e = ltt_tracefile_get_event(tfc->tf);
+    return FALSE;
+}

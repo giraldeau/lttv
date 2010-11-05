@@ -104,7 +104,7 @@ int  cpu_before_chunk(void *hook_data, void *call_data);
 int  cpu_after_chunk(void *hook_data, void *call_data);
 //int  cpu_before_request(void *hook_data, void *call_data);
 //int  cpu_after_request(void *hook_data, void *call_data);
-
+int after_schedchange_hook(void *hook_data, void *call_data);
 
 
 gint cpu_update_time_window_hook(void *hook_data, void *call_data);

@@ -26,7 +26,8 @@ GRAPHLIBS="-L ${BUILDPATH}/lttv/modules/gui/lttvwindow/lttvwindow/.libs -m lttvw
 "-L ${BUILDPATH}/lttv/modules/gui/cpuview/.libs -m guicpuview "\
 "-L ${BUILDPATH}/lttv/modules/gui/histogram/.libs -m guihistogram"
 DEFAULTMODE="gui"
-
+#GRAPHLIBS="-L ${BUILDPATH}/lttv/modules/gui/lttvwindow/lttvwindow/.libs -m lttvwindow "\
+#"-L ${BUILDPATH}/lttv/modules/gui/cpuview/.libs -m guicpuview "
 usage () {
 	echo "Usage: $0 [OPTION]... [TRACE]..." >/dev/stderr
 	echo "" >/dev/stderr
