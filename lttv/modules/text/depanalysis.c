@@ -907,6 +907,20 @@ static struct process_state *find_state_ending_after(int pid, LttTime t)
 		return g_array_index(p->hlev_history, struct process_state *, result);
 }
 
+static void print_indent(int offset)
+{
+	if (offset > 2) {
+		int i;
+
+		printf("%*s", 8, "");
+		for (i = 3; i < offset; i++) {
+			printf("|");
+			printf("%*s", 4, "");
+		}
+	} else
+		printf("%*s", 4*offset, "");
+}
+
 static void print_delay_pid(int pid, LttTime t1, LttTime t2, int offset)
 {
 	struct process *p;
@@ -927,8 +941,8 @@ static void print_delay_pid(int pid, LttTime t1, LttTime t2, int offset)
 			state_private_blocked = pstate->private;
 			struct process_state *state_unblocked;
 
-			printf("%*s", 8*offset, "");
-			printf("Blocked in ");
+			print_indent(offset);
+			printf("--> Blocked in ");
 			print_stack_garray_horizontal(state_private_blocked->llev_state_entry);
 
 			printf("(times: ");
@@ -943,15 +957,15 @@ static void print_delay_pid(int pid, LttTime t1, LttTime t2, int offset)
 				if(state_unblocked->bstate == HLEV_INTERRUPTED_IRQ) {
 					struct hlev_state_info_interrupted_irq *priv = state_unblocked->private;
 					/* if in irq or softirq, we don't care what the waking process was doing because they are asynchroneous events */
-					printf("%*s", 8*offset, "");
-					printf("Woken up by an IRQ: ");
+					print_indent(offset);
+					printf("--- Woken up by an IRQ: ");
 					print_irq(priv->irq);
 					printf("\n");
 				}
 				else if(state_unblocked->bstate == HLEV_INTERRUPTED_SOFTIRQ) {
 					struct hlev_state_info_interrupted_softirq *priv = state_unblocked->private;
-					printf("%*s", 8*offset, "");
-					printf("Woken up by a SoftIRQ: ");
+					print_indent(offset);
+					printf("--- Woken up by a SoftIRQ: ");
 					print_softirq(priv->softirq);
 					printf("\n");
 				}
@@ -965,8 +979,8 @@ static void print_delay_pid(int pid, LttTime t1, LttTime t2, int offset)
 						t2prime = pstate->time_end;
 
 					print_delay_pid(state_private_blocked->pid_exit, t1prime, t2prime, offset+1);
-					printf("%*s", 8*offset, "");
-					printf("Woken up in context of ");
+					print_indent(offset);
+					printf("--- Woken up in context of ");
 					print_pid(state_private_blocked->pid_exit);
 					if(state_private_blocked->llev_state_exit) {
 						print_stack_garray_horizontal(state_private_blocked->llev_state_exit);
@@ -978,7 +992,7 @@ static void print_delay_pid(int pid, LttTime t1, LttTime t2, int offset)
 				}
 			}
 			else {
-				printf("%*s", 8*offset, "");
+				print_indent(offset);
 				printf("Weird... cannot find in what state the waker (%d) was\n", state_private_blocked->pid_exit);
 			}
 
@@ -1002,6 +1016,17 @@ static void print_range_critical_path(int process, LttTime t1, LttTime t2)
 	printf("Final process is %d\n", process);
 	print_delay_pid(process, t1, t2, 2);
 }
+
+/*
+ * output legend example:
+ *
+ *           --> Blocked in RUNNING, SYSCALL NNN [syscall_name]
+ *           |      ---> Blocked in RUNNING, SYSCALL NNN [syscall_name]
+ *           |      |        --> Blocked in RUNNING, SYSCALL  [syscall_name]
+ *           |      |        --- Woken up by an IRQ: IRQ 0 [timer]
+ *           |      ---  Woken up in context of PID [appname] in high-level state RUNNING
+ *           --- Woken up in context of PID [appname] in high-level state RUNNING
+ */
 
 static void print_process_critical_path_summary()
 {
