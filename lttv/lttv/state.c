@@ -227,7 +227,7 @@ static void lttv_trace_states_read_raw(LttvTraceState *tcs, FILE *fp,
 		GPtrArray *quarktable);
 
 /* Resource function prototypes */
-static LttvBdevState *get_hashed_bdevstate(LttvTraceState *ts, guint16 devcode);
+static LttvBdevState *get_hashed_bdevstate(LttvTraceState *ts, guint32 devcode);
 static LttvBdevState *bdevstate_new(void);
 static void bdevstate_free(LttvBdevState *);
 static void bdevstate_free_cb(gpointer key, gpointer value, gpointer user_data);
@@ -1491,7 +1491,7 @@ static void lttv_state_free_trap_states(LttvTrapState *states, guint n)
 
 /* bdevstate stuff */
 
-static LttvBdevState *get_hashed_bdevstate(LttvTraceState *ts, guint16 devcode)
+static LttvBdevState *get_hashed_bdevstate(LttvTraceState *ts, guint32 devcode)
 {
 	gint devcode_gint = devcode;
 	gpointer bdev = g_hash_table_lookup(ts->bdev_states, &devcode_gint);
@@ -2764,7 +2764,7 @@ static gboolean bdev_request_issue(void *hook_data, void *call_data)
 			lttv_trace_get_hook_field(th, 1));
 	guint oper = ltt_event_get_long_unsigned(e,
 			lttv_trace_get_hook_field(th, 2));
-	guint16 devcode = MKDEV(major,minor);
+	guint32 devcode = MKDEV(major,minor);
 
 	/* have we seen this block device before? */
 	gpointer bdev = get_hashed_bdevstate(ts, devcode);
@@ -2790,7 +2790,7 @@ static gboolean bdev_request_complete(void *hook_data, void *call_data)
 			lttv_trace_get_hook_field(th, 1));
 	//guint oper = ltt_event_get_long_unsigned(e,
 	//		lttv_trace_get_hook_field(th, 2));
-	guint16 devcode = MKDEV(major,minor);
+	guint32 devcode = MKDEV(major,minor);
 
 	/* have we seen this block device before? */
 	gpointer bdev = get_hashed_bdevstate(ts, devcode);

@@ -470,6 +470,6 @@ static inline guint lttv_state_get_target_pid(LttvTracefileState *tfs)
 #define MINORMASK	((1U << MINORBITS) - 1)
 #define MAJOR(dev)	((unsigned int) ((dev) >> MINORBITS))
 #define MINOR(dev)	((unsigned int) ((dev) & MINORMASK))
-#define MKDEV(ma,mi)	(((ma) << MINORBITS) | (mi))
+#define MKDEV(ma, mi)	((((unsigned int) (ma)) << MINORBITS) | (unsigned int) (mi))
 
 #endif // STATE_H

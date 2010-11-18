@@ -1845,25 +1845,29 @@ void add_trace(GtkWidget * widget, gpointer user_data)
     tab = ptab->tab;
   }
 
-  //GtkDirSelection * file_selector = (GtkDirSelection *)gtk_dir_selection_new("Select a trace");
-  GtkFileSelection * file_selector = (GtkFileSelection *)gtk_file_selection_new("Select a trace");
-  gtk_widget_hide( (file_selector)->file_list->parent) ;
-  gtk_file_selection_hide_fileop_buttons(file_selector);
-  gtk_window_set_transient_for(GTK_WINDOW(file_selector),
-      GTK_WINDOW(mw_data->mwindow));
-  
+  /* File open dialog management */
+  GtkFileChooser * file_chooser = 
+	  GTK_FILE_CHOOSER(
+		  gtk_file_chooser_dialog_new ("Select a trace",
+					  GTK_WINDOW(mw_data->mwindow),
+					  GTK_FILE_CHOOSER_ACTION_SELECT_FOLDER,
+					  GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
+					  GTK_STOCK_OPEN, GTK_RESPONSE_ACCEPT,
+					  NULL));
+
+  gtk_file_chooser_set_show_hidden (file_chooser, TRUE);
   if(remember_trace_dir[0] != '\0')
-    gtk_file_selection_set_filename(file_selector, remember_trace_dir);
-  
-  id = gtk_dialog_run(GTK_DIALOG(file_selector));
+	  gtk_file_chooser_set_filename(file_chooser, remember_trace_dir);
+
+  id = gtk_dialog_run(GTK_DIALOG(file_chooser));
+
   switch(id){
     case GTK_RESPONSE_ACCEPT:
     case GTK_RESPONSE_OK:
-      dir = gtk_file_selection_get_filename (file_selector);
+      dir = gtk_file_chooser_get_filename (file_chooser);
       strncpy(remember_trace_dir, dir, PATH_MAX);
       strncat(remember_trace_dir, "/", PATH_MAX);
       if(!dir || strlen(dir) == 0){
-      	gtk_widget_destroy((GtkWidget*)file_selector);
       	break;
       }
       get_absolute_pathname(dir, abs_path);
@@ -1893,7 +1897,6 @@ void add_trace(GtkWidget * widget, gpointer user_data)
         lttvwindow_add_trace(tab, trace_v);
       }
 
-      gtk_widget_destroy((GtkWidget*)file_selector);
       
       //update current tab
       //update_traceset(mw_data);
@@ -1909,9 +1912,10 @@ void add_trace(GtkWidget * widget, gpointer user_data)
     case GTK_RESPONSE_REJECT:
     case GTK_RESPONSE_CANCEL:
     default:
-      gtk_widget_destroy((GtkWidget*)file_selector);
-      break;
+	    break;
   }
+  gtk_widget_destroy((GtkWidget*)file_chooser);
+
 }
 
 /* remove_trace removes a trace from the current traceset if all viewers in 

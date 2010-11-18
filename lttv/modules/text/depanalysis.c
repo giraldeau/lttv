@@ -49,6 +49,7 @@ static int depanalysis_range_pid = -1;
 static int depanalysis_range_pid_searching = -1;
 static int depanalysis_use_time=0;
 static int depanalysis_event_limit = -1;
+static int a_print_simple_summary = 0;
 static LttTime depanalysis_time1, depanalysis_time2;
 static char *arg_t1_str,*arg_t2_str;
 static int statedump_finished = 0;
@@ -454,7 +455,7 @@ static int try_pop_blocked_llev_preempted(struct process *p, LttTime t)
 		pwstate = g_array_index(p->stack->array, struct sstack_item *, push_idx)->data_val;
 
 		if(!(pwstate->state.bstate == LLEV_PREEMPTED && ((struct llev_state_info_preempted *)pwstate->state.private)->prev_state > 0)) {
-			printf("double try wake up\n");
+			//printf("double try wake up\n");
 			return 0;
 		}
 	}
@@ -508,7 +509,7 @@ static gboolean write_traceset_header(void *hook_data, void *call_data)
   g_info("Traceset header");
 
   /* Print the trace set header */
-  fprintf(a_file,"Trace set contains %d traces\n\n",
+  g_info(a_file,"Trace set contains %d traces\n\n",
       lttv_traceset_number(tc->ts));
 
   return FALSE;
@@ -906,6 +907,20 @@ static struct process_state *find_state_ending_after(int pid, LttTime t)
 		return g_array_index(p->hlev_history, struct process_state *, result);
 }
 
+static void print_indent(int offset)
+{
+	if (offset > 2) {
+		int i;
+
+		printf("%*s", 8, "");
+		for (i = 3; i < offset; i++) {
+			printf("|");
+			printf("%*s", 4, "");
+		}
+	} else
+		printf("%*s", 4*offset, "");
+}
+
 static void print_delay_pid(int pid, LttTime t1, LttTime t2, int offset)
 {
 	struct process *p;
@@ -926,8 +941,8 @@ static void print_delay_pid(int pid, LttTime t1, LttTime t2, int offset)
 			state_private_blocked = pstate->private;
 			struct process_state *state_unblocked;
 
-			printf("%*s", 8*offset, "");
-			printf("Blocked in ");
+			print_indent(offset);
+			printf("--> Blocked in ");
 			print_stack_garray_horizontal(state_private_blocked->llev_state_entry);
 
 			printf("(times: ");
@@ -942,15 +957,15 @@ static void print_delay_pid(int pid, LttTime t1, LttTime t2, int offset)
 				if(state_unblocked->bstate == HLEV_INTERRUPTED_IRQ) {
 					struct hlev_state_info_interrupted_irq *priv = state_unblocked->private;
 					/* if in irq or softirq, we don't care what the waking process was doing because they are asynchroneous events */
-					printf("%*s", 8*offset, "");
-					printf("Woken up by an IRQ: ");
+					print_indent(offset);
+					printf("--- Woken up by an IRQ: ");
 					print_irq(priv->irq);
 					printf("\n");
 				}
 				else if(state_unblocked->bstate == HLEV_INTERRUPTED_SOFTIRQ) {
 					struct hlev_state_info_interrupted_softirq *priv = state_unblocked->private;
-					printf("%*s", 8*offset, "");
-					printf("Woken up by a SoftIRQ: ");
+					print_indent(offset);
+					printf("--- Woken up by a SoftIRQ: ");
 					print_softirq(priv->softirq);
 					printf("\n");
 				}
@@ -964,8 +979,8 @@ static void print_delay_pid(int pid, LttTime t1, LttTime t2, int offset)
 						t2prime = pstate->time_end;
 
 					print_delay_pid(state_private_blocked->pid_exit, t1prime, t2prime, offset+1);
-					printf("%*s", 8*offset, "");
-					printf("Woken up in context of ");
+					print_indent(offset);
+					printf("--- Woken up in context of ");
 					print_pid(state_private_blocked->pid_exit);
 					if(state_private_blocked->llev_state_exit) {
 						print_stack_garray_horizontal(state_private_blocked->llev_state_exit);
@@ -977,7 +992,7 @@ static void print_delay_pid(int pid, LttTime t1, LttTime t2, int offset)
 				}
 			}
 			else {
-				printf("%*s", 8*offset, "");
+				print_indent(offset);
 				printf("Weird... cannot find in what state the waker (%d) was\n", state_private_blocked->pid_exit);
 			}
 
@@ -1002,6 +1017,17 @@ static void print_range_critical_path(int process, LttTime t1, LttTime t2)
 	print_delay_pid(process, t1, t2, 2);
 }
 
+/*
+ * output legend example:
+ *
+ *           --> Blocked in RUNNING, SYSCALL NNN [syscall_name]
+ *           |      ---> Blocked in RUNNING, SYSCALL NNN [syscall_name]
+ *           |      |        --> Blocked in RUNNING, SYSCALL  [syscall_name]
+ *           |      |        --- Woken up by an IRQ: IRQ 0 [timer]
+ *           |      ---  Woken up in context of PID [appname] in high-level state RUNNING
+ *           --- Woken up in context of PID [appname] in high-level state RUNNING
+ */
+
 static void print_process_critical_path_summary()
 {
 	struct process *pinfo;
@@ -1022,6 +1048,8 @@ static void print_process_critical_path_summary()
 		struct process_state *hlev_state_cur;
 
 		pinfo = (struct process *)pinfos->data;
+		if (depanalysis_range_pid_searching != -1 && pinfo->pid != depanalysis_range_pid_searching)
+			goto next_iter;
 		printf("\tProcess %d [%s]\n", pinfo->pid, g_quark_to_string(pinfo->name));
 
 		if(pinfo->hlev_history->len < 1)
@@ -1048,13 +1076,16 @@ gint compare_states_length(gconstpointer a, gconstpointer b)
 	return val;
 }
 
-static void print_simple_summary()
+static void print_simple_summary(void)
 {
 	struct process *pinfo;
 	GList *pinfos;
 	GList *pinfos_first;
 	int i,j;
 	int id_for_episodes = 0;
+
+	if (!a_print_simple_summary)
+		return;
 
 	/* we save all the nodes here to print the episodes table quickly */
 	GArray *all_nodes = g_array_new(FALSE, FALSE, sizeof(struct summary_tree_node *));
@@ -1356,7 +1387,7 @@ static gboolean write_traceset_footer(void *hook_data, void *call_data)
 
 	g_info("TextDump traceset footer");
 
-	fprintf(a_file,"End trace set\n\n");
+	g_info(a_file,"End trace set\n\n");
 
 //	if(LTTV_IS_TRACESET_STATS(tc)) {
 //		lttv_stats_sum_traceset((LttvTracesetStats *)tc, ltt_time_infinite);
@@ -1372,8 +1403,8 @@ static gboolean write_traceset_footer(void *hook_data, void *call_data)
 	/* print the reports */
 	print_simple_summary();
 	print_process_critical_path_summary();
-	printf("depanalysis_use_time = %d\n", depanalysis_use_time);
 	if(depanalysis_use_time == 3) {
+		printf("depanalysis_use_time = %d\n", depanalysis_use_time);
 		if(depanalysis_range_pid == -1 && depanalysis_range_pid_searching >= 0)
 			depanalysis_range_pid = depanalysis_range_pid_searching;
 
@@ -1965,6 +1996,10 @@ static void arg_limit(void *hook_data)
 {
 }
 
+static void arg_sum(void *hook_data)
+{
+}
+
 static void init()
 {
   gboolean result;
@@ -1985,6 +2020,8 @@ static void init()
       LTTV_OPT_INT, &depanalysis_range_pid_searching, arg_pid, NULL);
   lttv_option_add("limit-events", 0, "dependency limit event count", "count",
       LTTV_OPT_INT, &depanalysis_event_limit, arg_limit, NULL);
+  lttv_option_add("print-summary", 0, "print simple summary", "sum",
+      LTTV_OPT_INT, &a_print_simple_summary, arg_sum, NULL);
 
   process_hash_table = g_hash_table_new(g_int_hash, g_int_equal);
   syscall_table = g_hash_table_new(g_int_hash, g_int_equal);
@@ -2030,6 +2067,7 @@ static void destroy()
   lttv_option_remove("dep-time-end");
   lttv_option_remove("dep-pid");
   lttv_option_remove("limit-events");
+  lttv_option_remove("print-summary");
 
   g_hash_table_destroy(process_hash_table);
   g_hash_table_destroy(syscall_table);
