@@ -1094,8 +1094,11 @@ int ltt_tracefile_seek_time(LttTracefile *tf, LttTime time)
       }
 
     } else if(ltt_time_compare(time, tf->buffer.begin.timestamp) < 0) {
-      /* go to lower part */
-      high = block_num - 1;
+      /*
+       * Go to lower part. We don't want block_num - 1 since block_num
+       * can equal low , in which case high < low.
+       */
+      high = block_num;
     } else if(ltt_time_compare(time, tf->buffer.end.timestamp) > 0) {
       /* go to higher part */
       low = block_num + 1;
