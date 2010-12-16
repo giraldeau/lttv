@@ -285,8 +285,11 @@ void g_datalist_foreach_addTracefilesOfTrace(GQuark name, gpointer data, gpointe
                 tracefile = &g_array_index(tracefile_array, LttTracefile, i);
                 
                 newPtr = CONVERT_PTR_TO_JLONG(tracefile);
-                
-                (*args->env)->CallVoidMethod(args->env, args->jobj, accessFunction, (*args->env)->NewStringUTF(args->env, g_quark_to_string(tracefile->name) ), newPtr );
+
+                /* Only process online CPUs with backing tracefile */
+                if (tracefile->cpu_online) {
+                    (*args->env)->CallVoidMethod(args->env, args->jobj, accessFunction, (*args->env)->NewStringUTF(args->env, g_quark_to_string(tracefile->name) ), newPtr );
+                }
         }
 }
 
@@ -315,13 +318,15 @@ void g_datalist_foreach_saveTracefilesTime(GQuark name, gpointer data, gpointer 
         for (i=0; i<tracefile_array->len; i++) {
                 tracefile = &g_array_index(tracefile_array, LttTracefile, i);
                 
-                /* Allocate a new LttTime for each tracefile (so it won't change if the tracefile seek somewhere else) */
-                savedData = (struct saveTimeAndTracefile*)malloc( sizeof(struct saveTimeAndTracefile) );
-                savedData->time.tv_sec = tracefile->event.event_time.tv_sec;
-                savedData->time.tv_nsec = tracefile->event.event_time.tv_nsec;
-                savedData->tracefile = tracefile;
-                /* Append the saved data to the array */
-                g_array_append_val(save_array, savedData);
+                if (tracefile->cpu_online) {
+					/* Allocate a new LttTime for each tracefile (so it won't change if the tracefile seek somewhere else) */
+					savedData = (struct saveTimeAndTracefile*)malloc( sizeof(struct saveTimeAndTracefile) );
+					savedData->time.tv_sec = tracefile->event.event_time.tv_sec;
+					savedData->time.tv_nsec = tracefile->event.event_time.tv_nsec;
+					savedData->tracefile = tracefile;
+					/* Append the saved data to the array */
+					g_array_append_val(save_array, savedData);
+                }
         }
 }
 
