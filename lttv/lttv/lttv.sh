@@ -10,5 +10,5 @@ if [ x"$*" = x"" ]; then
   echo
   $0.real --help
 else
-  $0.real $*
+  $0.real "$@"
 fi
