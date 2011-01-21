@@ -23,6 +23,7 @@
 AC_PREREQ(2.57)
 AC_INIT([lttv], [0.12.36-18112010], [ltt-dev@lists.casi.polymtl.ca])
 AM_INIT_AUTOMAKE
+AM_SILENT_RULES([yes])
 AM_CONFIG_HEADER(config.h)
 AM_PROG_LIBTOOL
 
