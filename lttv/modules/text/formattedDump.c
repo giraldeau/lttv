@@ -52,8 +52,8 @@ static gboolean a_state;
 static gboolean a_text;
 static gboolean a_strace;
 
-static char *a_file_name = NULL;
-static char *a_format = NULL;
+static char *a_file_name;
+static char *a_format;
 
 static LttvHooks *before_traceset;
 static LttvHooks *event_hook;
@@ -73,9 +73,9 @@ static gboolean open_output_file(void *hook_data, void *call_data)
 {
 	g_info("Open the output file");
 	if (a_file_name == NULL) {
-	  a_file = stdout;
+		a_file = stdout;
 	} else {
-	  a_file = fopen(a_file_name, "w");
+		a_file = fopen(a_file_name, "w");
 	}
 	if (a_file == NULL) {
 		g_error("cannot open file %s", a_file_name);
