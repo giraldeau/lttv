@@ -240,7 +240,7 @@ static void openGraphFiles(SyncState* const syncState)
 				if ((analysisData->graphsData->hullPoints[i][j]= fopen(name, "w")) ==
 					NULL)
 				{
-					g_error(strerror(errno));
+					g_error("%s", strerror(errno));
 				}
 			}
 		}
@@ -249,7 +249,7 @@ static void openGraphFiles(SyncState* const syncState)
 	retval= chdir(cwd);
 	if (retval == -1)
 	{
-		g_error(strerror(errno));
+		g_error("%s", strerror(errno));
 	}
 	free(cwd);
 }
@@ -329,7 +329,7 @@ static void closeGraphFiles(SyncState* const syncState)
 				retval= fclose(analysisData->graphsData->hullPoints[i][j]);
 				if (retval != 0)
 				{
-					g_error(strerror(errno));
+					g_error("%s", strerror(errno));
 				}
 			}
 		}

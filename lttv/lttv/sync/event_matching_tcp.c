@@ -604,7 +604,7 @@ static void openGraphDataFiles(SyncState* const syncState)
 				if ((matchingData->messagePoints[i][j]= fopen(name, "w")) ==
 					NULL)
 				{
-					g_error(strerror(errno));
+					g_error("%s", strerror(errno));
 				}
 			}
 		}
@@ -613,7 +613,7 @@ static void openGraphDataFiles(SyncState* const syncState)
 	retval= chdir(cwd);
 	if (retval == -1)
 	{
-		g_error(strerror(errno));
+		g_error("%s", strerror(errno));
 	}
 	free(cwd);
 }
@@ -676,7 +676,7 @@ static void closeGraphDataFiles(SyncState* const syncState)
 				retval= fclose(matchingData->messagePoints[i][j]);
 				if (retval != 0)
 				{
-					g_error(strerror(errno));
+					g_error("%s", strerror(errno));
 				}
 			}
 		}

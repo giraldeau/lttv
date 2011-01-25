@@ -161,7 +161,7 @@ static void initAnalysisEval(SyncState* const syncState)
 		rttStream= fopen(optionEvalRttFile.arg, "r");
 		if (rttStream == NULL)
 		{
-			g_error(strerror(errno));
+			g_error("%s", strerror(errno));
 		}
 
 		readRttInfo(analysisData->rttInfo, rttStream);
@@ -169,7 +169,7 @@ static void initAnalysisEval(SyncState* const syncState)
 		retval= fclose(rttStream);
 		if (retval == EOF)
 		{
-			g_error(strerror(errno));
+			g_error("%s", strerror(errno));
 		}
 	}
 
@@ -274,14 +274,14 @@ static AnalysisHistogramEval* constructAnalysisHistogramEval(const char* const
 		if ((*(FILE**)((void*) histogram + loopValues[i].pointsOffset)=
 				fopen(name, "w")) == NULL)
 		{
-			g_error(strerror(errno));
+			g_error("%s", strerror(errno));
 		}
 	}
 
 	retval= chdir(cwd);
 	if (retval == -1)
 	{
-		g_error(strerror(errno));
+		g_error("%s", strerror(errno));
 	}
 	free(cwd);
 
@@ -314,7 +314,7 @@ static void destroyAnalysisHistogramEval(AnalysisHistogramEval* const
 		retval= fclose(*(FILE**)((void*) histogram + loopValues[i].pointsOffset));
 		if (retval != 0)
 		{
-			g_error(strerror(errno));
+			g_error("%s", strerror(errno));
 		}
 	}
 
@@ -463,11 +463,11 @@ static void writeHistogram(FILE* graphsStream, const struct RttKey* rttKey,
 		// Remove the ",\\\n" from the last graph plot line
 		if (ftruncate(fileno(graphsStream), ftell(graphsStream) - 3) == -1)
 		{
-			g_error(strerror(errno));
+			g_error("%s", strerror(errno));
 		}
 		if (fseek(graphsStream, 0, SEEK_END) == -1)
 		{
-			g_error(strerror(errno));
+			g_error("%s", strerror(errno));
 		}
 		fprintf(graphsStream, "\n");
 	}
@@ -550,7 +550,7 @@ static void analyzeMessageEval(SyncState* const syncState, Message* const
 	message)
 {
 	AnalysisDataEval* analysisData= syncState->analysisData;
-	MessageStats* messageStats;
+	MessageStats* messageStats = NULL;	/* for gcc */
 	double* rtt;
 	double tt;
 	struct RttKey rttKey;
@@ -1111,7 +1111,7 @@ static void readRttInfo(GHashTable* rttInfo, FILE* rttStream)
 
 		if (retval == -1 && !feof(rttStream))
 		{
-			g_error(strerror(errno));
+			g_error("%s", strerror(errno));
 		}
 
 		if (line[retval - 1] == '\n')
@@ -1124,7 +1124,7 @@ static void readRttInfo(GHashTable* rttInfo, FILE* rttStream)
 			&tmp);
 		if (retval == EOF)
 		{
-			g_error(strerror(errno));
+			g_error("%s", strerror(errno));
 		}
 		else if (retval != 3)
 		{
@@ -1187,7 +1187,7 @@ static void positionStream(FILE* stream)
 				}
 				else
 				{
-					g_error(strerror(errno));
+					g_error("%s", strerror(errno));
 				}
 			}
 		}

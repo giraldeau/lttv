@@ -55,11 +55,11 @@ FILE* createGraphsDir(const char* const graphsDir)
 				S_IWUSR | S_IXUSR | S_IRGRP | S_IWGRP | S_IXGRP | S_IROTH
 				| S_IWOTH | S_IXOTH)) == -1)
 	{
-		g_error(strerror(errno));
+		g_error("%s", strerror(errno));
 	}
 	if ((result= fdopen(graphsFp, "w")) == NULL)
 	{
-		g_error(strerror(errno));
+		g_error("%s", strerror(errno));
 	}
 
 	fprintf(result,
@@ -69,7 +69,7 @@ FILE* createGraphsDir(const char* const graphsDir)
 	retval= chdir(cwd);
 	if (retval == -1)
 	{
-		g_error(strerror(errno));
+		g_error("%s", strerror(errno));
 	}
 	free(cwd);
 
@@ -95,7 +95,7 @@ char* changeToGraphsDir(const char* const graphsDir)
 	cwd= getcwd(NULL, 0);
 	if (cwd == NULL)
 	{
-		g_error(strerror(errno));
+		g_error("%s", strerror(errno));
 	}
 	while ((retval= chdir(graphsDir)) != 0)
 	{
@@ -105,12 +105,12 @@ char* changeToGraphsDir(const char* const graphsDir)
 				S_IWGRP | S_IXGRP | S_IROTH | S_IWOTH | S_IXOTH);
 			if (retval != 0)
 			{
-				g_error(strerror(errno));
+				g_error("%s", strerror(errno));
 			}
 		}
 		else
 		{
-			g_error(strerror(errno));
+			g_error("%s", strerror(errno));
 		}
 	}
 
@@ -233,11 +233,11 @@ void writeGraphsScript(SyncState* const syncState)
 
 				if (ftruncate(fileno(syncState->graphsStream), trunc) == -1)
 				{
-					g_error(strerror(errno));
+					g_error("%s", strerror(errno));
 				}
 				if (fseek(syncState->graphsStream, 0, SEEK_END) == -1)
 				{
-					g_error(strerror(errno));
+					g_error("%s", strerror(errno));
 				}
 
 				fprintf(syncState->graphsStream,

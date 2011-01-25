@@ -382,7 +382,7 @@ static void openGraphDataFiles(SyncState* const syncState)
 			g_assert_cmpint(retval, <=, sizeof(name) - 1);
 			if ((graphs->accuracyPoints[i][j]= fopen(name, "w")) == NULL)
 			{
-				g_error(strerror(errno));
+				g_error("%s", strerror(errno));
 			}
 		}
 	}
@@ -390,7 +390,7 @@ static void openGraphDataFiles(SyncState* const syncState)
 	retval= chdir(cwd);
 	if (retval == -1)
 	{
-		g_error(strerror(errno));
+		g_error("%s", strerror(errno));
 	}
 	free(cwd);
 }
@@ -460,7 +460,7 @@ static void closeGraphDataFiles(SyncState* const syncState)
 			retval= fclose(graphs->accuracyPoints[i][j]);
 			if (retval != 0)
 			{
-				g_error(strerror(errno));
+				g_error("%s", strerror(errno));
 			}
 		}
 		free(graphs->accuracyPoints[i]);
