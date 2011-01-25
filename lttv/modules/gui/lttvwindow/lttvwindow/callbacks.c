@@ -434,7 +434,7 @@ void insert_viewer(GtkWidget* widget, lttvwindow_viewer_constructor constructor)
 
   viewer_container = tab->viewer_container;
 
-  viewer = (GtkWidget*)constructor(ptab);
+  viewer = (GtkWidget*)constructor(&ptab->parent);
   if(viewer)
   {
     //gtk_multivpaned_widget_add(GTK_MULTIVPANED(multivpaned), viewer); 

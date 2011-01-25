@@ -50,7 +50,7 @@ typedef struct _Attribute {
 static __inline__ LttvAttributeValue
 address_of_value(LttvAttributeType t, AttributeValue *v)
 {
-	LttvAttributeValue va;
+	LttvAttributeValue va = { NULL };	/* init to NULL for gcc */
 
 	switch(t) {
 		case LTTV_INT: va.v_int = &v->dv_int; break;

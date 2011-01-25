@@ -31,7 +31,7 @@
 #include "eventhooks.h"
 
 #include "resourceview_icon.xpm"
-#include "hLegendInsert.xpm"
+/* unused #include "hLegendInsert.xpm" */
 
 GQuark LTT_NAME_CPU;
 
