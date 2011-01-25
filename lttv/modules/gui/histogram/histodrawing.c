@@ -136,7 +136,6 @@ void histo_drawing_data_request_begin(EventsRequest *events_request, LttvTracese
 {
   g_debug("Begin of data request");
   HistoControlFlowData *cfd = events_request->viewer_data;
-  LttvTracesetContext *tsc = LTTV_TRACESET_CONTEXT(tss);
   TimeWindow time_window = 
     lttvwindow_get_time_window(cfd->tab);
 
@@ -157,7 +156,6 @@ void histo_drawing_chunk_begin(EventsRequest *events_request, LttvTracesetState 
 {
   g_debug("Begin of chunk");
   HistoControlFlowData *cfd = events_request->viewer_data;
-  LttvTracesetContext *tsc = LTTV_TRACESET_CONTEXT(tss);
 
   if(cfd->chunk_has_begun) return;
 
@@ -173,7 +171,6 @@ void histo_drawing_request_expose(EventsRequest *events_request,
   histoDrawing_t *drawing = cfd->drawing;
    
   guint x, x_end, width;
-  LttvTracesetContext *tsc = (LttvTracesetContext*)tss;
     
   TimeWindow time_window = 
         lttvwindow_get_time_window(cfd->tab);
@@ -749,8 +746,6 @@ void histo_drawing_destroy(histoDrawing_t *drawing)
 
 void histo_drawing_clear(histoDrawing_t *drawing,guint clear_from,guint clear_to)
 { 
-  
-  HistoControlFlowData *cfd = drawing->histo_control_flow_data;
   guint clear_width = clear_to- clear_from;
  /* 
   //disabled for histogram
@@ -1107,7 +1102,7 @@ histo_expose_vertical_ruler( GtkWidget *widget, GdkEventExpose *event, gpointer 
   GdkColor foreground = { 0, 0, 0, 0 };
   GdkColor background = { 0, 0xffff, 0xffff, 0xffff };
   GdkColor red ={ 0, 0xFFFF, 0x1E00, 0x1000 };
-  GdkColor magneta ={ 0, 0x8900, 0x0000, 0x8400 };
+  //GdkColor magneta ={ 0, 0x8900, 0x0000, 0x8400 };
   g_debug("vertical ruler expose event");
  
   gdk_draw_rectangle (drawing->vertical_ruler->window,

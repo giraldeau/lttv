@@ -69,11 +69,6 @@ ButtonWidget *histo_buttonwidget_construct(HistoControlFlowData *histocontrol_fl
 
 void histo_buttonwidget_destroy(ButtonWidget *buttonwidget);
 
-
-static gboolean gplus( GtkWidget *widget,gpointer user_data);//assigned to zoomIn
-static gboolean gMinus( GtkWidget *widget,gpointer user_data );//assigned to zoomOut
-static gboolean gFit( GtkWidget *widget,gpointer user_data );//assigned to zoomFit
-
 GtkWidget *histo_buttonwidget_get_widget(ButtonWidget *button_widget);
 void histo_update_pixmap_size(histoDrawing_t *value,
                                     guint width);

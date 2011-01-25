@@ -21,6 +21,7 @@
 #endif
 
 #include <glib.h>
+#include <glib/gprintf.h>
 #include <gtk/gtk.h>
 #include <gdk/gdk.h>
 #include <lttv/lttv.h>
@@ -87,8 +88,6 @@ gboolean cfv_scroll_event(GtkWidget *widget, GdkEventScroll *event,
 static void        property_button      (GtkToolButton *toolbutton,
                                           gpointer       user_data)
 {
-  ControlFlowData *control_flow_data = (ControlFlowData*)user_data;
-
   g_printf("CFV Property button clicked\n");
 
 }

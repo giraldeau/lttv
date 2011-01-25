@@ -152,9 +152,8 @@ gboolean scroll_event(GtkWidget *widget, GdkEventScroll *event, gpointer data)
       (ControlFlowData*)g_object_get_data(
                 G_OBJECT(widget),
                 "control_flow_data");
-  Drawing_t *drawing = control_flow_data->drawing;
-	unsigned int cell_height =
-		get_cell_height(GTK_TREE_VIEW(control_flow_data->process_list->process_list_widget));
+  unsigned int cell_height =
+      get_cell_height(GTK_TREE_VIEW(control_flow_data->process_list->process_list_widget));
 
   switch(event->direction) {
     case GDK_SCROLL_UP:
@@ -168,7 +167,7 @@ gboolean scroll_event(GtkWidget *widget, GdkEventScroll *event, gpointer data)
     default:
       g_error("should only scroll up and down.");
   }
-	return TRUE;
+  return TRUE;
 }
 
 

@@ -186,25 +186,15 @@ void drawing_data_request(Drawing_t *drawing,
   {
     /* find the tracehooks */
     LttvTracesetContext *tsc = lttvwindow_get_traceset_context(tab);
-
     LttvTraceset *traceset = tsc->ts;
-
-    guint i, k, l, nb_trace;
-
     LttvTraceState *ts;
-
-    LttvTracefileState *tfs;
-
     GArray *hooks;
-
-    LttvTraceHook *hook;
-
     LttvTraceHook *th;
 
-    guint ret;
+    guint i, k;
     guint first_after;
 
-    nb_trace = lttv_traceset_number(traceset);
+    guint nb_trace = lttv_traceset_number(traceset);
     // FIXME  (fixed) : eventually request for more traces
     for(i = 0 ; i < nb_trace ; i++) {
       EventsRequest *events_request = g_new(EventsRequest, 1);
@@ -536,7 +526,6 @@ void drawing_data_request_begin(EventsRequest *events_request, LttvTracesetState
 
   g_debug("Begin of data request");
   ControlFlowData *cfd = events_request->viewer_data;
-  LttvTracesetContext *tsc = LTTV_TRACESET_CONTEXT(tss);
   TimeWindow time_window = 
     lttvwindow_get_time_window(cfd->tab);
 
@@ -563,7 +552,6 @@ void drawing_chunk_begin(EventsRequest *events_request, LttvTracesetState *tss)
   g_debug("Begin of chunk");
   ControlFlowData *cfd = events_request->viewer_data;
   LttvTracesetContext *tsc = &tss->parent;
-  //LttTime current_time = lttv_traceset_context_get_current_tfc(tsc)->timestamp;
   guint i;
   LttvTraceset *traceset = tsc->ts;
   guint nb_trace = lttv_traceset_number(traceset);
@@ -590,7 +578,6 @@ void drawing_request_expose(EventsRequest *events_request,
   guint x_end;
 
   ControlFlowData *cfd = events_request->viewer_data;
-  LttvTracesetContext *tsc = (LttvTracesetContext*)tss;
   Drawing_t *drawing = cfd->drawing;
   
   TimeWindow time_window = 

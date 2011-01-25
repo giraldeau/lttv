@@ -157,8 +157,6 @@ gui_filter(LttvPlugin *plugin)
   g_debug("filter::gui_filter()");
 
   unsigned i;
-  GtkCellRenderer *renderer;
-  GtkTreeViewColumn *column;
 
   FilterViewerData* fvd = g_new(FilterViewerData,1);
 
@@ -464,8 +462,6 @@ gui_filter_destructor(FilterViewerData *fvd)
 GtkWidget *
 h_guifilter(LttvPlugin *plugin)
 {
-  FilterViewerData* f = gui_filter(plugin) ;
-
   return NULL;
 }
 

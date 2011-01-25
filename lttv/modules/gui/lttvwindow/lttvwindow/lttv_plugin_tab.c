@@ -66,7 +66,7 @@ lttv_plugin_tab_get_type (void)
       sizeof (LttvPluginTabClass),
       NULL,   /* base_init */
       NULL,   /* base_finalize */
-      lttv_plugin_tab_class_init,   /* class_init */
+      (GClassInitFunc) lttv_plugin_tab_class_init,   /* class_init */
       NULL,   /* class_finalize */
       NULL,   /* class_data */
       sizeof (LttvPluginTab),

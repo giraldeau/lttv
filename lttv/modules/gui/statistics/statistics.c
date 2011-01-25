@@ -131,7 +131,6 @@ static gint background_ready(void *hook_data, void *call_data)
 {
   StatisticViewerData *svd = (StatisticViewerData *)hook_data;
   Tab *tab = svd->tab;
-  LttvTrace *trace = (LttvTrace*)call_data;
 
   svd->background_info_waiting--;
 
@@ -431,7 +430,6 @@ void show_traceset_stats(StatisticViewerData * statistic_viewer_data)
   int i, nb;
   LttvTraceset *ts;
   LttvTraceStats *tcs;
-  LttSystemDescription *desc;
   LttvTracesetStats * tscs = lttvwindow_get_traceset_stats(tab);
   gchar * str, trace_str[PATH_LENGTH];
   GtkTreePath * path;
@@ -468,7 +466,7 @@ void show_traceset_stats(StatisticViewerData * statistic_viewer_data)
             start_time.tv_sec,
             start_time.tv_nsec);
 #endif //0
-    sprintf(trace_str, g_quark_to_string(ltt_trace_name(tcs->parent.parent.t)));
+    sprintf(trace_str, "%s", g_quark_to_string(ltt_trace_name(tcs->parent.parent.t)));
     gtk_tree_store_append (store, &iter, NULL);  
     gtk_tree_store_set (store, &iter,NAME_COLUMN,trace_str,-1);  
     path = gtk_tree_model_get_path(GTK_TREE_MODEL(store), &iter);

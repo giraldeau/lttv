@@ -47,6 +47,7 @@
 #include <math.h>
 
 #include <glib.h>
+#include <glib/gprintf.h>
 #include <gtk/gtk.h>
 #include <gdk/gdk.h>
 #include <gdk/gdkx.h>
@@ -511,7 +512,6 @@ gui_events(LttvPluginTab *ptab)
 static gint background_ready(void *hook_data, void *call_data)
 {
   EventViewerData *event_viewer_data = (EventViewerData *)hook_data;
-  LttvTrace *trace = (LttvTrace*)call_data;
 
   event_viewer_data->background_info_waiting--;
 
@@ -599,8 +599,6 @@ header_size_allocate(GtkWidget *widget,
 
 void tree_v_set_cursor(EventViewerData *event_viewer_data)
 {
-  GtkTreePath *path;
-  
   g_debug("set cursor cb");
 
 #if 0
@@ -619,9 +617,6 @@ void tree_v_set_cursor(EventViewerData *event_viewer_data)
 
 void tree_v_get_cursor(EventViewerData *event_viewer_data)
 {
-  GtkTreePath *path;
-  gint *indices;
-  
   g_debug("get cursor cb");
   
 
@@ -660,8 +655,6 @@ void tree_v_move_cursor_cb (GtkWidget *widget,
                             gpointer data)
 {
   GtkTreePath *path; // = gtk_tree_path_new();
-  gint *indices;
-  gdouble value;
   EventViewerData *event_viewer_data = (EventViewerData*)data;
   
   g_debug("move cursor cb");
@@ -1040,7 +1033,6 @@ static void        filter_button      (GtkToolButton *toolbutton,
 gboolean tree_v_scroll_handler (GtkWidget *widget, GdkEventScroll *event, gpointer data)
 {
 	EventViewerData *event_viewer_data = (EventViewerData*) data;
-	Tab *tab = event_viewer_data->tab;
 
 	switch(event->direction) {
 		case GDK_SCROLL_UP:
@@ -1095,7 +1087,6 @@ static void tree_selection_changed_cb (GtkTreeSelection *selection,
     gpointer data)
 {
   g_debug("tree sel changed cb");
-  EventViewerData *event_viewer_data = (EventViewerData*) data;
 
 #if 0
     /* Set the cursor to currently selected event */
@@ -1144,9 +1135,6 @@ static gint key_snooper(GtkWidget *grab_widget, GdkEventKey *event,
 void v_scroll_cb (GtkAdjustment *adjustment, gpointer data)
 {
   EventViewerData *event_viewer_data = (EventViewerData*)data;
-  LttvTracesetStats *tss =
-    lttvwindow_get_traceset_stats(event_viewer_data->tab);
-  LttvTracesetContext *tsc = (LttvTracesetContext*)tss;
   g_debug("SCROLL begin");
   g_debug("SCROLL values : %g , %g, %g",
       adjustment->value, event_viewer_data->previous_value,
@@ -1304,7 +1292,6 @@ static gboolean events_check_handler(guint count, gboolean *stop_flag,
 
 static void get_events(double new_value, EventViewerData *event_viewer_data)
 {
-  GtkTreePath *tree_path;
   LttvTracesetStats *tss =
     lttvwindow_get_traceset_stats(event_viewer_data->tab);
   LttvTracesetContext *tsc = (LttvTracesetContext*)tss;
@@ -1683,7 +1670,6 @@ gboolean update_current_time(void * hook_data, void * call_data)
   const LttTime * current_time = (LttTime*)call_data;
   LttvTracesetContext * tsc =
         lttvwindow_get_traceset_context(event_viewer_data->tab);
-  GtkTreePath *path;
   
   /* If the currently selected event time != current time, set the first event
    * with this time as currently selected. */
@@ -1825,8 +1811,6 @@ gboolean traceset_changed(void * hook_data, void * call_data)
 gboolean filter_changed(void * hook_data, void * call_data)
 {
   EventViewerData *event_viewer_data = (EventViewerData*) hook_data;
-  LttvTracesetContext * tsc =
-        lttvwindow_get_traceset_context(event_viewer_data->tab);
 
   event_viewer_data->main_win_filter = 
     (LttvFilter*)call_data;

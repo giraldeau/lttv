@@ -241,8 +241,6 @@ static GtkWidget *interrupts(LttvPlugin *plugin)
  */
 InterruptEventData *system_info(LttvPluginTab *ptab)
 {
-  
-  LttTime end;
   GtkTreeViewColumn *column;
   GtkCellRenderer *renderer;
   InterruptEventData* event_viewer_data = g_new(InterruptEventData,1) ;
@@ -420,23 +418,13 @@ InterruptEventData *system_info(LttvPluginTab *ptab)
  */
 static void FirstRequest(InterruptEventData *event_data )
 {
-  guint i, k, l, nb_trace;
- 
-  LttvTraceHook *hook;
-   
-  guint ret; 
-  
+  guint i, k, nb_trace;
   LttvTraceState *ts;
-    
   GArray *hooks;
-   
   EventsRequest *events_request;
-  
   LttvTraceHook *th;
-  
   LttvTracesetContext *tsc = lttvwindow_get_traceset_context(event_data->tab);
-  
-  
+
   /* Get the traceset */
   LttvTraceset *traceset = tsc->ts;
  
@@ -580,9 +568,8 @@ gboolean FirstRequestIrqExitCallback(void *hook_data, void *call_data)
 static void CalculateData(LttTime time_exit,  guint cpu_id,InterruptEventData *event_data)
 {
   
-  gint i, irq_id;
+  gint i;
   irq_entry *element; 
-  LttTime duration;
   GArray *FirstRequestIrqExit = event_data->FirstRequestIrqExit;
   GArray *FirstRequestIrqEntry = event_data->FirstRequestIrqEntry;
   for(i = FirstRequestIrqEntry->len-1; i >=0; i--)
@@ -682,25 +669,14 @@ static void CalculateTotalDurationAndMaxIrqDurationAndMinIrqDuration(irq_entry *
  */ 
 static gboolean SecondRequest(void *hook_data, void *call_data)
 {
- 
-  guint i, k, l, nb_trace;
- 
-  LttvTraceHook *hook;
-   
+  guint i, k, nb_trace;
   guint ret; 
-  
   LttvTraceState *ts;
-    
   GArray *hooks;
-   
   EventsRequest *events_request;
-  
   LttvTraceHook *th;
-  
   InterruptEventData *event_data = (InterruptEventData *)hook_data;
-  
   LttvTracesetContext *tsc = lttvwindow_get_traceset_context(event_data->tab);
-  
   CalculateAverageDurationForEachIrqId(event_data);
    
   /* Get the traceset */
@@ -870,7 +846,6 @@ static void CalculateXi(LttEvent *event_irq_exit, InterruptEventData *event_data
   LttTime Xi;
   LttTime  exit_time; 
   
-  GArray *SecondRequestIrqExit = event_data->SecondRequestIrqExit;
   GArray *SecondRequestIrqEntry = event_data->SecondRequestIrqEntry;
   for(i = 0; i < SecondRequestIrqEntry->len; i++)
   {
@@ -1004,11 +979,8 @@ static  guint64 CalculateFrequencyInnerPart(guint Xi_in_ns,  guint FrequencyHZ)
  */ 
 static gboolean DisplayViewer(void *hook_data, void *call_data)
 {
-  
-  guint average;
   gint i;	
   Irq element; 
-  LttTime average_duration;
   GtkTreeIter    iter;
   guint64 real_data;
   guint maxIRQduration;
@@ -1048,13 +1020,13 @@ static gboolean DisplayViewer(void *hook_data, void *call_data)
     
     FrequencyHZ = FrequencyInHZ(element.TotalNumberOfInterrupts,event_data->time_window);
    
-   if(FrequencyHZ != 0)
-   {
+    if(FrequencyHZ != 0)
+    {
       periodInSec = (double)1/FrequencyHZ;
       periodInSec *= NANOSECONDS_PER_SECOND;
       periodInNsec = (int)periodInSec;
      
-   }
+    }
      
     gtk_list_store_append (event_data->ListStore, &iter);
     gtk_list_store_set (event_data->ListStore, &iter,
@@ -1231,18 +1203,12 @@ gboolean interrupt_update_time_window(void * hook_data, void * call_data)
 
 gboolean trace_header(void *hook_data, void *call_data)
 {
-
-  InterruptEventData *event_data = (InterruptEventData *)hook_data;
-  LttvTracefileContext *tfc = (LttvTracefileContext *)call_data;
-  LttEvent *e;
-  LttTime event_time;
   return FALSE;
 }
 
 void interrupt_destroy_walk(gpointer data, gpointer user_data)
 {
   g_info("interrupt_destroy_walk");
-  InterruptEventData *event_data = (InterruptEventData*) data;
   interrupt_destructor((InterruptEventData*)data);
 }
 

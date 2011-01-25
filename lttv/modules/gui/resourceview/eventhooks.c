@@ -255,7 +255,6 @@ h_legend(LttvPlugin *plugin)
 
 int event_selected_hook(void *hook_data, void *call_data)
 {
-  ControlFlowData *resourceview_data = (ControlFlowData*) hook_data;
   guint *event_number = (guint*) call_data;
 
   g_debug("DEBUG : event selected by main window : %u", *event_number);
@@ -312,7 +311,6 @@ static void irq_set_line_color(PropertiesLine *prop_line, LttvIRQState *s)
 
 static void soft_irq_set_line_color(PropertiesLine *prop_line, LttvSoftIRQState *s)
 {
-  GQuark present_state;
   if(s->running)
     prop_line->color = drawing_colors_soft_irq[COL_SOFT_IRQ_BUSY];
   else if(s->pending)
@@ -323,7 +321,6 @@ static void soft_irq_set_line_color(PropertiesLine *prop_line, LttvSoftIRQState 
 
 static void trap_set_line_color(PropertiesLine *prop_line, LttvTrapState *s)
 {
-  GQuark present_state;
   if(s->running == 0)
     prop_line->color = drawing_colors_trap[COL_TRAP_IDLE];
   else
@@ -383,10 +380,8 @@ int before_schedchange_hook(void *hook_data, void *call_data)
 
   LttEvent *e;
   e = ltt_tracefile_get_event(tfc->tf);
-  gint target_pid_saved = tfc->target_pid;
 
   LttTime evtime = ltt_event_time(e);
-  LttvFilter *filter = resourceview_data->filter;
 
   /* we are in a schedchange, before the state update. We must draw the
    * items corresponding to the state before it changes : now is the right
@@ -408,10 +403,8 @@ int before_schedchange_hook(void *hook_data, void *call_data)
   guint cpu = tfs->cpu;
 
   guint trace_num = ts->parent.index;
-   /* Add process to process list (if not present) */
-  guint pl_height = 0;
+  /* Add process to process list (if not present) */
   HashedResourceData *hashed_process_data = NULL;
-  ProcessList *process_list = resourceview_data->process_list;
   
   hashed_process_data = resourcelist_obtain_cpu(resourceview_data, trace_num, cpu);
   
@@ -559,7 +552,6 @@ int after_schedchange_hook(void *hook_data, void *call_data)
   /* Add process to process list (if not present) */
   LttvProcessState *process_in;
   LttTime birth;
-  guint pl_height = 0;
   HashedResourceData *hashed_process_data_in = NULL;
 
   ProcessList *process_list = resourceview_data->process_list;
@@ -676,12 +668,9 @@ int before_execmode_hook(void *hook_data, void *call_data)
   /* Well, the process_out existed : we must get it in the process hash
    * or add it, and draw its items.
    */
-   /* Add process to process list (if not present) */
-  guint pl_height = 0;
+  /* Add process to process list (if not present) */
   HashedResourceData *hashed_process_data = NULL;
   ProcessList *process_list = resourceview_data->process_list;
-
-  LttTime birth = process->creation_time;
  
   if(likely(process_list->current_hash_data[trace_num][cpu] != NULL)) {
     hashed_process_data = process_list->current_hash_data[trace_num][cpu];
@@ -824,8 +813,6 @@ int before_execmode_hook_irq(void *hook_data, void *call_data)
 
   LttTime evtime = ltt_event_time(e);
 
-  LttTrace *trace = tfc->t_context->t;
-
   /* we are in a execmode, before the state update. We must draw the
    * items corresponding to the state before it changes : now is the right
    * time to do it.
@@ -861,10 +848,8 @@ int before_execmode_hook_irq(void *hook_data, void *call_data)
   /* Well, the process_out existed : we must get it in the process hash
    * or add it, and draw its items.
    */
-   /* Add process to process list (if not present) */
-  guint pl_height = 0;
+  /* Add process to process list (if not present) */
   HashedResourceData *hashed_process_data = NULL;
-  ProcessList *process_list = resourceview_data->process_list;
 
   hashed_process_data = resourcelist_obtain_irq(resourceview_data, trace_num, irq);
   // TODO: fix this, it's ugly and slow:
@@ -1009,8 +994,6 @@ int before_execmode_hook_soft_irq(void *hook_data, void *call_data)
 
   LttTime evtime = ltt_event_time(e);
 
-  LttTrace *trace = tfc->t_context->t;
-
   /* we are in a execmode, before the state update. We must draw the
    * items corresponding to the state before it changes : now is the right
    * time to do it.
@@ -1048,10 +1031,8 @@ int before_execmode_hook_soft_irq(void *hook_data, void *call_data)
   /* Well, the process_out existed : we must get it in the process hash
    * or add it, and draw its items.
    */
-   /* Add process to process list (if not present) */
-  guint pl_height = 0;
+  /* Add process to process list (if not present) */
   HashedResourceData *hashed_process_data = NULL;
-  ProcessList *process_list = resourceview_data->process_list;
 
   hashed_process_data = resourcelist_obtain_soft_irq(resourceview_data, trace_num, softirq);
 
@@ -1186,8 +1167,6 @@ int before_execmode_hook_trap(void *hook_data, void *call_data)
 
   LttTime evtime = ltt_event_time(e);
 
-  LttTrace *trace = tfc->t_context->t;
-
   /* we are in a execmode, before the state update. We must draw the
    * items corresponding to the state before it changes : now is the right
    * time to do it.
@@ -1228,10 +1207,8 @@ int before_execmode_hook_trap(void *hook_data, void *call_data)
   /* Well, the process_out existed : we must get it in the process hash
    * or add it, and draw its items.
    */
-   /* Add process to process list (if not present) */
-  guint pl_height = 0;
+  /* Add process to process list (if not present) */
   HashedResourceData *hashed_process_data = NULL;
-  ProcessList *process_list = resourceview_data->process_list;
 
   hashed_process_data = resourcelist_obtain_trap(resourceview_data, trace_num, trap);
 
@@ -1358,7 +1335,6 @@ int before_bdev_event_hook(void *hook_data, void *call_data)
 
   LttvTracefileContext *tfc = (LttvTracefileContext *)call_data;
 
-  LttvTracefileState *tfs = (LttvTracefileState *)call_data;
   LttvTraceState *ts = (LttvTraceState *)tfc->t_context;
 
   LttEvent *e;
@@ -1372,10 +1348,8 @@ int before_bdev_event_hook(void *hook_data, void *call_data)
    */
   /* For the pid */
 
-  guint cpu = tfs->cpu;
   guint8 major = ltt_event_get_long_unsigned(e, lttv_trace_get_hook_field(th, 0));
   guint8 minor = ltt_event_get_long_unsigned(e, lttv_trace_get_hook_field(th, 1));
-  guint oper = ltt_event_get_long_unsigned(e, lttv_trace_get_hook_field(th, 2));
   gint devcode_gint = MKDEV(major,minor);
 
   guint trace_num = ts->parent.index;
@@ -1387,10 +1361,8 @@ int before_bdev_event_hook(void *hook_data, void *call_data)
   /* Well, the process_out existed : we must get it in the process hash
    * or add it, and draw its items.
    */
-   /* Add process to process list (if not present) */
-  guint pl_height = 0;
+  /* Add process to process list (if not present) */
   HashedResourceData *hashed_process_data = NULL;
-  ProcessList *process_list = resourceview_data->process_list;
 //  LttTime birth = process->creation_time;
  
 //  if(likely(process_list->current_hash_data[trace_num][cpu] != NULL)) {
@@ -1567,9 +1539,7 @@ gint update_time_window_hook(void *hook_data, void *call_data)
     /* Same scale (scrolling) */
     g_info("scrolling");
     LttTime *ns = &new_time_window->start_time;
-    LttTime *nw = &new_time_window->time_width;
     LttTime *os = &old_time_window->start_time;
-    LttTime *ow = &old_time_window->time_width;
     LttTime old_end = old_time_window->end_time;
     LttTime new_end = new_time_window->end_time;
     //if(ns<os+w<ns+w)
@@ -1806,7 +1776,6 @@ gint continue_notify(void *hook_data, void *call_data)
 gint update_current_time_hook(void *hook_data, void *call_data)
 {
   ControlFlowData *resourceview_data = (ControlFlowData*)hook_data;
-  Drawing_t *drawing = resourceview_data->drawing;
 
   LttTime current_time = *((LttTime*)call_data);
   
@@ -1928,7 +1897,6 @@ void draw_closure(gpointer key, gpointer value, gpointer user_data)
 
     /* Only draw for processes that are currently in the trace states */
 
-    ProcessList *process_list = resourceview_data->process_list;
 #ifdef EXTRA_CHECK
     /* Should be alike when background info is ready */
     if(resourceview_data->background_info_waiting==0)
@@ -2049,7 +2017,6 @@ int before_chunk(void *hook_data, void *call_data)
 {
   EventsRequest *events_request = (EventsRequest*)hook_data;
   LttvTracesetState *tss = (LttvTracesetState*)call_data;
-  ControlFlowData *cfd = (ControlFlowData*)events_request->viewer_data;
 #if 0  
   /* Deactivate sort */
   gtk_tree_sortable_set_sort_column_id(
@@ -2094,7 +2061,6 @@ int after_request(void *hook_data, void *call_data)
   ControlFlowData *resourceview_data = events_request->viewer_data;
   LttvTracesetState *tss = (LttvTracesetState*)call_data;
   
-  ProcessList *process_list = resourceview_data->process_list;
   LttTime end_time = events_request->end_time;
 
   ClosureData closure_data;
@@ -2211,12 +2177,7 @@ int before_statedump_end(void *hook_data, void *call_data)
 
   LttvTracefileContext *tfc = (LttvTracefileContext *)call_data;
 
-  LttvTracefileState *tfs = (LttvTracefileState *)call_data;
-
-  LttvTraceState *ts = (LttvTraceState *)tfc->t_context;
-
   LttvTracesetState *tss = (LttvTracesetState*)tfc->t_context->ts_context;
-  ProcessList *process_list = resourceview_data->process_list;
 
   LttEvent *e;
   e = ltt_tracefile_get_event(tfc->tf);

@@ -111,6 +111,7 @@
 #include <lttv/lttv.h>
 
 #include "histodrawitem.h"
+#include "histodrawing.h"
 
 
 #define MAX_PATH_LEN 256

@@ -83,93 +83,10 @@
 // fixed #define TRACE_NUMBER 0
 #define EXTRA_ALLOC 1024 // pixels
 
-/* Action to do when background computation completed.
- *
- * Wait for all the awaited computations to be over.
+/* 
+ * Most functions here are inspired from the controlflow module.
+ * Look in gui/controlflow/eventhooks.c if you need to add more functionality
  */
-
-static gint histo_background_ready(void *hook_data, void *call_data)
-{
-  HistoControlFlowData *histocontrol_flow_data = (HistoControlFlowData *)hook_data;
-  LttvTrace *trace = (LttvTrace*)call_data;
-
-  histoDrawing_t *drawing = histocontrol_flow_data->drawing;
-  histocontrol_flow_data->background_info_waiting--;
-  
-  if(histocontrol_flow_data->background_info_waiting == 0) {
-    g_message("Histocontrol flow viewer : background computation data ready.");
-
-    histo_drawing_clear(drawing,0,drawing->width);
-    
-    gtk_widget_set_size_request(drawing->drawing_area,
-                -1, -1);
-    histo_redraw_notify(histocontrol_flow_data, NULL);
-  }
-
-  return 0;
-}
-
-
-/* Request background computation. Verify if it is in progress or ready first.
- * Only for each trace in the tab's traceset.
- */
-static void histo_request_background_data(HistoControlFlowData *histocontrol_flow_data)
-{
-  LttvTracesetContext * tsc =
-        lttvwindow_get_traceset_context(histocontrol_flow_data->tab);
-  gint num_traces = lttv_traceset_number(tsc->ts);
-  gint i;
-  LttvTrace *trace;
-  LttvTraceState *tstate;
-
-  LttvHooks *histo_background_ready_hook = 
-    lttv_hooks_new();
-  lttv_hooks_add(histo_background_ready_hook, histo_background_ready, histocontrol_flow_data,
-      LTTV_PRIO_DEFAULT);
-  histocontrol_flow_data->background_info_waiting = 0;
-  
-  for(i=0;i<num_traces;i++) {
-    trace = lttv_traceset_get(tsc->ts, i);
-    tstate = LTTV_TRACE_STATE(tsc->traces[i]);
-
-    if(lttvwindowtraces_get_ready(g_quark_from_string("state"),trace)==FALSE
-        && !tstate->has_precomputed_states) {
-
-      if(lttvwindowtraces_get_in_progress(g_quark_from_string("state"),
-                                          trace) == FALSE) {
-        /* We first remove requests that could have been done for the same
-         * information. Happens when two viewers ask for it before servicing
-         * starts.
-         */
-        if(!lttvwindowtraces_background_request_find(trace, "state"))
-          lttvwindowtraces_background_request_queue(
-              main_window_get_widget(histocontrol_flow_data->tab), trace, "state");
-        lttvwindowtraces_background_notify_queue(histocontrol_flow_data,
-                                                 trace,
-                                                 ltt_time_infinite,
-                                                 NULL,
-                                                 histo_background_ready_hook);
-        histocontrol_flow_data->background_info_waiting++;
-      } else { /* in progress */
-      
-        lttvwindowtraces_background_notify_current(histocontrol_flow_data,
-                                                   trace,
-                                                   ltt_time_infinite,
-                                                   NULL,
-                                                   histo_background_ready_hook);
-        histocontrol_flow_data->background_info_waiting++;
-      }
-    } else {
-      /* Data ready. Be its nature, this viewer doesn't need to have
-       * its data ready hook called there, because a background
-       * request is always linked with a redraw.
-       */
-    }
-    
-  }
-
-  lttv_hooks_destroy(histo_background_ready_hook);
-}
 
 /**
  * Histogram Viewer's constructor hook
@@ -318,7 +235,6 @@ return;
 int histo_count_event(void *hook_data, void *call_data){
 
   guint x;//time to pixel
-  guint i;// number of events
   LttTime  event_time; 
   LttEvent *e;
   guint *element;
@@ -333,7 +249,6 @@ int histo_count_event(void *hook_data, void *call_data){
   
    
   LttvTracefileContext *tfc = (LttvTracefileContext *)call_data;
-  LttvTracefileState *tfs = (LttvTracefileState *)call_data;
 
   e = ltt_tracefile_get_event(tfc->tf);
 
@@ -425,13 +340,13 @@ void histogram_show(HistoControlFlowData *histocontrol_flow_data,guint draw_begi
                                GDK_JOIN_MITER);*/
 //clean the area!
   histo_drawing_clear(drawing,draw_begin,draw_end);
-  LttTime t1,t2;
+  LttTime t1, t2;
   TimeWindow time_window =
               lttvwindow_get_time_window(histocontrol_flow_data->tab);
      
-  guint val,h_val;
+  guint val, h_val;
   
-  guint i,line_src,line_end;
+  guint i, line_src;
   guint end_chunk=MIN(draw_end,(histocontrol_flow_data->number_of_process)->len);
   
   for (i=draw_begin/*0*/;i<end_chunk/* (histocontrol_flow_data->number_of_process)->len*/;i++){
@@ -518,7 +433,6 @@ void histogram_show(HistoControlFlowData *histocontrol_flow_data,guint draw_begi
 
 int histo_event_selected_hook(void *hook_data, void *call_data)
 {
-  HistoControlFlowData *histocontrol_flow_data = (HistoControlFlowData*) hook_data;
   guint *event_number = (guint*) call_data;
 
   g_debug("DEBUG : event selected by main window : %u", *event_number);
@@ -614,229 +528,6 @@ gint histo_update_time_window_hook(void *hook_data, void *call_data)
 //show number of event at current time 
 
   histo_drawing_update_vertical_ruler(drawing);
-
-#if 0
-
-/*//  if( histo_new_time_window->time_width.tv_sec == histo_old_time_window->time_width.tv_sec
-  && histo_new_time_window->time_width.tv_nsec == histo_old_time_window->time_width.tv_nsec)
-  {
-    // Same scale (scrolling) 
-    g_info("scrolling");
-    /* For histogram,
-      while scrolling no matter far or near , 
-      right or left it's necessary to redraw whole screen!*/
-/*//    LttTime *ns = &histo_new_time_window->start_time;
-    LttTime *nw = &histo_new_time_window->time_width;
-    LttTime *os = &histo_old_time_window->start_time;
-    LttTime *ow = &histo_old_time_window->time_width;
-    LttTime histo_old_end = histo_old_time_window->end_time;
-    LttTime histo_new_end = histo_new_time_window->end_time;
-    //if(ns<os+w<ns+w)
-    //if(ns<os+w && os+w<ns+w)
-    //if(ns<histo_old_end && os<ns)
-
-    //added for histogram
-    gtk_widget_queue_draw(drawing->drawing_area);
-
-          drawing->damage_begin = 0;
-          drawing->damage_end = drawing->width;
-
-      //replaced for hisogram
-      histo_request_event(histocontrol_flow_data,drawing->damage_begin,
-			drawing->damage_end- drawing->damage_begin);
-/*  
-    if(ltt_time_compare(*ns, histo_old_end) == -1
-        && ltt_time_compare(*os, *ns) == -1)
-    {
-      g_info("scrolling near right");
-      // Scroll right, keep right part of the screen 
-      guint x = 0;
-      guint width = drawing->width;
-      histo_convert_time_to_pixels(
-          *histo_old_time_window,
-          *ns,
-          width,
-          &x);
-
-      // Copy old data to new location 
-      //replaced for histogram:
-	histo_copy_pixmap_region(drawing,NULL,
-    		drawing->drawing_area->style->black_gc,//drawing->gc,
-	 	NULL,
-    		x, 0,
-    		0, 0, (drawing->width-x)
-		, -1);
-  
-    if(drawing->damage_begin == drawing->damage_end)
-        drawing->damage_begin = drawing->width-x;
-      else
-        drawing->damage_begin = 0;
-
-      drawing->damage_end = drawing->width;
-
-//(histo) copy corresponding array region too:
-  guint i;
-  
-  for(i=0; i < histocontrol_flow_data->number_of_process->len-x;i++) 
-  {
-      g_array_index(histocontrol_flow_data->number_of_process, guint, i) = 
-         g_array_index(histocontrol_flow_data->number_of_process, guint, i+x);
-  }
-
-      // Clear the data request background, but not SAFETY 
- 
-
-//not necessary for histo, because in before chunk ,it clears the area
-/*	histo_rectangle_pixmap (
-	drawing->drawing_area->style->black_gc,
-          TRUE,
-          drawing->damage_begin, 0,
-          drawing->damage_end - drawing->damage_begin,  // do not overlap
-          -1,drawing);
-*/
- /*     gtk_widget_queue_draw(drawing->drawing_area);
-      //gtk_widget_queue_draw_area (drawing->drawing_area,
-      //                          0,0,
-      //                          histocontrol_flow_data->drawing->width,
-      //                          histocontrol_flow_data->drawing->height);
-
-    // Get new data for the rest.
-    //replaced for hisogram 
-      histo_request_event(histocontrol_flow_data,drawing->damage_begin,
-			drawing->damage_end- drawing->damage_begin);
-    } else { 
-      //if(ns<os<ns+w)
-      //if(ns<os && os<ns+w)
-      //if(ns<os && os<histo_new_end)
-      if(ltt_time_compare(*ns,*os) == -1
-          && ltt_time_compare(*os,histo_new_end) == -1)
-      {
-        g_info("scrolling near left");
-        // Scroll left, keep left part of the screen 
-        guint x = 0;
-        guint width = drawing->width;
-        histo_convert_time_to_pixels(
-            *histo_new_time_window,
-            *os,
-            width,
-            &x);
-        
-        // Copy old data to new location 
-	//replaced for histogram
-
-  	histo_copy_pixmap_region(drawing,NULL,
-    		drawing->drawing_area->style->black_gc,//drawing->gc,
-	 	NULL,
-    		0, 0,
-    		x, 0, -1, -1);
-	//(histo) copy corresponding array region too:
-  	guint i;
-  	for(i=histocontrol_flow_data->number_of_process->len; i > x-1;i--) 
-  	{
-     	 g_array_index(histocontrol_flow_data->number_of_process, guint, i) = 
-         g_array_index(histocontrol_flow_data->number_of_process, guint, i-x);
-  	}
-
-       if(drawing->damage_begin == drawing->damage_end)
-          drawing->damage_end = x;
-        else
-          drawing->damage_end = 
-            drawing->width;
-
-        drawing->damage_begin = 0;
-
-        
-//not necessary for histo, because in before chunk ,it clears the area
-  /*      histo_rectangle_pixmap (drawing->drawing_area->style->black_gc,
-          TRUE,
-          drawing->damage_begin, 0,
-          drawing->damage_end - drawing->damage_begin,  // do not overlap
-          -1,drawing);
-*/
- /*       gtk_widget_queue_draw(drawing->drawing_area);
-        //gtk_widget_queue_draw_area (drawing->drawing_area,
-        //                        0,0,
-        //                        histocontrol_flow_data->drawing->width,
-        //                        histocontrol_flow_data->drawing->height);
-
-
-        // Get new data for the rest. 
-
-//replaced for hisogram
-      histo_request_event(histocontrol_flow_data,drawing->damage_begin,
-			drawing->damage_end- drawing->damage_begin);
-    
-      } else {
-        if(ltt_time_compare(*ns,*os) == 0)
-        {
-          g_info("not scrolling");
-        } else {
-          g_info("scrolling far");
-          // Cannot reuse any part of the screen : far jump 
-          
-          //not necessary for histo, because in before chunk ,it clears the area
- /*         histo_rectangle_pixmap (histocontrol_flow_data->drawing->drawing_area->style->black_gc,
-            TRUE,
-            0, 0,
-            histocontrol_flow_data->drawing->width,//+SAFETY, // do not overlap
-            -1,drawing);
-*/
-          //gtk_widget_queue_draw_area (drawing->drawing_area,
-          //                      0,0,
-          //                      histocontrol_flow_data->drawing->width,
-          //                      histocontrol_flow_data->drawing->height);
-/*          gtk_widget_queue_draw(drawing->drawing_area);
-
-          drawing->damage_begin = 0;
-          drawing->damage_end = histocontrol_flow_data->drawing->width;
-/*
-          histo_drawing_data_request(histocontrol_flow_data->drawing,
-              0, 0,
-              histocontrol_flow_data->drawing->width,
-              histocontrol_flow_data->drawing->height);*/
-      //replaced for hisogram
- /*     histo_request_event(histocontrol_flow_data,drawing->damage_begin,
-			drawing->damage_end- drawing->damage_begin);
-        }
-      }
-    }
-  } else {
-    // Different scale (zoom) 
-    g_info("zoom");
-
- //not necessary for histo, because in before chunk ,it clears the area
- /*
-    histo_rectangle_pixmap (drawing->drawing_area->style->black_gc,
-          TRUE,
-          0, 0,
-          histocontrol_flow_data->drawing->width+SAFETY, // do not overlap
-          -1,drawing);
-*/
-    //gtk_widget_queue_draw_area (drawing->drawing_area,
-    //                            0,0,
-    //                            histocontrol_flow_data->drawing->width,
-    //                            histocontrol_flow_data->drawing->height);
-/*//    gtk_widget_queue_draw(drawing->drawing_area);
-  
-    drawing->damage_begin = 0;
-    drawing->damage_end = drawing->width;
-
-  //replaced for hisogram
-   histo_request_event(histocontrol_flow_data,drawing->damage_begin,
-			drawing->damage_end- drawing->damage_begin);
-  }
-
-  // Update directly when scrolling 
-  gdk_window_process_updates(drawing->drawing_area->window,
-      TRUE);
-
-  //show number of event at current time 
-
-  histo_drawing_update_vertical_ruler(drawing);
-*/
-#endif
-
-//disabled for histogram, always redraw whole screen. 
   return 0;
 }
 
@@ -1019,9 +710,6 @@ gboolean histo_filter_changed(void * hook_data, void * call_data)
   HistoControlFlowData *histocontrol_flow_data = (HistoControlFlowData*)hook_data;
   histoDrawing_t *drawing =histocontrol_flow_data->drawing;
 
-  LttvTracesetContext * tsc =
-        lttvwindow_get_traceset_context(histocontrol_flow_data->tab);
-
   histocontrol_flow_data->histo_main_win_filter = 
     (LttvFilter*)call_data;
   //get_events(event_viewer_data->vadjust_c->value, event_viewer_data);
@@ -1057,7 +745,6 @@ int histo_before_chunk(void *hook_data, void *call_data)
 {
   EventsRequest *histo_events_request = (EventsRequest*)hook_data;
   LttvTracesetState *histo_tss = (LttvTracesetState*)call_data;
-  HistoControlFlowData *histo_cfd = (HistoControlFlowData*)histo_events_request->viewer_data;
 #if 0  
   /* Desactivate sort */
   gtk_tree_sortable_set_sort_column_id(
@@ -1106,7 +793,6 @@ int histo_after_chunk(void *hook_data, void *call_data)
 {
   EventsRequest *events_request = (EventsRequest*)hook_data;
   HistoControlFlowData *histocontrol_flow_data = events_request->viewer_data;
-  LttvTracesetState *tss = (LttvTracesetState*)call_data;
   LttvTracesetContext *tsc = (LttvTracesetContext*)call_data;
   LttvTracefileContext *tfc = lttv_traceset_context_get_current_tfc(tsc);
   LttTime end_time;

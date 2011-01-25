@@ -164,10 +164,6 @@ gui_control(LttvPluginTab *ptab)
   Tab *tab = ptab->tab;
   g_debug("filter::gui_control()");
 
-  unsigned i;
-  GtkCellRenderer *renderer;
-  GtkTreeViewColumn *column;
-
   ControlData* tcd = g_new(ControlData,1);
 
   tcd->tab  = tab;
@@ -450,8 +446,6 @@ gui_control(LttvPluginTab *ptab)
 void
 gui_control_destructor(ControlData *tcd)
 {
-  Tab *tab = tcd->tab;
-
   /* May already been done by GTK window closing */
   if(GTK_IS_WIDGET(guicontrol_get_widget(tcd))){
     g_info("widget still exists");
@@ -850,7 +844,7 @@ void start_clicked (GtkButton *button, gpointer user_data)
         GTK_DIALOG_MODAL|GTK_DIALOG_DESTROY_WITH_PARENT,
         GTK_MESSAGE_ERROR,
         GTK_BUTTONS_OK,
-        msg);
+        "%s", msg);
     gtk_dialog_run(GTK_DIALOG(dialogue));
     gtk_widget_destroy(dialogue);
   }
@@ -922,7 +916,7 @@ void pause_clicked (GtkButton *button, gpointer user_data)
         GTK_DIALOG_MODAL|GTK_DIALOG_DESTROY_WITH_PARENT,
         GTK_MESSAGE_ERROR,
         GTK_BUTTONS_OK,
-        msg);
+        "%s", msg);
     gtk_dialog_run(GTK_DIALOG(dialogue));
     gtk_widget_destroy(dialogue);
   }
@@ -993,7 +987,7 @@ void unpause_clicked (GtkButton *button, gpointer user_data)
         GTK_DIALOG_MODAL|GTK_DIALOG_DESTROY_WITH_PARENT,
         GTK_MESSAGE_ERROR,
         GTK_BUTTONS_OK,
-        msg);
+        "%s", msg);
     gtk_dialog_run(GTK_DIALOG(dialogue));
     gtk_widget_destroy(dialogue);
   }
@@ -1024,10 +1018,10 @@ void stop_clicked (GtkButton *button, gpointer user_data)
  
   const gchar *lttctl_path =
     gtk_entry_get_text(GTK_ENTRY(tcd->lttctl_path_entry));
-  gchar *trace_dir = gtk_entry_get_text(GTK_ENTRY(tcd->trace_dir_entry));
+  const gchar *trace_dir = gtk_entry_get_text(GTK_ENTRY(tcd->trace_dir_entry));
   GSList * trace_list = NULL;
 
-  trace_list = g_slist_append(trace_list, trace_dir);
+  trace_list = g_slist_append(trace_list, (gpointer) trace_dir);
 
   /* Setup arguments to su */
   /* child */
@@ -1092,7 +1086,7 @@ void stop_clicked (GtkButton *button, gpointer user_data)
         GTK_DIALOG_MODAL|GTK_DIALOG_DESTROY_WITH_PARENT,
         GTK_MESSAGE_ERROR,
         GTK_BUTTONS_OK,
-        msg);
+        "%s", msg);
     gtk_dialog_run(GTK_DIALOG(dialogue));
     gtk_widget_destroy(dialogue);
     return;
@@ -1176,7 +1170,7 @@ void arm_clicked (GtkButton *button, gpointer user_data)
         GTK_DIALOG_MODAL|GTK_DIALOG_DESTROY_WITH_PARENT,
         GTK_MESSAGE_ERROR,
         GTK_BUTTONS_OK,
-        msg);
+        "%s", msg);
     gtk_dialog_run(GTK_DIALOG(dialogue));
     gtk_widget_destroy(dialogue);
   }
@@ -1227,7 +1221,7 @@ void disarm_clicked (GtkButton *button, gpointer user_data)
         GTK_DIALOG_MODAL|GTK_DIALOG_DESTROY_WITH_PARENT,
         GTK_MESSAGE_ERROR,
         GTK_BUTTONS_OK,
-        msg);
+        "%s", msg);
     gtk_dialog_run(GTK_DIALOG(dialogue));
     gtk_widget_destroy(dialogue);
   }
@@ -1248,9 +1242,6 @@ void disarm_clicked (GtkButton *button, gpointer user_data)
 GtkWidget *
 h_guicontrol(LttvPlugin *plugin)
 {
-  LttvPluginTab *ptab = LTTV_PLUGIN_TAB(plugin);
-  ControlData* f = gui_control(ptab);
-
   return NULL;
 }
 

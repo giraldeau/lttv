@@ -133,7 +133,6 @@ create_MWindow (void)
   GtkWidget *tlbMoveViewerUp;
   GtkWidget *tlbMoveViewerDown;
   GtkWidget *tlbRemoveViewer;
-  GtkWidget *MToolbar2;
   GtkWidget *MNotebook;
   //  GtkWidget *empty_notebook_page;
   //  GtkWidget *label1;

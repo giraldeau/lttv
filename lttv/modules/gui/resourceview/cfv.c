@@ -83,16 +83,6 @@ gboolean cfv_scroll_event(GtkWidget *widget, GdkEventScroll *event,
 }
 
 
-/* Toolbar callbacks */
-static void        property_button      (GtkToolButton *toolbutton,
-                                          gpointer       user_data)
-{
-  ControlFlowData *control_flow_data = (ControlFlowData*)user_data;
-
-  g_printf("CFV Property button clicked\n");
-
-}
-
 /*****************************************************************************
  *                     Control Flow Viewer class implementation              *
  *****************************************************************************/
@@ -107,12 +97,8 @@ static void        property_button      (GtkToolButton *toolbutton,
 ControlFlowData *
 resourceview(LttvPluginTab *ptab)
 {
-  Tab *tab = ptab->tab;
-  GtkWidget *tmp_toolbar_icon;
   GtkWidget *process_list_widget, *drawing_widget, *drawing_area;
-  //ControlFlowData* control_flow_data = g_new(ControlFlowData,1) ;
   LttvPluginCFV *plugin_cfv = g_object_new(LTTV_TYPE_PLUGIN_CFV, NULL);
-  GtkTooltips *tooltips = gtk_tooltips_new();
   ControlFlowData* control_flow_data = plugin_cfv->cfd;
   control_flow_data->ptab = ptab;
   control_flow_data->tab = ptab->tab;

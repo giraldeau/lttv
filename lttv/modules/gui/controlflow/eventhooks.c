@@ -92,7 +92,6 @@ extern GSList *g_legend_list;
 static gint background_ready(void *hook_data, void *call_data)
 {
   ControlFlowData *control_flow_data = (ControlFlowData *)hook_data;
-  LttvTrace *trace = (LttvTrace*)call_data;
 
   control_flow_data->background_info_waiting--;
   
@@ -219,7 +218,6 @@ h_guicontrolflow(LttvPlugin *plugin)
 
 int event_selected_hook(void *hook_data, void *call_data)
 {
-  ControlFlowData *control_flow_data = (ControlFlowData*) hook_data;
   guint *event_number = (guint*) call_data;
 
   g_debug("DEBUG : event selected by main window : %u", *event_number);
@@ -289,7 +287,6 @@ int before_trywakeup_hook(void *hook_data, void *call_data)
 
   LttvTracefileContext *tfc = (LttvTracefileContext *)call_data;
 
-  LttvTracefileState *tfs = (LttvTracefileState *)call_data;
   LttvTraceState *ts = (LttvTraceState *)tfc->t_context;
 
   LttEvent *e = ltt_tracefile_get_event(tfc->tf);
@@ -314,7 +311,6 @@ int before_trywakeup_hook(void *hook_data, void *call_data)
      * draw items from the beginning of the read for it. If it is not
      * present, it's a new process and it was not present : it will
      * be added after the state update. TOCHECK: What does that last para mean? */
-    guint cpu = tfs->cpu;
     guint trace_num = ts->parent.index;
     LttvProcessState *process = lttv_state_find_process(ts, woken_cpu, woken_pid);
     
@@ -1435,8 +1431,6 @@ int before_process_release_hook(void *hook_data, void *call_data)
 
   LttvTracefileContext *tfc = (LttvTracefileContext *)call_data;
 
-  LttvTracefileState *tfs = (LttvTracefileState *)call_data;
-
   LttvTraceState *ts = (LttvTraceState *)tfc->t_context;
 
   LttEvent *e;
@@ -1465,7 +1459,6 @@ int before_process_release_hook(void *hook_data, void *call_data)
 
   if(process != NULL) {
     LttTime birth;
-    guint pl_height = 0;
     HashedProcessData *hashed_process_data = NULL;
 
     ProcessList *process_list = control_flow_data->process_list;
@@ -1618,8 +1611,6 @@ int after_process_fork_hook(void *hook_data, void *call_data)
   ControlFlowData *control_flow_data = events_request->viewer_data;
 
   LttvTracefileContext *tfc = (LttvTracefileContext *)call_data;
-
-  LttvTracefileState *tfs = (LttvTracefileState *)call_data;
 
   LttvTraceState *ts = (LttvTraceState *)tfc->t_context;
 
@@ -2036,8 +2027,6 @@ int after_event_enum_process_hook(void *hook_data, void *call_data)
 
   LttvTracefileContext *tfc = (LttvTracefileContext *)call_data;
 
-  LttvTracefileState *tfs = (LttvTracefileState *)call_data;
-
   LttvTraceState *ts = (LttvTraceState *)tfc->t_context;
 
   guint first_cpu, nb_cpus, cpu;
@@ -2050,8 +2039,6 @@ int after_event_enum_process_hook(void *hook_data, void *call_data)
     if(!lttv_filter_tree_parse(filter->head,e,tfc->tf,
           tfc->t_context->t,tfc,NULL,NULL))
       return FALSE;
-
-  LttTime evtime = ltt_event_time(e);
 
   /* Add process to process list (if not present) */
   LttvProcessState *process_in;
@@ -2175,9 +2162,7 @@ gint update_time_window_hook(void *hook_data, void *call_data)
     /* Same scale (scrolling) */
     g_info("scrolling");
     LttTime *ns = &new_time_window->start_time;
-    LttTime *nw = &new_time_window->time_width;
     LttTime *os = &old_time_window->start_time;
-    LttTime *ow = &old_time_window->time_width;
     LttTime old_end = old_time_window->end_time;
     LttTime new_end = new_time_window->end_time;
     //if(ns<os+w<ns+w)
@@ -2440,7 +2425,6 @@ gint continue_notify(void *hook_data, void *call_data)
 gint update_current_time_hook(void *hook_data, void *call_data)
 {
   ControlFlowData *control_flow_data = (ControlFlowData*)hook_data;
-  Drawing_t *drawing = control_flow_data->drawing;
 
   LttTime current_time = *((LttTime*)call_data);
   
@@ -2591,7 +2575,6 @@ void draw_closure(gpointer key, gpointer value, gpointer user_data)
 
       /* Only draw for processes that are currently in the trace states */
 
-      ProcessList *process_list = control_flow_data->process_list;
 #ifdef EXTRA_CHECK
       /* Should be alike when background info is ready */
       if(control_flow_data->background_info_waiting==0)
@@ -2696,7 +2679,6 @@ int before_chunk(void *hook_data, void *call_data)
 {
   EventsRequest *events_request = (EventsRequest*)hook_data;
   LttvTracesetState *tss = (LttvTracesetState*)call_data;
-  ControlFlowData *cfd = (ControlFlowData*)events_request->viewer_data;
 #if 0  
   /* Desactivate sort */
   gtk_tree_sortable_set_sort_column_id(
@@ -2846,10 +2828,6 @@ int before_statedump_end(void *hook_data, void *call_data)
   ControlFlowData *control_flow_data = events_request->viewer_data;
 
   LttvTracefileContext *tfc = (LttvTracefileContext *)call_data;
-
-  LttvTracefileState *tfs = (LttvTracefileState *)call_data;
-
-  LttvTraceState *ts = (LttvTraceState *)tfc->t_context;
 
   LttvTracesetState *tss = (LttvTracesetState*)tfc->t_context->ts_context;
   ProcessList *process_list = control_flow_data->process_list;

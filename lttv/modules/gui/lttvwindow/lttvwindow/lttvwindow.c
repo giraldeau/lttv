@@ -127,7 +127,9 @@ void set_current_position(Tab *tab, const LttvTracesetContextPosition *pos)
     "hooks/updatecurrentposition", LTTV_POINTER, &value);
   g_assert(retval);
   tmp = (LttvHooks*)*(value.v_pointer);
-  if(tmp != NULL) lttv_hooks_call(tmp, pos);
+  if (tmp != NULL) {
+    lttv_hooks_call(tmp, (void *) pos);
+  }
 }
 
 void add_toolbar_constructor(MainWindow *mw, LttvToolbarClosure *toolbar_c)

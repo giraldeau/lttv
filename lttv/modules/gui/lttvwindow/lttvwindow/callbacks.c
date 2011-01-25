@@ -418,10 +418,8 @@ insert_viewer_wrap(GtkWidget *menuitem, gpointer user_data)
 void insert_viewer(GtkWidget* widget, lttvwindow_viewer_constructor constructor)
 {
   GtkWidget * viewer_container;
-  MainWindow * mw_data = get_window_data_struct(widget);
   GtkWidget * notebook = lookup_widget(widget, "MNotebook");
   GtkWidget * viewer;
-  TimeInterval * time_interval;
   GtkWidget *page = gtk_notebook_get_nth_page(GTK_NOTEBOOK(notebook),
                       gtk_notebook_get_current_page(GTK_NOTEBOOK(notebook)));
   LttvPluginTab *ptab;
@@ -814,7 +812,6 @@ gint viewer_container_position(GtkWidget *container, GtkWidget *child)
 
 void move_down_viewer(GtkWidget * widget, gpointer user_data)
 {
-  MainWindow * mw = get_window_data_struct(widget);
   GtkWidget * notebook = lookup_widget(widget, "MNotebook");
 
   GtkWidget *page = gtk_notebook_get_nth_page(GTK_NOTEBOOK(notebook),
@@ -848,7 +845,6 @@ void move_down_viewer(GtkWidget * widget, gpointer user_data)
 
 void move_up_viewer(GtkWidget * widget, gpointer user_data)
 {
-  MainWindow * mw = get_window_data_struct(widget);
   GtkWidget * notebook = lookup_widget(widget, "MNotebook");
 
   GtkWidget *page = gtk_notebook_get_nth_page(GTK_NOTEBOOK(notebook),
@@ -889,7 +885,6 @@ void move_up_viewer(GtkWidget * widget, gpointer user_data)
 
 void delete_viewer(GtkWidget * widget, gpointer user_data)
 {
-  MainWindow * mw = get_window_data_struct(widget);
   GtkWidget * notebook = lookup_widget(widget, "MNotebook");
 
   GtkWidget *page = gtk_notebook_get_nth_page(GTK_NOTEBOOK(notebook),
@@ -983,7 +978,6 @@ void open_traceset(GtkWidget * widget, gpointer user_data)
 
 gboolean lttvwindow_process_pending_requests(Tab *tab)
 {
-  GtkWidget* widget;
   LttvTracesetContext *tsc;
   LttvTracefileContext *tfc;
   GSList *list_in = NULL;
@@ -1957,7 +1951,7 @@ void remove_trace(GtkWidget *widget, gpointer user_data)
   for(i = 0; i < nb_trace; i++){
     trace_v = lttv_traceset_get(tab->traceset_info->traceset, i);
     trace = lttv_trace(trace_v);
-    name[i] = g_quark_to_string(ltt_trace_name(trace));
+    name[i] = (char *) g_quark_to_string(ltt_trace_name(trace));
   }
 
   remove_trace_name = get_remove_trace(mw_data, name, nb_trace);
@@ -2275,7 +2269,6 @@ void zoom(GtkWidget * widget, double size)
   TimeInterval time_span;
   TimeWindow new_time_window;
   LttTime    current_time, time_delta;
-  MainWindow * mw_data = get_window_data_struct(widget);
   LttvTracesetContext *tsc;
   GtkWidget * notebook = lookup_widget(widget, "MNotebook");
 
@@ -2478,8 +2471,6 @@ on_close_tab_activate                  (GtkWidget       *widget,
 {
   gint page_num;
   GtkWidget * notebook;
-  GtkWidget * page;
-  MainWindow * mw_data = get_window_data_struct(widget);
   notebook = lookup_widget(widget, "MNotebook");
   if(notebook == NULL){
     g_info("Notebook does not exist\n");
@@ -2966,7 +2957,6 @@ void
 on_unload_module_activate              (GtkMenuItem     *menuitem,
                                         gpointer         user_data)
 {
-  GError *error = NULL;
   MainWindow * mw_data = get_window_data_struct((GtkWidget*)menuitem);
 
   LttvLibrary *library = NULL;
@@ -3096,7 +3086,6 @@ on_remove_library_search_path_activate     (GtkMenuItem     *menuitem,
   {
     GPtrArray *name;
     guint nb,i;
-    gchar *lib_name;
     name = g_ptr_array_new();
     nb = lttv_library_path_number();
     /* ask for the library name */
@@ -3407,8 +3396,6 @@ on_MWindow_configure                   (GtkWidget         *widget,
                                         GdkEventConfigure *event,
                                         gpointer           user_data)
 {
-  MainWindow * mw_data = get_window_data_struct((GtkWidget*)widget);
-	
 	// MD : removed time width modification upon resizing of the main window.
 	// The viewers will redraw themselves completely, without time interval
 	// modification.
@@ -3987,7 +3974,6 @@ void current_position_change_manager(Tab *tab,
 {
   LttvTracesetContext *tsc =
     LTTV_TRACESET_CONTEXT(tab->traceset_info->traceset_context);
-  TimeInterval time_span = tsc->time_span;
   int retval;
 
   retval= lttv_process_traceset_seek_position(tsc, pos);

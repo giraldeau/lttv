@@ -146,16 +146,6 @@ GtkWidget *histo_drawing_get_drawing_area(histoDrawing_t *drawing);
 /* Clear the drawing : make it 1xwidth. */
 void histo_drawing_clear(histoDrawing_t *drawing,guint clear_from,guint clear_to);
 
-/* Insert a square corresponding to a new process in the list */
-static void drawing_insert_square(histoDrawing_t *drawing,
-        guint y,
-        guint height);
-
-/* Remove a square corresponding to a removed process in the list */
-static void drawing_remove_square(histoDrawing_t *drawing,
-        guint y,
-        guint height);
-
 void histo_drawing_update_ruler(histoDrawing_t *drawing, TimeWindow *time_window);
 
 void histo_drawing_update_vertical_ruler(histoDrawing_t *drawing);//, TimeWindow *time_window);
@@ -167,14 +157,6 @@ void histo_drawing_request_expose(EventsRequest *events_request,
 void histo_drawing_data_request_begin(EventsRequest *events_request,
                                 LttvTracesetState *tss);
 void histo_drawing_chunk_begin(EventsRequest *events_request, LttvTracesetState *tss);
-
-
-
-static void
-tree_row_activated(GtkTreeModel *treemodel,
-                   GtkTreePath *arg1,
-                   GtkTreeViewColumn *arg2,
-                   gpointer user_data);
 
 
 /* histo_convert_pixels_to_time

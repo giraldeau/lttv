@@ -67,7 +67,7 @@ lttv_plugin_evd_get_type (void)
       sizeof (LttvPluginEVDClass),
       NULL,   /* base_init */
       NULL,   /* base_finalize */
-      lttv_plugin_evd_class_init,   /* class_init */
+      (GClassInitFunc) lttv_plugin_evd_class_init,   /* class_init */
       NULL,   /* class_finalize */
       NULL,   /* class_data */
       sizeof (LttvPluginEVD),

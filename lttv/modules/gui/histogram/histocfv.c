@@ -25,6 +25,7 @@
 #include <gdk/gdk.h>
 #include <lttv/lttv.h>
 #include <lttvwindow/lttvwindow.h>
+#include <lttvwindow/lttvwindowtraces.h>
 
 #include "histocfv.h"
 #include "histodrawing.h"
@@ -34,20 +35,6 @@
 #define PREDEFINED_HEIGHT 5000
 
 extern GSList *g_histo_control_flow_data_list;
-
-static gboolean
-header_size_allocate(GtkWidget *widget,
-                        GtkAllocation *allocation,
-                        gpointer user_data)
-{
-  histoDrawing_t *drawing = (histoDrawing_t*)user_data;
-
-  gtk_widget_set_size_request(drawing->ruler, -1, allocation->height);
-  //gtk_widget_queue_resize(drawing->padding);
-  //gtk_widget_queue_resize(drawing->ruler);
-  gtk_container_check_resize(GTK_CONTAINER(drawing->ruler_hbox));
-  return 0;
-}
 
 
 /*****************************************************************************

@@ -68,7 +68,7 @@ lttv_plugin_cfv_get_type (void)
       sizeof (LttvPluginCFVClass),
       NULL,   /* base_init */
       NULL,   /* base_finalize */
-      lttv_plugin_cfv_class_init,   /* class_init */
+      (GClassInitFunc) lttv_plugin_cfv_class_init,   /* class_init */
       NULL,   /* class_finalize */
       NULL,   /* class_data */
       sizeof (LttvPluginCFV),

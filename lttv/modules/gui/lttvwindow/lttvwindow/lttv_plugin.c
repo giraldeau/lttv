@@ -32,9 +32,9 @@ lttv_plugin_class_init (LttvPluginClass *klass)
 }
 
 static void
-lttv_plugin_instance_init (GTypeInstance *instance, gpointer g_class)
+lttv_plugin_init (GTypeInstance *instance, gpointer g_class)
 {
-  LttvPlugin *self;
+  LttvPlugin *self = LTTV_PLUGIN (instance);
   self->top_widget = NULL;
 }
 
@@ -47,12 +47,12 @@ lttv_plugin_get_type (void)
       sizeof (LttvPluginClass),
       NULL,   /* base_init */
       NULL,   /* base_finalize */
-      lttv_plugin_class_init,   /* class_init */
+      (GClassInitFunc) lttv_plugin_class_init,   /* class_init */
       NULL,   /* class_finalize */
       NULL,   /* class_data */
       sizeof (LttvPlugin),
       0,      /* n_preallocs */
-      NULL    /* instance_init */
+      lttv_plugin_init    /* instance_init */
       };
       type = g_type_register_static (G_TYPE_OBJECT,
                                      "LttvPluginType",
