@@ -68,7 +68,7 @@ static gboolean process_traceset(void *hook_data, void *call_data)
 
   LttvIAttribute *attributes = LTTV_IATTRIBUTE(lttv_global_attributes());
 
-  LttvTracesetStats *tscs;
+  LttvTracesetStats *tscs = NULL;
 
   LttvTracesetState *tss;
 
@@ -93,7 +93,7 @@ static gboolean process_traceset(void *hook_data, void *call_data)
 
   syncTraceset(tc);
 
-  lttv_state_add_event_hooks(tc);
+  lttv_state_add_event_hooks(tss);
   if(a_stats) lttv_stats_add_event_hooks(tscs);
 
   retval= lttv_iattribute_find_by_path(attributes, "filter/expression",

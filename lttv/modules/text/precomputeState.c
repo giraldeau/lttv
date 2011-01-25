@@ -40,10 +40,6 @@
 #include <stdio.h>
 
 static gboolean
-  a_field_names,
-  a_state,
-  a_cpu_stats,
-  a_process_stats,
   a_raw;
 
 static char
@@ -91,7 +87,6 @@ static gboolean write_traceset_header(void *hook_data, void *call_data)
 
 static gboolean write_traceset_footer(void *hook_data, void *call_data)
 {
-  LttvTracesetContext *tc = (LttvTracesetContext *)call_data;
   GQuark q;
   const gchar *string;
 
@@ -149,7 +144,6 @@ static gboolean write_trace_header(void *hook_data, void *call_data)
 
 static gboolean write_trace_footer(void *hook_data, void *call_data)
 {
-  LttvTraceContext *tc = (LttvTraceContext *)call_data;
 
   if(a_raw) {
 
@@ -165,15 +159,11 @@ static int for_each_event(void *hook_data, void *call_data)
 {
   guint *event_count = (guint*)hook_data;
 
-  LttvIAttribute *attributes = LTTV_IATTRIBUTE(lttv_global_attributes());
-  
   LttvTracefileContext *tfc = (LttvTracefileContext *)call_data;
 
   LttvTracefileState *tfs = (LttvTracefileState *)call_data;
 
   LttEvent *e;
-
-  LttvAttributeValue value_filter;
 
   /* Only save at LTTV_STATE_SAVE_INTERVAL */
   if(likely((*event_count)++ < LTTV_STATE_SAVE_INTERVAL))
@@ -181,9 +171,7 @@ static int for_each_event(void *hook_data, void *call_data)
   else
     *event_count = 0;
 
-  guint cpu = tfs->cpu;
   LttvTraceState *ts = (LttvTraceState*)tfc->t_context;
-  LttvProcessState *process = ts->running_process[cpu];
 
   e = ltt_tracefile_get_event(tfc->tf);
 

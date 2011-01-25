@@ -19,6 +19,8 @@
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
+#define _GNU_SOURCE
+#include <stdio.h>
 
 #include <lttv/lttv.h>
 #include <lttv/option.h>
@@ -32,8 +34,7 @@
 #include <ltt/ltt.h>
 #include <ltt/event.h>
 #include <ltt/trace.h>
-#define _GNU_SOURCE
-#include <stdio.h>
+
 #include <glib.h>
 #include <stdlib.h>
 
@@ -42,7 +43,6 @@
 static LttvHooks
   *before_traceset,
   *after_traceset,
-//  *before_trace,
   *event_hook;
 
 static int depanalysis_range_pid = -1;
@@ -403,7 +403,6 @@ static void prepare_pop_item_commit_nocheck(struct process *p, enum llev_state s
 static void prepare_pop_item_commit(struct process *p, enum llev_state st, LttTime t)
 {
 	struct process_with_state *pwstate;
-	struct sstack_item *item = sstack_item_new_pop();
 
 	int push_idx;
 	       
@@ -504,14 +503,8 @@ static GString *a_string;
 
 static gboolean write_traceset_header(void *hook_data, void *call_data)
 {
-  LttvTracesetContext *tc = (LttvTracesetContext *)call_data;
-
   g_info("Traceset header");
-
-  /* Print the trace set header */
-  g_info(a_file,"Trace set contains %d traces\n\n",
-      lttv_traceset_number(tc->ts));
-
+ 
   return FALSE;
 }
 
@@ -533,7 +526,7 @@ static void update_hlev_state(struct process *p, LttTime t)
 {
 	int i;
 
-	enum hlev_state new_hlev;
+	enum hlev_state new_hlev = 0;
 
 	for(i=p->stack_current; i>=0; i--) {
 		enum llev_state st;
@@ -602,13 +595,13 @@ static void update_hlev_state(struct process *p, LttTime t)
 			break;
 		case HLEV_BLOCKED: {
 			struct hlev_state_info_blocked *hlev_blocked_private = p->hlev_state->private;
-			//struct process_state *ps = find_in_stack(LLEV_SYSCALL, p);
 			int syscall_pos = find_pos_in_stack(LLEV_SYSCALL, p);
 			int trap_pos = find_pos_in_stack(LLEV_TRAP, p);
 
 			/* init vals */
 			hlev_blocked_private->syscall_id = 1;
 			hlev_blocked_private->trap = 0;
+			hlev_blocked_private->pid_exit = 0;
 			hlev_blocked_private->substate = HLEV_BLOCKED__UNDEFINED;
 			hlev_blocked_private->private = NULL;
 			hlev_blocked_private->llev_state_entry = oldstyle_stack_to_garray(p->llev_state_stack, p->stack_current);
@@ -710,7 +703,9 @@ static void print_summary_item(struct summary_tree_node *node, int depth)
 	GList *vals;
 
 	if(depth >= 0) {
-		printf("\t%*s (", strlen(node->name)+2*depth, node->name);
+		printf("\t%*s (", 
+			(unsigned int)strlen(node->name)+2*depth, 
+			node->name);
 		print_time(node->duration);
 		printf(") <%d>\n", node->id_for_episodes);
 	}
@@ -734,19 +729,19 @@ static void print_summary_item(struct summary_tree_node *node, int depth)
 
 static inline void print_irq(int irq)
 {
-	printf("IRQ %d [%s]", irq, g_quark_to_string(g_hash_table_lookup(irq_table, &irq)));
+	printf("IRQ %d [%s]", irq, g_quark_to_string((GQuark)(unsigned long)g_hash_table_lookup(irq_table, &irq)));
 }
 
 static inline void print_softirq(int softirq)
 {
-	printf("SoftIRQ %d [%s]", softirq, g_quark_to_string(g_hash_table_lookup(softirq_table, &softirq)));
+	printf("SoftIRQ %d [%s]", softirq, g_quark_to_string((GQuark)(unsigned long)g_hash_table_lookup(softirq_table, &softirq)));
 }
 
 static inline void print_pid(int pid)
 {
 	struct process *event_process_info = g_hash_table_lookup(process_hash_table, &pid);
 
-	char *pname;
+	const char *pname;
 
 	if(event_process_info == NULL)
 		pname = "?";
@@ -757,17 +752,16 @@ static inline void print_pid(int pid)
 
 static void modify_path_with_private(GArray *path, struct process_state *pstate)
 {
-	//GString tmps = g_string_new("");
 	char *tmps;
 
 	// FIXME: fix this leak
 	switch(pstate->bstate) {
 		case HLEV_INTERRUPTED_IRQ:
-			asprintf(&tmps, "IRQ %d [%s]", ((struct hlev_state_info_interrupted_irq *)pstate->private)->irq, g_quark_to_string(g_hash_table_lookup(irq_table, &((struct hlev_state_info_interrupted_irq *)pstate->private)->irq)));
+			asprintf(&tmps, "IRQ %d [%s]", ((struct hlev_state_info_interrupted_irq *)pstate->private)->irq, g_quark_to_string((GQuark)(unsigned long)g_hash_table_lookup(irq_table, &((struct hlev_state_info_interrupted_irq *)pstate->private)->irq)));
 			g_array_append_val(path, tmps);
 			break;
 		case HLEV_INTERRUPTED_SOFTIRQ:
-			asprintf(&tmps, "SoftIRQ %d [%s]", ((struct hlev_state_info_interrupted_softirq *)pstate->private)->softirq, g_quark_to_string(g_hash_table_lookup(softirq_table, &((struct hlev_state_info_interrupted_softirq *)pstate->private)->softirq)));
+			asprintf(&tmps, "SoftIRQ %d [%s]", ((struct hlev_state_info_interrupted_softirq *)pstate->private)->softirq, g_quark_to_string((GQuark)(unsigned long)g_hash_table_lookup(softirq_table, &((struct hlev_state_info_interrupted_softirq *)pstate->private)->softirq)));
 			g_array_append_val(path, tmps);
 			break;
 		case HLEV_BLOCKED: {
@@ -783,12 +777,12 @@ static void modify_path_with_private(GArray *path, struct process_state *pstate)
 				g_array_append_val(path, ptr);
 			}
 			else {
-				asprintf(&tmps, "Syscall %d [%s]", hlev_blocked_private->syscall_id, g_quark_to_string(g_hash_table_lookup(syscall_table, &hlev_blocked_private->syscall_id)));
+				asprintf(&tmps, "Syscall %d [%s]", hlev_blocked_private->syscall_id, g_quark_to_string((GQuark)(unsigned long)g_hash_table_lookup(syscall_table, &hlev_blocked_private->syscall_id)));
 				g_array_append_val(path, tmps);
 			}
 
 			if(((struct hlev_state_info_blocked *)pstate->private)->substate == HLEV_BLOCKED__OPEN) {
-				char *str = g_quark_to_string(((struct hlev_state_info_blocked__open *)((struct hlev_state_info_blocked *)pstate->private)->private)->filename);
+				const char *str = g_quark_to_string(((struct hlev_state_info_blocked__open *)((struct hlev_state_info_blocked *)pstate->private)->private)->filename);
 				g_array_append_val(path, str);
 			}
 			else if(((struct hlev_state_info_blocked *)pstate->private)->substate == HLEV_BLOCKED__READ) {
@@ -823,7 +817,7 @@ void print_stack_garray_horizontal(GArray *stack)
 
 		if(pstate->bstate == LLEV_SYSCALL) {
 			struct llev_state_info_syscall *llev_syscall_private = pstate->private;
-			printf(" %d [%s]", llev_syscall_private->syscall_id, g_quark_to_string(g_hash_table_lookup(syscall_table, &llev_syscall_private->syscall_id)));
+			printf(" %d [%s]", llev_syscall_private->syscall_id, g_quark_to_string((GQuark)(unsigned long)g_hash_table_lookup(syscall_table, &llev_syscall_private->syscall_id)));
 		}
 
 		printf(", ");
@@ -1032,7 +1026,6 @@ static void print_process_critical_path_summary()
 {
 	struct process *pinfo;
 	GList *pinfos;
-	int i,j;
 
 	pinfos = g_hash_table_get_values(process_hash_table);
 	if(pinfos == NULL) {
@@ -1043,9 +1036,6 @@ static void print_process_critical_path_summary()
 	printf("Process Critical Path Summary:\n");
 
 	for(;;) {
-		struct summary_tree_node base_node = { children: NULL };
-
-		struct process_state *hlev_state_cur;
 
 		pinfo = (struct process *)pinfos->data;
 		if (depanalysis_range_pid_searching != -1 && pinfo->pid != depanalysis_range_pid_searching)
@@ -1102,8 +1092,6 @@ static void print_simple_summary(void)
 	/* For each process */
 	for(;;) {
 		struct summary_tree_node base_node = { children: NULL, name: "Root" };
-
-		struct process_state *hlev_state_cur;
 
 		pinfo = (struct process *)pinfos->data;
 		printf("\tProcess %d [%s]\n", pinfo->pid, g_quark_to_string(pinfo->name));
@@ -1209,8 +1197,6 @@ static void print_simple_summary_pid_range(int pid, LttTime t1, LttTime t2)
 
 	{
 		struct summary_tree_node base_node = { children: NULL, name: "Root" };
-
-		struct process_state *hlev_state_cur;
 
 		printf("\tProcess %d [%s]\n", pinfo->pid, g_quark_to_string(pinfo->name));
 
@@ -1371,7 +1357,7 @@ void print_range_reports(int pid, LttTime t1, LttTime t2)
 		else
 			iter_t2 = g_array_index(family, struct family_item, i-1).creation;
 
-		printf("This section of summary concerns pid %d between ");
+		printf("This section of summary concerns pid %d between ", iter_pid);
 		print_time(iter_t1);
 		printf(" and ");
 		print_time(iter_t2);
@@ -1383,16 +1369,7 @@ void print_range_reports(int pid, LttTime t1, LttTime t2)
 
 static gboolean write_traceset_footer(void *hook_data, void *call_data)
 {
-	LttvTracesetContext *tc = (LttvTracesetContext *)call_data;
-
-	g_info("TextDump traceset footer");
-
-	g_info(a_file,"End trace set\n\n");
-
-//	if(LTTV_IS_TRACESET_STATS(tc)) {
-//		lttv_stats_sum_traceset((LttvTracesetStats *)tc, ltt_time_infinite);
-//		print_stats(a_file, (LttvTracesetStats *)tc);
-//	}
+	g_info("depanalysis traceset footer");
 
 	/* After processing all the events, we need to flush the sstacks
          * because some unfinished states may remain in them. We want them
@@ -1418,28 +1395,9 @@ static gboolean write_traceset_footer(void *hook_data, void *call_data)
   return FALSE;
 }
 
-#if 0
-static gboolean write_trace_header(void *hook_data, void *call_data)
-{
-  LttvTraceContext *tc = (LttvTraceContext *)call_data;
-#if 0 //FIXME
-  LttSystemDescription *system = ltt_trace_system_description(tc->t);
-
-  fprintf(a_file,"  Trace from %s in %s\n%s\n\n",
-	  ltt_trace_system_description_node_name(system),
-	  ltt_trace_system_description_domain_name(system),
-	  ltt_trace_system_description_description(system));
-#endif //0
-  return FALSE;
-}
-#endif
-
 
 static int write_event_content(void *hook_data, void *call_data)
 {
-  gboolean result;
-
-//  LttvIAttribute *attributes = LTTV_IATTRIBUTE(lttv_global_attributes());
 
   LttvTracefileContext *tfc = (LttvTracefileContext *)call_data;
 
@@ -1496,8 +1454,9 @@ static char *field_get_value_string(struct LttEvent *e, struct marker_info *info
 	return ltt_event_get_string(e, marker_field);
 }
 
-void process_delayed_stack_action(struct process *pinfo, struct sstack_item *item)
+void process_delayed_stack_action(void *arg, struct sstack_item *item)
 {
+	struct process *pinfo = (struct process *)arg;
 	//printf("processing delayed stack action on pid %d at ", pinfo->pid);
 	//if(((struct process_with_state *) item->data_val)->state.time_begin.tv_nsec == 987799696)
 	//	printf("HERE!!!\n");
@@ -1550,7 +1509,8 @@ void process_delayed_stack_action(struct process *pinfo, struct sstack_item *ite
 
 static struct process *get_or_init_process_info(struct LttEvent *e, GQuark name, int pid, int *new)
 {
-	gconstpointer val;
+	//gconstpointer val;
+	gpointer val;
 
 	val = g_hash_table_lookup(process_hash_table, &pid);
 	if(val == NULL) {
@@ -1610,7 +1570,6 @@ static int process_event(void *hook_data, void *call_data)
 	guint cpu = tfs->cpu;
 	LttvTraceState *ts = (LttvTraceState*)tfc->t_context;
 	LttvProcessState *process = ts->running_process[cpu];
-	LttTrace *trace = ts->parent.t;
 	struct process *pinfo;
 
 	e = ltt_tracefile_get_event(tfs->parent.tf);
@@ -1649,7 +1608,7 @@ static int process_event(void *hook_data, void *call_data)
 
 		*pint = field_get_value_int(e, info, LTT_FIELD_ID);
 		q = g_quark_from_string(field_get_value_string(e, info, LTT_FIELD_SYMBOL));
-		g_hash_table_insert(syscall_table, pint, q);
+		g_hash_table_insert(syscall_table, pint, (gpointer)(unsigned long)q);
 	}
 	else if(tfc->tf->name == LTT_CHANNEL_IRQ_STATE && info->name == LTT_EVENT_LIST_INTERRUPT) {
 		GQuark q;
@@ -1657,7 +1616,7 @@ static int process_event(void *hook_data, void *call_data)
 
 		*pint = field_get_value_int(e, info, LTT_FIELD_IRQ_ID);
 		q = g_quark_from_string(field_get_value_string(e, info, LTT_FIELD_ACTION));
-		g_hash_table_insert(irq_table, pint, q);
+		g_hash_table_insert(irq_table, pint, (gpointer)(unsigned long)q);
 	}
 	else if(tfc->tf->name == LTT_CHANNEL_SOFTIRQ_STATE && info->name == LTT_EVENT_SOFTIRQ_VEC) {
 		GQuark q;
@@ -1665,7 +1624,7 @@ static int process_event(void *hook_data, void *call_data)
 
 		*pint = field_get_value_int(e, info, LTT_FIELD_ID);
 		q = g_quark_from_string(field_get_value_string(e, info, LTT_FIELD_SYMBOL));
-		g_hash_table_insert(softirq_table, pint, q);
+		g_hash_table_insert(softirq_table, pint, (gpointer)(unsigned long)q);
 	}
 
 
@@ -1756,7 +1715,7 @@ static int process_event(void *hook_data, void *call_data)
 	}
 	else if(tfc->tf->name == LTT_CHANNEL_KERNEL && info->name == LTT_EVENT_PROCESS_FORK) {
 		int pid = differentiate_swappers(field_get_value_int(e, info, LTT_FIELD_CHILD_PID), e);
-		struct process *event_process_info = get_or_init_process_info(e, process->name, differentiate_swappers(field_get_value_int(e, info, LTT_FIELD_CHILD_PID), e), NULL);
+		struct process *event_process_info = get_or_init_process_info(e, process->name, pid, NULL);
 		struct sstack_item *item;
 
 		event_process_info->parent = process->pid;
@@ -1839,7 +1798,7 @@ static int process_event(void *hook_data, void *call_data)
 		llev_syscall_read_private = llev_syscall_private->private;
 
 		fd = field_get_value_int(e, info, LTT_FIELD_FD);
-		pfileq = g_hash_table_lookup(process->fds, fd);
+		pfileq = (GQuark)(unsigned long)g_hash_table_lookup(process->fds, &fd);
 		if(pfileq) {
 			llev_syscall_read_private->filename = pfileq;
 		}
@@ -1885,7 +1844,7 @@ static int process_event(void *hook_data, void *call_data)
 		llev_syscall_poll_private = llev_syscall_private->private;
 
 		fd = field_get_value_int(e, info, LTT_FIELD_FD);
-		pfileq = g_hash_table_lookup(process->fds, fd);
+		pfileq = (GQuark)(unsigned long)g_hash_table_lookup(process->fds, &fd);
 		if(pfileq) {
 			llev_syscall_poll_private->filename = pfileq;
 		}
@@ -1937,7 +1896,6 @@ static int process_event(void *hook_data, void *call_data)
 	}
 
 	next_iter:
-	skip_state_machine:
 	return FALSE;
 }
 
@@ -2037,13 +1995,6 @@ static void init()
   g_assert(event_hook);
   lttv_hooks_add(event_hook, process_event, NULL, LTTV_PRIO_DEFAULT);
 
-//  result = lttv_iattribute_find_by_path(attributes, "hooks/trace/before",
-//      LTTV_POINTER, &value);
-//  g_assert(result);
-//  before_trace = *(value.v_pointer);
-//  g_assert(before_trace);
-//  lttv_hooks_add(before_trace, write_trace_header, NULL, LTTV_PRIO_DEFAULT);
-//
   result = lttv_iattribute_find_by_path(attributes, "hooks/traceset/before",
       LTTV_POINTER, &value);
   g_assert(result);
@@ -2077,7 +2028,7 @@ static void destroy()
   g_string_free(a_string, TRUE);
 
   lttv_hooks_remove_data(event_hook, write_event_content, NULL);
-//  lttv_hooks_remove_data(before_trace, write_trace_header, NULL);
+
   lttv_hooks_remove_data(before_traceset, write_traceset_header, NULL);
   lttv_hooks_remove_data(after_traceset, write_traceset_footer, NULL);
 }

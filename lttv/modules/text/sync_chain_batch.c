@@ -356,7 +356,7 @@ void teardownSyncChain(LttvTracesetContext* const traceSetContext)
 
 		if (fclose(syncState->graphsStream) != 0)
 		{
-			g_error(strerror(errno));
+			g_error("%s", strerror(errno));
 		}
 	}
 

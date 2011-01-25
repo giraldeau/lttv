@@ -68,6 +68,7 @@ struct sstack_item *sstack_item_new(void);
 struct sstack_item *sstack_item_new_push(unsigned char finished);
 struct sstack_item *sstack_item_new_pop(void);
 struct sstack_item *sstack_item_new_event(void);
+void sstack_force_flush(struct sstack *stack);
 
 extern void print_stack(struct sstack *stack);
 
