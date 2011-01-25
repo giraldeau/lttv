@@ -2941,6 +2941,9 @@ static gboolean dump_softirq(void *hook_data, void *call_data)
 static gboolean sched_try_wakeup(void *hook_data, void *call_data)
 {
 	LttvTracefileState *s = (LttvTracefileState *)call_data;
+	guint cpu = s->cpu;
+	LttvTraceState *ts = (LttvTraceState*)s->parent.t_context;
+	LttvProcessState *running_process = ts->running_process[cpu];
 	LttEvent *e = ltt_tracefile_get_event(s->parent.tf);
 	LttvTraceHook *th = (LttvTraceHook *)hook_data;
 	LttvProcessState *process;
@@ -2954,8 +2957,11 @@ static gboolean sched_try_wakeup(void *hook_data, void *call_data)
 			(LttvTraceState*)s->parent.t_context,
 			woken_cpu, woken_pid,
 			&s->parent.timestamp);
-	process->state->s = LTTV_STATE_WAIT_CPU;
-	process->state->change = s->parent.timestamp;
+	if (running_process != process)
+	{
+		process->state->s = LTTV_STATE_WAIT_CPU;
+		process->state->change = s->parent.timestamp;
+	}
 
 	g_debug("Wakeup: process %d on CPU %u\n", woken_pid, woken_cpu);
 
